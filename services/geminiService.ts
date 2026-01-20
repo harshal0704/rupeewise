@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Transaction } from "../types";
 
-const apiKey = process.env.API_KEY || ''; 
+const apiKey = process.env.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 const INDIAN_FINANCE_SYSTEM_INSTRUCTION = `
@@ -44,10 +44,10 @@ export const categorizeTransaction = async (description: string): Promise<string
 
 export const parseBankStatement = async (file: File): Promise<Transaction[]> => {
   if (!apiKey) return [];
-  
+
   try {
     const filePart = await fileToGenerativePart(file);
-    
+
     const prompt = `
       Extract transactions from this bank statement image/PDF.
       Return a JSON array where each object has:
@@ -60,7 +60,6 @@ export const parseBankStatement = async (file: File): Promise<Transaction[]> => 
       Ignore opening/closing balances. Focus on transaction rows.
     `;
 
-    const response = await ai.models.generateContent({
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: {
@@ -88,7 +87,7 @@ export const parseBankStatement = async (file: File): Promise<Transaction[]> => 
     });
 
     const rawData = JSON.parse(response.text || "[]");
-    
+
     // Transform to App Transaction type
     return rawData.map((t: any, index: number) => ({
       id: `${Date.now()}-${index}`,
@@ -106,11 +105,10 @@ export const parseBankStatement = async (file: File): Promise<Transaction[]> => 
   }
 };
 
-export const getFinancialAdvice = async (history: {role: string, parts: {text: string}[]}[]): Promise<string> => {
+export const getFinancialAdvice = async (history: { role: string, parts: { text: string }[] }[]): Promise<string> => {
   if (!apiKey) return "Please configure your API Key to chat with RupeeWise AI.";
-  
+
   try {
-    const chat = ai.chats.create({
     const chat = ai.chats.create({
       model: 'gemini-1.5-flash',
       config: {
@@ -130,7 +128,7 @@ export const getFinancialAdvice = async (history: {role: string, parts: {text: s
 
 export const explainTaxLiablity = async (income: number, deductions: number, regime: string): Promise<string> => {
   if (!apiKey) return "API Key missing.";
-  
+
   try {
     const prompt = `
       Calculate and explain the income tax liability for an Indian individual with:
@@ -143,7 +141,6 @@ export const explainTaxLiablity = async (income: number, deductions: number, reg
       Keep it simple and concise.
     `;
 
-    const response = await ai.models.generateContent({
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: prompt,
@@ -158,11 +155,10 @@ export const explainTaxLiablity = async (income: number, deductions: number, reg
   }
 };
 
-export const simulateLifeScenario = async (prompt: string): Promise<{analysis: string, feasible: boolean}> => {
+export const simulateLifeScenario = async (prompt: string): Promise<{ analysis: string, feasible: boolean }> => {
   if (!apiKey) return { analysis: "API Key missing.", feasible: false };
 
   try {
-    const response = await ai.models.generateContent({
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: prompt,
@@ -178,7 +174,7 @@ export const simulateLifeScenario = async (prompt: string): Promise<{analysis: s
         }
       }
     });
-    
+
     const text = response.text;
     if (!text) throw new Error("No response text");
     return JSON.parse(text);
@@ -188,18 +184,17 @@ export const simulateLifeScenario = async (prompt: string): Promise<{analysis: s
   }
 };
 
-export const getMarketStatus = async (): Promise<{text: string, sources: string[]}> => {
+export const getMarketStatus = async (): Promise<{ text: string, sources: string[] }> => {
   if (!apiKey) return { text: "API Key missing", sources: [] };
   try {
-    const response = await ai.models.generateContent({
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: "What is the live/current value of Nifty 50 and Sensex? concise one line.",
       config: {
-        tools: [{googleSearch: {}}],
+        tools: [{ googleSearch: {} }],
       }
     });
-    
+
     // Extract grounding sources if available
     const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks
       ?.map((c: any) => c.web?.uri)
@@ -217,7 +212,7 @@ export const getMarketStatus = async (): Promise<{text: string, sources: string[
 
 export const runStockSimulation = async (stock: string, strategy: string, duration: string): Promise<any> => {
   if (!apiKey) return null;
-  
+
   const prompt = `Simulate an investment strategy for Indian Stock Market based on historical trends or realistic volatility.
   Stock/Index: ${stock}
   Strategy: ${strategy} (e.g., SIP, Buy on Dip, Lumpsum)
@@ -233,7 +228,6 @@ export const runStockSimulation = async (stock: string, strategy: string, durati
   `;
 
   try {
-    const response = await ai.models.generateContent({
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-pro',
       contents: prompt,
@@ -270,7 +264,6 @@ export const screenStocks = async (query: string): Promise<any> => {
 
   try {
     const response = await ai.models.generateContent({
-    const response = await ai.models.generateContent({
       model: 'gemini-1.5-pro',
       contents: `You are a professional stock screener for the Indian Market (NSE/BSE).
       User Query: "${query}"
@@ -284,7 +277,7 @@ export const screenStocks = async (query: string): Promise<any> => {
       Do not generate excessive text. Keep it strictly valid JSON.
       `,
       config: {
-        tools: [{googleSearch: {}}],
+        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -306,25 +299,25 @@ export const screenStocks = async (query: string): Promise<any> => {
         }
       }
     });
-    
+
     // Clean up potential Markdown formatting if the model ignores MIME type
     let cleanText = response.text || "{}";
     cleanText = cleanText.replace(/```json\n?|\n?```/g, "").trim();
-    
+
     return JSON.parse(cleanText);
   } catch (error) {
     console.error("Screener Error:", error);
     // Return a graceful fallback instead of null to prevent UI crashes if checks are missing
-    return { 
-      results: [], 
-      summary: "We encountered an error processing the market data. Please try a more specific query." 
+    return {
+      results: [],
+      summary: "We encountered an error processing the market data. Please try a more specific query."
     };
   }
 };
 
 export const getHistoricalComparison = async (stocks: string[]): Promise<any> => {
   if (!apiKey) return { chartData: [] };
-  
+
   const stocksStr = stocks.join(", ");
   const prompt = `
     Compare the historical performance of these Indian stocks/indices over the last 1 year: ${stocksStr}.
@@ -363,15 +356,15 @@ export const getHistoricalComparison = async (stocks: string[]): Promise<any> =>
   }
 };
 
-export const getStockPrice = async (symbol: string): Promise<{price: number, name: string}> => {
+export const getStockPrice = async (symbol: string): Promise<{ price: number, name: string }> => {
   if (!apiKey) return { price: 0, name: symbol };
-  
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: `What is the approximate current share price of ${symbol} in NSE India? Return ONLY a JSON object: {"price": number, "name": "Full Company Name"}.`,
       config: {
-        tools: [{googleSearch: {}}],
+        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json"
       }
     });
