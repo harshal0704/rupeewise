@@ -1,6 +1,4 @@
 <div align="center">
-  <!-- Replace with your actual logo/banner if you have one, or keep the existing one if preferred -->
-  <img src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" alt="RupeeWise Banner" width="100%" />
 
   <h1>RupeeWise</h1>
   <p><strong>AI-Powered Financial Wisdom for the Modern Indian Investor</strong></p>
