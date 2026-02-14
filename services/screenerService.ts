@@ -47,7 +47,7 @@ export const screenerService = {
             `;
 
             const result = await genAI.models.generateContent({
-                model: 'gemini-2.0-flash-lite-preview-02-05',
+                model: 'gemini-1.5-flash',
                 contents: prompt,
             });
 
