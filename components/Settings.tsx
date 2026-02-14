@@ -3,12 +3,17 @@ import { User, Settings as SettingsIcon, Database, Trash2, LogOut, Check, X, Ale
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
+import { useTheme } from '../context/ThemeContext'; // Import useTheme
 
 const Settings: React.FC = () => {
     const { user, profile, logout } = useAuth();
     const navigate = useNavigate();
+    const { user, profile, logout } = useAuth();
+    const navigate = useNavigate();
     const { addNotification } = useNotifications();
+    const { theme, setTheme, themes } = useTheme(); // Use Theme Hook
     const [loading, setLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 

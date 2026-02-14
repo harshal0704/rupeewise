@@ -19,6 +19,7 @@ import Settings from './components/Settings';
 import { Transaction } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { api } from './services/api';
 
 import Layout from './components/Layout';
@@ -117,9 +118,11 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <NotificationProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
+        <ThemeProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </ThemeProvider>
       </NotificationProvider>
     </AuthProvider>
   );
