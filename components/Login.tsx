@@ -5,8 +5,8 @@ import { Lock, Mail, ArrowRight, User, TrendingUp, Shield, Globe } from 'lucide-
 
 const Login: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('user@rupeewise.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -166,11 +166,7 @@ const Login: React.FC = () => {
               </p>
             </div>
 
-            <div className="mt-6 text-center">
-              <p className="text-xs text-slate-600">
-                Demo: user@rupeewise.com / password
-              </p>
-            </div>
+
           </div>
         </div>
       </div>
