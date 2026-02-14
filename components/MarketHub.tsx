@@ -97,7 +97,7 @@ const MarketHub: React.FC = () => {
                     <>
                         <div className="lg:col-span-2 space-y-6">
                             {/* Chart Card */}
-                            <div className="glass-panel p-1 rounded-3xl min-h-[600px] flex flex-col overflow-hidden bg-[#131722]">
+                            <div className="glass-panel p-1 rounded-3xl h-[calc(100vh-220px)] min-h-[500px] flex flex-col overflow-hidden bg-[#131722]">
                                 <div className="h-full w-full">
                                     <TradingViewChart symbol={activeTab === 'crypto' ? "BITSTAMP:BTCUSD" : `NSE:${ticker}`} />
                                 </div>
