@@ -6,6 +6,7 @@ import {
     Search, Bell, Settings, User, Star, Briefcase, GraduationCap, Target
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const SidebarLink = ({ to, icon: Icon, label, active, onClick }: any) => (
     <Link
@@ -24,8 +25,10 @@ const SidebarLink = ({ to, icon: Icon, label, active, onClick }: any) => (
 
 const Layout: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
     const location = useLocation();
     const { user, logout } = useAuth();
+    const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
 
     const navItems = [
         { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -138,14 +141,57 @@ const Layout: React.FC = () => {
                         />
                     </div>
 
-                    <div className="flex items-center space-x-4">
-                        <button className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors relative">
-                            <Bell size={20} />
-                            <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                        </button>
-                        <button className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors">
+                    <div className="flex items-center space-x-4 relative">
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowNotifications(!showNotifications)}
+                                className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors relative"
+                            >
+                                <Bell size={20} />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                                )}
+                            </button>
+
+                            {/* Notification Dropdown */}
+                            {showNotifications && (
+                                <div className="absolute right-0 top-12 w-80 glass-panel rounded-2xl border border-slate-700/50 shadow-2xl z-50 animate-fade-in origin-top-right overflow-hidden">
+                                    <div className="p-4 border-b border-slate-700/30 flex justify-between items-center bg-slate-900/50">
+                                        <h3 className="font-bold text-white">Notifications</h3>
+                                        <div className="flex gap-2">
+                                            <button onClick={markAllAsRead} className="text-xs text-primary hover:text-primary-glow transition-colors">Mark all read</button>
+                                            <button onClick={clearAll} className="text-xs text-slate-400 hover:text-red-400 transition-colors">Clear</button>
+                                        </div>
+                                    </div>
+                                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                                        {notifications.length === 0 ? (
+                                            <div className="p-8 text-center text-slate-500">
+                                                <Bell size={24} className="mx-auto mb-2 opacity-20" />
+                                                <p className="text-sm">No notifications yet</p>
+                                            </div>
+                                        ) : (
+                                            notifications.map(notification => (
+                                                <div
+                                                    key={notification.id}
+                                                    className={`p-4 border-b border-slate-700/30 hover:bg-slate-800/50 transition-colors ${!notification.read ? 'bg-primary/5' : ''}`}
+                                                    onClick={() => markAsRead(notification.id)}
+                                                >
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <h4 className={`text-sm font-semibold ${!notification.read ? 'text-white' : 'text-slate-400'}`}>{notification.title}</h4>
+                                                        <span className="text-[10px] text-slate-500">{new Date(notification.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                    <p className="text-xs text-slate-400 leading-relaxed">{notification.message}</p>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <Link to="/settings" className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors">
                             <Settings size={20} />
-                        </button>
+                        </Link>
                     </div>
                 </header>
 
