@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Star, TrendingUp, TrendingDown, Plus, X, RefreshCw } from 'lucide-react';
+import { Star, TrendingUp, TrendingDown, Plus, X, RefreshCw, ArrowRight } from 'lucide-react';
 import { getStockPrice } from '../services/geminiService';
+import { supabase } from '../services/supabaseClient';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface WatchlistItem {
+    id?: string;
     symbol: string;
     name: string;
     price: number;
@@ -10,27 +14,55 @@ interface WatchlistItem {
 }
 
 const Watchlist: React.FC = () => {
-    const [items, setItems] = useState<WatchlistItem[]>([
-        { symbol: 'RELIANCE', name: 'Reliance Industries', price: 2980.50, change: 1.2 },
-        { symbol: 'TCS', name: 'Tata Consultancy Svcs', price: 4120.00, change: -0.5 },
-        { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1450.75, change: 0.8 },
-    ]);
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const [items, setItems] = useState<WatchlistItem[]>([]);
     const [newItem, setNewItem] = useState('');
     const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            fetchWatchlist();
+        }
+    }, [user]);
+
+    const fetchWatchlist = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('watchlist')
+                .select('*');
+
+            if (error) throw error;
+
+            setItems(data || []);
+        } catch (error) {
+            console.error("Error fetching watchlist:", error);
+        } finally {
+            setInitialLoading(false);
+        }
+    };
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newItem) return;
+        if (!newItem || !user) return;
         setLoading(true);
         try {
             const data = await getStockPrice(newItem.toUpperCase());
             if (data.price > 0) {
-                setItems([...items, {
-                    symbol: newItem.toUpperCase(),
-                    name: data.name,
-                    price: data.price,
-                    change: (Math.random() * 4) - 2 // Mock change for demo
-                }]);
+                const { error } = await supabase
+                    .from('watchlist')
+                    .insert([{
+                        user_id: user.id,
+                        symbol: newItem.toUpperCase(),
+                        name: data.name,
+                        price: data.price,
+                        change: (Math.random() * 4) - 2
+                    }]);
+
+                if (error) throw error;
+
+                await fetchWatchlist();
                 setNewItem('');
             }
         } catch (error) {
@@ -40,9 +72,25 @@ const Watchlist: React.FC = () => {
         }
     };
 
-    const remove = (symbol: string) => {
-        setItems(items.filter(i => i.symbol !== symbol));
+    const remove = async (symbol: string) => {
+        try {
+            const { error } = await supabase
+                .from('watchlist')
+                .delete()
+                .eq('symbol', symbol);
+
+            if (error) throw error;
+            setItems(items.filter(i => i.symbol !== symbol));
+        } catch (error) {
+            console.error("Error removing item:", error);
+        }
     };
+
+    const handleItemClick = (symbol: string) => {
+        navigate('/market', { state: { ticker: symbol } });
+    };
+
+    if (initialLoading) return <div className="p-8 text-center text-slate-400">Loading watchlist...</div>;
 
     return (
         <div className="space-y-8 animate-fade-in pb-20">
@@ -71,47 +119,62 @@ const Watchlist: React.FC = () => {
                 </form>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {items.map((item) => (
-                    <div key={item.symbol} className="glass-panel p-6 rounded-2xl group hover:border-primary/50 transition-all relative">
-                        <button
-                            onClick={() => remove(item.symbol)}
-                            className="absolute top-4 right-4 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+            {items.length === 0 ? (
+                <div className="text-center py-20 bg-slate-900/50 rounded-3xl border border-slate-800 border-dashed">
+                    <Star size={48} className="text-slate-600 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-white">Watchlist is Empty</h3>
+                    <p className="text-slate-400 mt-2">Add symbols to track their performance.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {items.map((item) => (
+                        <div
+                            key={item.symbol}
+                            onClick={() => handleItemClick(item.symbol)}
+                            className="glass-panel p-6 rounded-2xl group hover:border-primary/50 transition-all relative cursor-pointer"
                         >
-                            <X size={18} />
-                        </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); remove(item.symbol); }}
+                                className="absolute top-4 right-4 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all z-10"
+                            >
+                                <X size={18} />
+                            </button>
 
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 className="text-xl font-bold text-white">{item.symbol}</h3>
-                                <p className="text-xs text-slate-400">{item.name}</p>
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                        {item.symbol}
+                                        <ArrowRight size={14} className="text-slate-500 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                                    </h3>
+                                    <p className="text-xs text-slate-400">{item.name}</p>
+                                </div>
+                                <div className={`flex items-center gap-1 text-sm font-bold ${item.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    {item.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                                    {Math.abs(item.change).toFixed(2)}%
+                                </div>
                             </div>
-                            <div className={`flex items-center gap-1 text-sm font-bold ${item.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {item.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                                {Math.abs(item.change).toFixed(2)}%
+
+                            <div className="flex items-end justify-between">
+                                <div>
+                                    <p className="text-xs text-slate-500 uppercase font-semibold">Current Price</p>
+                                    <p className="text-2xl font-bold text-white">₹{item.price?.toLocaleString()}</p>
+                                </div>
+                                <div className="h-10 w-24">
+                                    {/* Mini Sparkline Placeholder */}
+                                    <svg viewBox="0 0 100 40" className="w-full h-full overflow-visible">
+                                        <path
+                                            d={`M0 20 Q 25 ${20 - item.change * 5} 50 20 T 100 ${20 - item.change * 5}`}
+                                            fill="none"
+                                            stroke={item.change >= 0 ? '#4ade80' : '#f87171'}
+                                            strokeWidth="2"
+                                        />
+                                    </svg>
+                                </div>
                             </div>
                         </div>
-
-                        <div className="flex items-end justify-between">
-                            <div>
-                                <p className="text-xs text-slate-500 uppercase font-semibold">Current Price</p>
-                                <p className="text-2xl font-bold text-white">₹{item.price.toLocaleString()}</p>
-                            </div>
-                            <div className="h-10 w-24">
-                                {/* Mini Sparkline Placeholder */}
-                                <svg viewBox="0 0 100 40" className="w-full h-full overflow-visible">
-                                    <path
-                                        d={`M0 20 Q 25 ${20 - item.change * 5} 50 20 T 100 ${20 - item.change * 5}`}
-                                        fill="none"
-                                        stroke={item.change >= 0 ? '#4ade80' : '#f87171'}
-                                        strokeWidth="2"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
