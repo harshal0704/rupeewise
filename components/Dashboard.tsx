@@ -4,6 +4,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { IndianRupee, TrendingUp, Wallet, ArrowUp, ArrowDown, Target, Zap, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { supabase } from '../services/supabaseClient';
+import { getFinancialAdvice } from '../services/geminiService';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -14,12 +16,39 @@ const COLORS = ['#6366f1', '#06b6d4', '#d946ef', '#f43f5e', '#8b5cf6', '#ec4899'
 const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions }) => {
   const { user } = useAuth();
   const [localTransactions, setLocalTransactions] = useState<Transaction[]>(propTransactions);
+  const [insight, setInsight] = useState<string>("Analyzing your finances...");
+  const [topGoal, setTopGoal] = useState<any>(null);
 
   useEffect(() => {
     if (propTransactions && propTransactions.length > 0) {
       setLocalTransactions(propTransactions);
     }
   }, [propTransactions]);
+
+  useEffect(() => {
+    // Fetch Top Goal
+    const fetchTopGoal = async () => {
+      const { data } = await supabase
+        .from('goals')
+        .select('*')
+        .order('target_amount', { ascending: false }) // Prioritize biggest goal
+        .limit(1)
+        .single();
+      if (data) setTopGoal(data);
+    };
+
+    // Generate Insight
+    const fetchInsight = async () => {
+      const prompt = "Give me a one-sentence, motivating financial tip for an Indian investor.";
+      const response = await getFinancialAdvice([{ role: 'user', parts: [{ text: prompt }] }]);
+      setInsight(response);
+    };
+
+    if (user) {
+      fetchTopGoal();
+      fetchInsight();
+    }
+  }, [user]);
 
   const totalSpent = localTransactions
     .filter(t => t.type === 'debit')
@@ -31,15 +60,38 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
 
   const balance = totalIncome - totalSpent;
 
-  // Mock Data for Sparkline
-  const netWorthData = [
-    { name: 'Jan', value: 40000 },
-    { name: 'Feb', value: 45000 },
-    { name: 'Mar', value: 42000 },
-    { name: 'Apr', value: 50000 },
-    { name: 'May', value: 48000 },
-    { name: 'Jun', value: balance > 55000 ? balance : 55000 },
-  ];
+  // Dynamic Chart Data from Transactions
+  const processChartData = () => {
+    const monthlyData: { [key: string]: number } = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    // Initialize with some base value or 0
+    let cumulative = 0;
+
+    // Sort transactions by date
+    const sorted = [...localTransactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Group by month
+    sorted.forEach(t => {
+      const date = new Date(t.date);
+      const month = months[date.getMonth()];
+      if (t.type === 'credit') cumulative += t.amount;
+      else cumulative -= t.amount;
+      monthlyData[month] = cumulative;
+    });
+
+    // Fill in gaps or just return what we have. 
+    // For simplicity, returning last 6 months found or defaults.
+    return Object.keys(monthlyData).map(m => ({ name: m, value: monthlyData[m] }));
+  };
+
+  const netWorthData = localTransactions.length > 0
+    ? processChartData()
+    : [
+      { name: 'Jan', value: 10000 }, { name: 'Feb', value: 12000 },
+      { name: 'Mar', value: 11000 }, { name: 'Apr', value: 15000 },
+      { name: 'May', value: 18000 }, { name: 'Jun', value: 20000 }
+    ];
 
   const categoryData = localTransactions
     .filter(t => t.type === 'debit')
@@ -128,18 +180,30 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
               <div className="p-3 bg-accent/10 rounded-xl text-accent">
                 <Target size={24} />
               </div>
-              <span className="text-xs font-bold bg-accent/20 text-accent px-2 py-1 rounded-full">Priority</span>
+              <span className="text-xs font-bold bg-accent/20 text-accent px-2 py-1 rounded-full">Top Goal</span>
             </div>
-            <h3 className="text-lg font-bold text-white mb-1">Europe Trip</h3>
-            <p className="text-sm text-slate-400 mb-4">Target: ₹2,50,000</p>
+            {topGoal ? (
+              <>
+                <h3 className="text-lg font-bold text-white mb-1">{topGoal.title}</h3>
+                <p className="text-sm text-slate-400 mb-4">Target: ₹{topGoal.target_amount.toLocaleString()}</p>
 
-            <div className="w-full bg-slate-800 rounded-full h-2.5 mb-2">
-              <div className="bg-gradient-to-r from-accent to-purple-500 h-2.5 rounded-full" style={{ width: '45%' }}></div>
-            </div>
-            <div className="flex justify-between text-xs text-slate-400">
-              <span>₹1,12,500 saved</span>
-              <span>45%</span>
-            </div>
+                <div className="w-full bg-slate-800 rounded-full h-2.5 mb-2">
+                  <div
+                    className="bg-gradient-to-r from-accent to-purple-500 h-2.5 rounded-full"
+                    style={{ width: `${Math.min(100, (topGoal.current_amount / topGoal.target_amount) * 100)}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-slate-400">
+                  <span>₹{topGoal.current_amount.toLocaleString()} saved</span>
+                  <span>{Math.round((topGoal.current_amount / topGoal.target_amount) * 100)}%</span>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-slate-400 text-sm">No goals set yet.</p>
+                <a href="#/goals" className="text-primary text-xs font-bold mt-2 inline-block">Create One</a>
+              </div>
+            )}
           </div>
 
           {/* AI Insight Widget */}
@@ -150,7 +214,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
               <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wide">Daily Insight</h3>
             </div>
             <p className="text-sm text-slate-300 leading-relaxed">
-              "Consider increasing your SIP in Nifty 50 Index Fund by ₹500 to beat inflation this year."
+              "{insight}"
             </p>
             <div className="mt-4 flex items-center text-primary text-xs font-bold group-hover:translate-x-1 transition-transform">
               ASK COACH <ChevronRight size={14} className="ml-1" />

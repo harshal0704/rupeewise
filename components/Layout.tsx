@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Smartphone, TrendingUp, FileText,
     MessageSquareText, Box, Menu, X, LineChart, LogOut,
@@ -26,7 +26,9 @@ const SidebarLink = ({ to, icon: Icon, label, active, onClick }: any) => (
 const Layout: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const location = useLocation();
+    const navigate = useNavigate();
     const { user, logout } = useAuth();
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
 
@@ -42,6 +44,37 @@ const Layout: React.FC = () => {
         { path: '/tax', icon: FileText, label: 'Tax Simplifier' },
         { path: '/coach', icon: MessageSquareText, label: 'AI Coach' },
     ];
+
+    const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+
+            // Page Navigation Shortcuts
+            const pageMap: { [key: string]: string } = {
+                'dashboard': '/',
+                'upi': '/upi',
+                'invest': '/invest',
+                'stocks': '/stocks',
+                'market': '/stocks',
+                'watchlist': '/watchlist',
+                'portfolio': '/portfolio',
+                'academy': '/learn',
+                'learn': '/learn',
+                'goals': '/goals',
+                'tax': '/tax',
+                'coach': '/coach',
+                'ai': '/coach'
+            };
+
+            if (pageMap[query]) {
+                navigate(pageMap[query]);
+            } else {
+                // Default to stock search
+                navigate(`/stocks?search=${encodeURIComponent(searchQuery)}`);
+            }
+            setSearchQuery('');
+        }
+    };
 
     return (
         <div className="flex min-h-screen font-sans text-slate-100 overflow-hidden relative">
@@ -138,6 +171,9 @@ const Layout: React.FC = () => {
                             type="text"
                             placeholder="Search stocks, mutual funds, or features..."
                             className="bg-transparent border-none outline-none text-sm w-full text-slate-200 placeholder-slate-500"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={handleSearch}
                         />
                     </div>
 
