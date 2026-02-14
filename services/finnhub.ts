@@ -53,5 +53,23 @@ export const finnhub = {
             console.error("Finnhub Error:", error);
             return [];
         }
+    },
+
+    /**
+     * Fetch real-time quote
+     * @param symbol Stock symbol
+     */
+    getQuote: async (symbol: string): Promise<{ c: number, d: number, dp: number } | null> => {
+        try {
+            const response = await fetch(
+                `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`
+            );
+
+            if (!response.ok) throw new Error('Failed to fetch quote');
+            return await response.json();
+        } catch (error) {
+            console.error("Finnhub Quote Error:", error);
+            return null;
+        }
     }
 };

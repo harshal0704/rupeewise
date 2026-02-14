@@ -4,7 +4,7 @@ import { Briefcase, TrendingUp, DollarSign, PieChart as PieIcon, Bot, RefreshCw,
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { analyzePortfolio } from '../services/geminiService';
-import { marketstack } from '../services/marketstack';
+import { finnhub } from '../services/finnhub';
 
 const Portfolio: React.FC = () => {
     const { user } = useAuth();
@@ -44,11 +44,16 @@ const Portfolio: React.FC = () => {
                 const symbols = data.filter(h => h.type === 'Stock' || h.type === 'Mutual Fund').map(h => h.symbol);
 
                 // Fetch live prices
-                const quotes = await marketstack.getRealTimePrice(symbols);
+                const quotesPromises = symbols.map(async (sym) => {
+                    const q = await finnhub.getQuote(sym);
+                    return { symbol: sym, price: q ? q.c : 0 };
+                });
+                const quotes = await Promise.all(quotesPromises);
 
                 const processed = data.map(h => {
                     const quote = quotes.find(q => q.symbol === h.symbol);
-                    const currentPrice = quote ? quote.price : h.avg_price;
+                    // If fetching failed (price 0) or didn't exist, use avg_price as fallback to avoid 0 value
+                    const currentPrice = (quote && quote.price > 0) ? quote.price : h.avg_price;
                     return {
                         ...h,
                         currentPrice,

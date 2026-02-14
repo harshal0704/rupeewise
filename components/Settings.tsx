@@ -11,8 +11,10 @@ const Settings: React.FC = () => {
     const navigate = useNavigate();
     const { addNotification } = useNotifications();
     const { theme, setTheme, themes } = useTheme();
+
     const [loading, setLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [geminiModel, setGeminiModel] = useState(() => localStorage.getItem('gemini_model') || 'gemini-2.0-flash-lite-preview-02-05');
 
     // Preferences (Mock State for now)
     const [currency, setCurrency] = useState('INR');
@@ -196,6 +198,24 @@ const Settings: React.FC = () => {
                                 </div>
                                 <p className="text-xs text-slate-500 mt-2">
                                     Your key is stored locally in your browser. Get one from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google AI Studio</a>.
+                                </p>
+                            </div>
+                            <div>
+                                <label className="block text-sm text-slate-400 mb-2">Gemini Model Name</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. gemini-1.5-flash"
+                                        value={geminiModel}
+                                        onChange={(e) => {
+                                            setGeminiModel(e.target.value);
+                                            localStorage.setItem('gemini_model', e.target.value);
+                                        }}
+                                        className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                    />
+                                </div>
+                                <p className="text-xs text-slate-500 mt-2">
+                                    Enter the model ID (e.g., <code>gemini-2.0-flash-lite-preview-02-05</code>, <code>gemini-1.5-pro</code>).
                                 </p>
                             </div>
                         </div>

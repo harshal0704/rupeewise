@@ -2,6 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Transaction } from "../types";
 
 const getApiKey = () => localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
+const getGeminiModel = () => localStorage.getItem('gemini_model') || 'gemini-2.0-flash-lite-preview-02-05';
 
 const INDIAN_FINANCE_SYSTEM_INSTRUCTION = `
 You are RupeeWise AI, a financial expert tailored for the Indian market. 
@@ -30,7 +31,7 @@ export const categorizeTransaction = async (description: string): Promise<string
   const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: `Categorize this Indian UPI/Bank transaction description into one word (e.g., Food, Travel, Utility, Shopping, Health, Entertainment, Transfer): "${description}"`,
       config: {
         systemInstruction: "You are a transaction classifier. Return ONLY the category name.",
@@ -66,7 +67,7 @@ export const parseBankStatement = async (file: File): Promise<Transaction[]> => 
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: {
         parts: [
           filePart,
@@ -118,7 +119,7 @@ export const getFinancialAdvice = async (history: { role: string, parts: { text:
 
   try {
     const chat = ai.chats.create({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       config: {
         systemInstruction: INDIAN_FINANCE_SYSTEM_INSTRUCTION,
       },
@@ -153,7 +154,7 @@ export const explainTaxLiablity = async (income: number, deductions: number, reg
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: prompt,
       config: {
         systemInstruction: INDIAN_FINANCE_SYSTEM_INSTRUCTION,
@@ -174,7 +175,7 @@ export const simulateLifeScenario = async (prompt: string): Promise<{ analysis: 
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: prompt,
       config: {
         systemInstruction: INDIAN_FINANCE_SYSTEM_INSTRUCTION + " Analyze the user's financial scenario. Return a JSON object with 'analysis' (string, markdown supported) and 'feasible' (boolean).",
@@ -205,7 +206,7 @@ export const getMarketStatus = async (): Promise<{ text: string, sources: string
   const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: "What is the live/current value of Nifty 50 and Sensex? concise one line.",
       config: {
         tools: [{ googleSearch: {} }],
@@ -249,7 +250,7 @@ export const runStockSimulation = async (stock: string, strategy: string, durati
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -287,7 +288,7 @@ export const screenStocks = async (query: string): Promise<any> => {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: `You are a professional stock screener for the Indian Market (NSE/BSE).
       User Query: "${query}"
       
@@ -357,7 +358,7 @@ export const getHistoricalComparison = async (stocks: string[]): Promise<any> =>
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -390,7 +391,7 @@ export const getStockPrice = async (symbol: string): Promise<{ price: number, na
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: `What is the approximate current share price of ${symbol} in NSE India? Return ONLY a JSON object: {"price": number, "name": "Full Company Name"}.`,
       config: {
         tools: [{ googleSearch: {} }],
@@ -427,7 +428,7 @@ export const analyzePortfolio = async (holdings: any[]) => {
     const ai = new GoogleGenAI({ apiKey });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: getGeminiModel(),
       contents: prompt,
       config: {
         systemInstruction: INDIAN_FINANCE_SYSTEM_INSTRUCTION
@@ -467,7 +468,7 @@ export const generateFullCourse = async (topic: string): Promise<any> => {
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-lite-preview-02-05',
+      model: getGeminiModel(),
       contents: prompt,
       config: {
         responseMimeType: "application/json",
