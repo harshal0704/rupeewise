@@ -8,7 +8,7 @@ const InvestmentSimulator: React.FC = () => {
   const [years, setYears] = useState(10);
   const [returnRate, setReturnRate] = useState(12);
   const [type, setType] = useState<'SIP' | 'Lumpsum'>('SIP');
-  const [marketData, setMarketData] = useState<{text: string, sources: string[]} | null>(null);
+  const [marketData, setMarketData] = useState<{ text: string, sources: string[] } | null>(null);
 
   useEffect(() => {
     const fetchMarket = async () => {
@@ -22,14 +22,14 @@ const InvestmentSimulator: React.FC = () => {
     const chartData = [];
     let invested = 0;
     let value = type === 'Lumpsum' ? amount : 0;
-    
+
     if (type === 'Lumpsum') invested = amount;
 
     for (let i = 0; i <= years; i++) {
       if (i > 0) {
         if (type === 'SIP') {
           const monthlyRate = returnRate / 12 / 100;
-          for(let m=0; m<12; m++) {
+          for (let m = 0; m < 12; m++) {
             value = (value + amount) * (1 + monthlyRate);
             invested += amount;
           }
@@ -37,7 +37,7 @@ const InvestmentSimulator: React.FC = () => {
           value = value * (1 + returnRate / 100);
         }
       }
-      
+
       chartData.push({
         year: `Year ${i}`,
         invested: Math.round(invested),
@@ -56,23 +56,23 @@ const InvestmentSimulator: React.FC = () => {
       <header className="mb-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <TrendingUp className="text-green-600" /> Investment Simulator
+            <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+              <TrendingUp className="text-emerald-400" /> Investment Simulator
             </h1>
-            <p className="text-gray-600">Visualize how your money grows with compounding power.</p>
+            <p className="text-slate-400">Visualize how your money grows with compounding power.</p>
           </div>
           {marketData && (
-            <div className="bg-indigo-50 border border-indigo-100 p-3 rounded-lg text-xs max-w-xs animate-fade-in shadow-sm">
+            <div className="bg-indigo-900/30 border border-indigo-800 p-3 rounded-lg text-xs max-w-xs animate-fade-in shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <Radio size={14} className="text-red-500 animate-pulse" />
-                <span className="font-bold text-indigo-900 uppercase tracking-wide">Live Market Context</span>
+                <span className="font-bold text-indigo-300 uppercase tracking-wide">Live Market Context</span>
               </div>
-              <p className="text-indigo-800 font-medium">{marketData.text}</p>
+              <p className="text-indigo-200 font-medium">{marketData.text}</p>
               {marketData.sources.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {marketData.sources.slice(0, 2).map((src, i) => (
-                    <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="flex items-center text-indigo-500 hover:text-indigo-700 underline">
-                      Source {i+1} <ExternalLink size={10} className="ml-1" />
+                    <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="flex items-center text-indigo-400 hover:text-indigo-300 underline">
+                      Source {i + 1} <ExternalLink size={10} className="ml-1" />
                     </a>
                   ))}
                 </div>
@@ -84,24 +84,24 @@ const InvestmentSimulator: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Controls */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-6 h-fit">
-          <div className="flex bg-gray-100 p-1 rounded-lg">
+        <div className="bg-slate-900/50 p-6 rounded-xl shadow-sm border border-slate-700 space-y-6 h-fit">
+          <div className="flex bg-slate-800 p-1 rounded-lg">
             <button
               onClick={() => setType('SIP')}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${type === 'SIP' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${type === 'SIP' ? 'bg-indigo-600 shadow text-white' : 'text-slate-400 hover:text-slate-200'}`}
             >
               SIP
             </button>
             <button
               onClick={() => setType('Lumpsum')}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${type === 'Lumpsum' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${type === 'Lumpsum' ? 'bg-indigo-600 shadow text-white' : 'text-slate-400 hover:text-slate-200'}`}
             >
               Lumpsum
             </button>
           </div>
 
           <div>
-            <label className="flex justify-between text-sm font-medium text-gray-700 mb-2">
+            <label className="flex justify-between text-sm font-medium text-slate-300 mb-2">
               <span>{type === 'SIP' ? 'Monthly Investment' : 'Total Investment'}</span>
               <span className="text-indigo-600">₹{amount.toLocaleString('en-IN')}</span>
             </label>
@@ -112,12 +112,12 @@ const InvestmentSimulator: React.FC = () => {
               step={type === 'SIP' ? 500 : 5000}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
             />
           </div>
 
           <div>
-            <label className="flex justify-between text-sm font-medium text-gray-700 mb-2">
+            <label className="flex justify-between text-sm font-medium text-slate-300 mb-2">
               <span>Time Period</span>
               <span className="text-indigo-600">{years} Years</span>
             </label>
@@ -127,12 +127,12 @@ const InvestmentSimulator: React.FC = () => {
               max="40"
               value={years}
               onChange={(e) => setYears(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
             />
           </div>
 
           <div>
-            <label className="flex justify-between text-sm font-medium text-gray-700 mb-2">
+            <label className="flex justify-between text-sm font-medium text-slate-300 mb-2">
               <span>Expected Annual Return</span>
               <span className="text-indigo-600">{returnRate}%</span>
             </label>
@@ -143,29 +143,29 @@ const InvestmentSimulator: React.FC = () => {
               step="0.5"
               value={returnRate}
               onChange={(e) => setReturnRate(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
             />
           </div>
 
           <div className="pt-4 border-t border-gray-100">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-500 text-sm">Invested Amount</span>
-              <span className="font-semibold text-gray-900">₹{totalInvested.toLocaleString('en-IN')}</span>
+              <span className="text-slate-400 text-sm">Invested Amount</span>
+              <span className="font-semibold text-white">₹{totalInvested.toLocaleString('en-IN')}</span>
             </div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-500 text-sm">Est. Returns</span>
-              <span className="font-semibold text-green-600">+₹{totalGain.toLocaleString('en-IN')}</span>
+              <span className="text-slate-400 text-sm">Est. Returns</span>
+              <span className="font-semibold text-emerald-400">+₹{totalGain.toLocaleString('en-IN')}</span>
             </div>
-            <div className="flex justify-between items-center mt-4 pt-4 border-t border-dashed border-gray-200">
-              <span className="text-lg font-bold text-gray-800">Total Value</span>
-              <span className="text-2xl font-bold text-indigo-700">₹{totalValue.toLocaleString('en-IN')}</span>
+            <div className="flex justify-between items-center mt-4 pt-4 border-t border-dashed border-slate-700">
+              <span className="text-lg font-bold text-white">Total Value</span>
+              <span className="text-2xl font-bold text-indigo-400">₹{totalValue.toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>
 
         {/* Chart */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6">Wealth Projection</h3>
+        <div className="lg:col-span-2 bg-slate-900/50 p-6 rounded-xl shadow-sm border border-slate-700 flex flex-col">
+          <h3 className="text-lg font-semibold text-white mb-6">Wealth Projection</h3>
           <div className="flex-1 min-h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
@@ -182,20 +182,20 @@ const InvestmentSimulator: React.FC = () => {
                     <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="year" stroke="#9ca3af" tick={{fill: '#4b5563'}} />
-                <YAxis tickFormatter={(value) => `₹${(value / 100000).toFixed(1)}L`} stroke="#9ca3af" tick={{fill: '#4b5563'}} />
+                <XAxis dataKey="year" stroke="#9ca3af" tick={{ fill: '#4b5563' }} />
+                <YAxis tickFormatter={(value) => `₹${(value / 100000).toFixed(1)}L`} stroke="#9ca3af" tick={{ fill: '#4b5563' }} />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}
-                  contentStyle={{ 
-                    borderRadius: '8px', 
-                    border: '1px solid #e5e7eb', 
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                    backgroundColor: '#ffffff',
-                    color: '#1f2937' 
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: '1px solid #334155',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)',
+                    backgroundColor: '#1e293b',
+                    color: '#f8fafc'
                   }}
-                  itemStyle={{ color: '#1f2937' }}
-                  labelStyle={{ color: '#4b5563' }}
+                  itemStyle={{ color: '#e2e8f0' }}
+                  labelStyle={{ color: '#94a3b8' }}
                 />
                 <Area
                   type="monotone"
