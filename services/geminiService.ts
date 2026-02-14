@@ -1,8 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Transaction } from "../types";
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+const getApiKey = () => localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
 
 const INDIAN_FINANCE_SYSTEM_INSTRUCTION = `
 You are RupeeWise AI, a financial expert tailored for the Indian market. 
@@ -25,7 +24,10 @@ export const fileToGenerativePart = async (file: File): Promise<{ inlineData: { 
 };
 
 export const categorizeTransaction = async (description: string): Promise<string> => {
+  const apiKey = getApiKey();
   if (!apiKey) return "Uncategorized";
+
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.0-flash-lite-preview-02-05',
@@ -43,7 +45,10 @@ export const categorizeTransaction = async (description: string): Promise<string
 };
 
 export const parseBankStatement = async (file: File): Promise<Transaction[]> => {
+  const apiKey = getApiKey();
   if (!apiKey) return [];
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const filePart = await fileToGenerativePart(file);
@@ -106,7 +111,10 @@ export const parseBankStatement = async (file: File): Promise<Transaction[]> => 
 };
 
 export const getFinancialAdvice = async (history: { role: string, parts: { text: string }[] }[]): Promise<string> => {
+  const apiKey = getApiKey();
   if (!apiKey) return "Please configure your API Key to chat with RupeeWise AI.";
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const chat = ai.chats.create({
@@ -127,7 +135,10 @@ export const getFinancialAdvice = async (history: { role: string, parts: { text:
 };
 
 export const explainTaxLiablity = async (income: number, deductions: number, regime: string): Promise<string> => {
+  const apiKey = getApiKey();
   if (!apiKey) return "API Key missing.";
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const prompt = `
@@ -156,7 +167,10 @@ export const explainTaxLiablity = async (income: number, deductions: number, reg
 };
 
 export const simulateLifeScenario = async (prompt: string): Promise<{ analysis: string, feasible: boolean }> => {
+  const apiKey = getApiKey();
   if (!apiKey) return { analysis: "API Key missing.", feasible: false };
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const response = await ai.models.generateContent({
@@ -185,7 +199,10 @@ export const simulateLifeScenario = async (prompt: string): Promise<{ analysis: 
 };
 
 export const getMarketStatus = async (): Promise<{ text: string, sources: string[] }> => {
+  const apiKey = getApiKey();
   if (!apiKey) return { text: "API Key missing", sources: [] };
+
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.0-flash-lite-preview-02-05',
@@ -211,7 +228,10 @@ export const getMarketStatus = async (): Promise<{ text: string, sources: string
 };
 
 export const runStockSimulation = async (stock: string, strategy: string, duration: string): Promise<any> => {
+  const apiKey = getApiKey();
   if (!apiKey) return null;
+
+  const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `Simulate an investment strategy for Indian Stock Market based on historical trends or realistic volatility.
   Stock/Index: ${stock}
@@ -260,7 +280,10 @@ export const runStockSimulation = async (stock: string, strategy: string, durati
 };
 
 export const screenStocks = async (query: string): Promise<any> => {
+  const apiKey = getApiKey();
   if (!apiKey) return null;
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const response = await ai.models.generateContent({
@@ -316,7 +339,10 @@ export const screenStocks = async (query: string): Promise<any> => {
 };
 
 export const getHistoricalComparison = async (stocks: string[]): Promise<any> => {
+  const apiKey = getApiKey();
   if (!apiKey) return { chartData: [] };
+
+  const ai = new GoogleGenAI({ apiKey });
 
   const stocksStr = stocks.join(", ");
   const prompt = `
@@ -357,7 +383,10 @@ export const getHistoricalComparison = async (stocks: string[]): Promise<any> =>
 };
 
 export const getStockPrice = async (symbol: string): Promise<{ price: number, name: string }> => {
+  const apiKey = getApiKey();
   if (!apiKey) return { price: 0, name: symbol };
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const response = await ai.models.generateContent({
@@ -377,7 +406,7 @@ export const getStockPrice = async (symbol: string): Promise<{ price: number, na
 };
 
 export const analyzePortfolio = async (holdings: any[]) => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+  const apiKey = getApiKey();
   if (!apiKey) return "API Key missing.";
 
   try {
@@ -413,7 +442,10 @@ export const analyzePortfolio = async (holdings: any[]) => {
 };
 
 export const generateFullCourse = async (topic: string): Promise<any> => {
+  const apiKey = getApiKey();
   if (!apiKey) return null;
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const prompt = `
