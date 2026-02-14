@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { BookOpen, GraduationCap, Brain, ChevronRight, PlayCircle, Award, HelpCircle, TrendingUp, FileText, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-import { getFinancialAdvice } from '../services/geminiService';
+import { BookOpen, GraduationCap, Brain, ChevronRight, PlayCircle, Award, HelpCircle, TrendingUp, FileText, CheckCircle, XCircle, RefreshCw, Plus, Loader2, X, Globe, BarChart2, DollarSign, Zap } from 'lucide-react';
+import { getFinancialAdvice, generateFullCourse } from '../services/geminiService';
 
 const Academy: React.FC = () => {
     const [aiQuery, setAiQuery] = useState('');
     const [aiResponse, setAiResponse] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Course Generator State
+    const [courseTopic, setCourseTopic] = useState('');
+    const [generatingCourse, setGeneratingCourse] = useState(false);
+
+    // Reader State
+    const [selectedLesson, setSelectedLesson] = useState<any>(null);
 
     // Quiz State
     const [quizStarted, setQuizStarted] = useState(false);
@@ -32,11 +39,11 @@ const Academy: React.FC = () => {
         }
     ];
 
-    const modules = [
+    const [modules, setModules] = useState<any[]>([
         {
             id: 'basics',
             title: 'Financial Basics',
-            icon: BookOpen,
+            icon: 'BookOpen',
             color: 'text-blue-400',
             bg: 'bg-blue-500/10',
             lessons: [
@@ -48,7 +55,7 @@ const Academy: React.FC = () => {
         {
             id: 'investing',
             title: 'Investing 101',
-            icon: TrendingUp,
+            icon: 'TrendingUp',
             color: 'text-green-400',
             bg: 'bg-green-500/10',
             lessons: [
@@ -60,7 +67,7 @@ const Academy: React.FC = () => {
         {
             id: 'tax',
             title: 'Tax Planning',
-            icon: FileText,
+            icon: 'FileText',
             color: 'text-purple-400',
             bg: 'bg-purple-500/10',
             lessons: [
@@ -69,7 +76,14 @@ const Academy: React.FC = () => {
                 { title: 'Tax Harvesting', duration: '10 min', url: 'https://zerodha.com/varsity/chapter/tax-loss-harvesting/' }
             ]
         }
-    ];
+    ]);
+
+    // Helper to render dynamic icons
+    const renderIcon = (iconName: string, className: string) => {
+        const icons: any = { BookOpen, TrendingUp, FileText, Globe, BarChart2, DollarSign, Zap };
+        const IconComponent = icons[iconName] || BookOpen;
+        return <IconComponent className={className} size={24} />;
+    };
 
     const handleAskAI = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -89,6 +103,33 @@ const Academy: React.FC = () => {
             setAiResponse("I'm having trouble connecting to my knowledge base. Please try again.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleGenerateCourse = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!courseTopic) return;
+        setGeneratingCourse(true);
+        try {
+            const courseData = await generateFullCourse(courseTopic);
+            if (courseData) {
+                setModules(prev => [courseData, ...prev]);
+                setCourseTopic('');
+            } else {
+                alert("Failed to generate course. Please try a different topic.");
+            }
+        } catch (error) {
+            console.error("Course Gen Error:", error);
+        } finally {
+            setGeneratingCourse(false);
+        }
+    };
+
+    const handleLessonClick = (lesson: any) => {
+        if (lesson.content) {
+            setSelectedLesson(lesson);
+        } else if (lesson.url) {
+            window.open(lesson.url, '_blank', 'noopener,noreferrer');
         }
     };
 
@@ -118,7 +159,7 @@ const Academy: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-fade-in pb-20">
+        <div className="space-y-8 animate-fade-in pb-20 relative">
             <header>
                 <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                     <GraduationCap className="text-primary" /> RupeeWise Academy
@@ -129,39 +170,61 @@ const Academy: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Learning Modules */}
                 <div className="lg:col-span-2 space-y-6">
-                    <h2 className="text-xl font-bold text-white">Course Library</h2>
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-white">Course Library</h2>
+                    </div>
+
+                    {/* AI Generator Input */}
+                    <div className="glass-panel p-4 rounded-xl flex gap-2 items-center mb-4 border border-primary/20 bg-primary/5">
+                        <Brain className="text-primary" size={24} />
+                        <form onSubmit={handleGenerateCourse} className="flex-1 flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="Generate a full course on any topic (e.g. 'Bitcoin', 'Forex', 'Options')"
+                                className="flex-1 bg-transparent border-none outline-none text-white placeholder-slate-400 text-sm"
+                                value={courseTopic}
+                                onChange={e => setCourseTopic(e.target.value)}
+                            />
+                            <button
+                                type="submit"
+                                disabled={generatingCourse || !courseTopic}
+                                className="bg-primary hover:bg-primary-glow text-white px-4 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {generatingCourse ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                                Create Course
+                            </button>
+                        </form>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {modules.map((module) => (
-                            <div key={module.id} className="glass-panel p-6 rounded-2xl hover:border-primary/50 transition-all group">
+                        {modules.map((module, idx) => (
+                            <div key={idx} className="glass-panel p-6 rounded-2xl hover:border-primary/50 transition-all group animate-scale-in">
                                 <div className={`w-12 h-12 rounded-xl ${module.bg} flex items-center justify-center mb-4`}>
-                                    <module.icon className={module.color} size={24} />
+                                    {renderIcon(module.icon, module.color)}
                                 </div>
                                 <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors">{module.title}</h3>
+                                {module.description && <p className="text-xs text-slate-400 mb-4 line-clamp-2">{module.description}</p>}
                                 <div className="space-y-3">
-                                    {module.lessons.map((lesson, idx) => (
-                                        <a
-                                            key={idx}
-                                            href={lesson.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                    {module.lessons.map((lesson: any, i: number) => (
+                                        <div
+                                            key={i}
+                                            onClick={() => handleLessonClick(lesson)}
                                             className="flex justify-between items-center text-sm text-slate-400 hover:text-white transition-colors p-2 hover:bg-slate-800/50 rounded-lg cursor-pointer group/lesson"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <PlayCircle size={14} className="group-hover/lesson:text-primary transition-colors" />
-                                                <span>{lesson.title}</span>
+                                                <span className="line-clamp-1">{lesson.title}</span>
                                             </div>
-                                            <span className="text-xs opacity-60">{lesson.duration}</span>
-                                        </a>
+                                            <span className="text-xs opacity-60 whitespace-nowrap">{lesson.duration}</span>
+                                        </div>
                                     ))}
                                 </div>
-                                <a
-                                    href={module.lessons[0].url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                <button
+                                    onClick={() => handleLessonClick(module.lessons[0])}
                                     className="block w-full text-center mt-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-lg transition-colors"
                                 >
                                     Start Learning
-                                </a>
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -270,10 +333,10 @@ const Academy: React.FC = () => {
                                             onClick={() => handleAnswer(idx)}
                                             disabled={selectedAnswer !== null}
                                             className={`w-full text-left p-2 rounded-lg text-sm transition-all ${selectedAnswer === idx
-                                                    ? idx === quizQuestions[currentQuestion].correct
-                                                        ? 'bg-green-500/20 text-green-300 border border-green-500/50'
-                                                        : 'bg-red-500/20 text-red-300 border border-red-500/50'
-                                                    : 'bg-slate-800/50 hover:bg-slate-800 text-slate-300'
+                                                ? idx === quizQuestions[currentQuestion].correct
+                                                    ? 'bg-green-500/20 text-green-300 border border-green-500/50'
+                                                    : 'bg-red-500/20 text-red-300 border border-red-500/50'
+                                                : 'bg-slate-800/50 hover:bg-slate-800 text-slate-300'
                                                 }`}
                                         >
                                             <div className="flex justify-between items-center">
@@ -292,6 +355,41 @@ const Academy: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Lesson Reader Modal */}
+            {selectedLesson && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-slate-900 w-full max-w-3xl rounded-2xl border border-slate-700 shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 rounded-t-2xl z-10">
+                            <div>
+                                <h2 className="text-2xl font-bold text-white">{selectedLesson.title}</h2>
+                                <span className="text-sm text-primary font-medium">{selectedLesson.duration} Read</span>
+                            </div>
+                            <button
+                                onClick={() => setSelectedLesson(null)}
+                                className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-white"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="p-8 overflow-y-auto custom-scrollbar">
+                            <article className="prose prose-invert prose-lg max-w-none">
+                                <div className="whitespace-pre-line">
+                                    {selectedLesson.content}
+                                </div>
+                            </article>
+                        </div>
+                        <div className="p-6 border-t border-slate-800 bg-slate-900/50 rounded-b-2xl flex justify-end">
+                            <button
+                                onClick={() => setSelectedLesson(null)}
+                                className="px-6 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-glow transition-all"
+                            >
+                                Complete Lesson
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

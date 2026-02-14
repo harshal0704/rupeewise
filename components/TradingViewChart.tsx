@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, memo } from 'react';
 
-export const TradingViewChart = memo(({ symbol = "NSE:NIFTY" }: { symbol?: string }) => {
+export const TradingViewChart = memo(({ symbol = "NASDAQ:AAPL" }: { symbol?: string }) => {
     const container = useRef<HTMLDivElement>(null);
 
     useEffect(() => {

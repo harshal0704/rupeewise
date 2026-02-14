@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Star, TrendingUp, TrendingDown, Plus, X, RefreshCw, ArrowRight } from 'lucide-react';
-import { getStockPrice } from '../services/geminiService'; // Keeping for backup or fallback
+import { Star, TrendingUp, TrendingDown, Plus, X, RefreshCw, ArrowRight, ExternalLink, MoreHorizontal, AlertCircle } from 'lucide-react';
 import { marketstack } from '../services/marketstack';
 import { supabase } from '../services/supabaseClient';
+import { screenerService } from '../services/screenerService';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +22,11 @@ const Watchlist: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
 
+    // Flip Card State
+    const [flippedId, setFlippedId] = useState<string | null>(null);
+    const [insights, setInsights] = useState<{ [key: string]: any }>({});
+    const [insightLoading, setInsightLoading] = useState(false);
+
     useEffect(() => {
         if (user) {
             fetchWatchlist();
@@ -37,13 +42,9 @@ const Watchlist: React.FC = () => {
             if (error) throw error;
 
             if (data && data.length > 0) {
-                // 1. Get symbols
                 const symbols = data.map(item => item.symbol);
+                const quotes = await marketstack.getRealTimePrice(symbols); // Use Marketstack for live prices
 
-                // 2. Fetch live prices from Marketstack
-                const quotes = await marketstack.getRealTimePrice(symbols);
-
-                // 3. Merge data
                 const mergedItems = data.map(item => {
                     const quote = quotes.find(q => q.symbol === item.symbol);
                     return {
@@ -78,13 +79,12 @@ const Watchlist: React.FC = () => {
                     .insert([{
                         user_id: user.id,
                         symbol: quote.symbol,
-                        name: quote.symbol, // Marketstack free EOD doesn't always give name, fallback to symbol
+                        name: quote.symbol,
                         price: quote.price,
                         change: quote.changePercent
                     }]);
 
                 if (error) throw error;
-
                 await fetchWatchlist();
                 setNewItem('');
             } else {
@@ -111,8 +111,33 @@ const Watchlist: React.FC = () => {
         }
     };
 
-    const handleItemClick = (symbol: string) => {
-        navigate('/market', { state: { ticker: symbol } });
+    const handleFlip = async (symbol: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (flippedId === symbol) {
+            setFlippedId(null);
+            return;
+        }
+
+        setFlippedId(symbol);
+
+        // Fetch insights if not already present
+        if (!insights[symbol]) {
+            setInsightLoading(true);
+            try {
+                const data = await screenerService.analyzeStock(symbol);
+                setInsights(prev => ({ ...prev, [symbol]: data }));
+            } catch (error) {
+                console.error("Insight fetch failed:", error);
+            } finally {
+                setInsightLoading(false);
+            }
+        }
+    };
+
+    const handleCardClick = (symbol: string) => {
+        if (flippedId !== symbol) {
+            navigate('/market', { state: { ticker: symbol } });
+        }
     };
 
     if (initialLoading) return <div className="p-8 text-center text-slate-400">Loading watchlist...</div>;
@@ -155,45 +180,107 @@ const Watchlist: React.FC = () => {
                     {items.map((item) => (
                         <div
                             key={item.symbol}
-                            onClick={() => handleItemClick(item.symbol)}
-                            className="glass-panel p-6 rounded-2xl group hover:border-primary/50 transition-all relative cursor-pointer"
+                            onClick={() => handleCardClick(item.symbol)}
+                            className="relative h-64 perspective-1000 group cursor-pointer"
                         >
-                            <button
-                                onClick={(e) => { e.stopPropagation(); remove(item.symbol); }}
-                                className="absolute top-4 right-4 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all z-10"
-                            >
-                                <X size={18} />
-                            </button>
+                            <div className={`relative w-full h-full transition-all duration-700 preserve-3d ${flippedId === item.symbol ? 'rotate-y-180' : ''}`}>
 
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                        {item.symbol}
-                                        <ArrowRight size={14} className="text-slate-500 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                                    </h3>
-                                    <p className="text-xs text-slate-400">{item.name}</p>
-                                </div>
-                                <div className={`flex items-center gap-1 text-sm font-bold ${item.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                    {item.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                                    {Math.abs(item.change).toFixed(2)}%
-                                </div>
-                            </div>
+                                {/* FRONT FACE */}
+                                <div className="absolute inset-0 backface-hidden glass-panel p-6 rounded-2xl border border-slate-700/50 hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all flex flex-col justify-between">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                                {item.symbol}
+                                                <ExternalLink size={14} className="text-slate-500 opacity-0 group-hover:opacity-100 transition-all" />
+                                            </h3>
+                                            <p className="text-xs text-slate-400">{item.name}</p>
+                                        </div>
+                                        <button
+                                            onClick={(e) => handleFlip(item.symbol, e)}
+                                            className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors z-20"
+                                            title="View Screen Insights"
+                                        >
+                                            <MoreHorizontal size={20} />
+                                        </button>
+                                    </div>
 
-                            <div className="flex items-end justify-between">
-                                <div>
-                                    <p className="text-xs text-slate-500 uppercase font-semibold">Current Price</p>
-                                    <p className="text-2xl font-bold text-white">₹{item.price?.toLocaleString()}</p>
+                                    <div className="flex items-end justify-between mt-auto">
+                                        <div>
+                                            <p className="text-xs text-slate-500 uppercase font-semibold">Current Price</p>
+                                            <p className="text-2xl font-bold text-white">₹{item.price?.toLocaleString()}</p>
+                                        </div>
+                                        <div className={`flex items-center gap-1 text-sm font-bold ${item.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                            {item.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                                            {Math.abs(item.change).toFixed(2)}%
+                                        </div>
+                                    </div>
+
+                                    {/* Mini Chart Decoration */}
+                                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800 rounded-b-2xl overflow-hidden">
+                                        <div className={`h-full ${item.change >= 0 ? 'bg-green-500' : 'bg-red-500'} transition-all`} style={{ width: `${Math.random() * 60 + 20}%` }}></div>
+                                    </div>
                                 </div>
-                                <div className="h-10 w-24">
-                                    {/* Mini Sparkline Placeholder */}
-                                    <svg viewBox="0 0 100 40" className="w-full h-full overflow-visible">
-                                        <path
-                                            d={`M0 20 Q 25 ${20 - item.change * 5} 50 20 T 100 ${20 - item.change * 5}`}
-                                            fill="none"
-                                            stroke={item.change >= 0 ? '#4ade80' : '#f87171'}
-                                            strokeWidth="2"
-                                        />
-                                    </svg>
+
+                                {/* BACK FACE */}
+                                <div className="absolute inset-0 backface-hidden rotate-y-180 glass-panel p-6 rounded-2xl border border-primary/30 bg-slate-900/95 flex flex-col">
+                                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                                        <h3 className="font-bold text-white text-sm">Screener Insights</h3>
+                                        <button
+                                            onClick={(e) => handleFlip(item.symbol, e)}
+                                            className="text-xs text-slate-400 hover:text-white flex items-center gap-1"
+                                        >
+                                            <X size={14} /> Close
+                                        </button>
+                                    </div>
+
+                                    {insightLoading && !insights[item.symbol] ? (
+                                        <div className="flex-1 flex items-center justify-center flex-col gap-2">
+                                            <RefreshCw className="animate-spin text-primary" size={24} />
+                                            <p className="text-xs text-slate-500">Analyzing fundamentals...</p>
+                                        </div>
+                                    ) : insights[item.symbol] ? (
+                                        <div className="flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
+                                            <div className="grid grid-cols-2 gap-2 mb-2">
+                                                <div className="bg-slate-800/50 p-2 rounded-lg text-center">
+                                                    <p className="text-[10px] text-slate-400">P/E Ratio</p>
+                                                    <p className="text-sm font-bold text-white">{insights[item.symbol].ratios.pe}</p>
+                                                </div>
+                                                <div className="bg-slate-800/50 p-2 rounded-lg text-center">
+                                                    <p className="text-[10px] text-slate-400">ROE</p>
+                                                    <p className="text-sm font-bold text-green-400">{insights[item.symbol].ratios.roe}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] font-bold text-green-400 flex items-center gap-1">
+                                                    <TrendingUp size={10} /> PROS
+                                                </p>
+                                                <ul className="text-[10px] text-slate-300 list-disc ml-3 space-y-0.5">
+                                                    {insights[item.symbol].pros.slice(0, 2).map((p: string, i: number) => (
+                                                        <li key={i}>{p}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+
+                                            <div className="mt-auto pt-3">
+                                                <a
+                                                    href={screenerService.getScreenerUrl(item.symbol)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="w-full py-1.5 bg-primary/20 hover:bg-primary/30 text-primary hover:text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
+                                                >
+                                                    View on Screener.in <ExternalLink size={10} />
+                                                </a>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex-1 flex items-center justify-center text-center p-4">
+                                            <div className="space-y-2">
+                                                <AlertCircle className="text-red-400 mx-auto" size={24} />
+                                                <p className="text-xs text-slate-400">Could not load insights.</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

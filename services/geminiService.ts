@@ -411,3 +411,61 @@ export const analyzePortfolio = async (holdings: any[]) => {
     return "Unable to generate portfolio analysis at this time. Please try again later.";
   }
 };
+
+export const generateFullCourse = async (topic: string): Promise<any> => {
+  if (!apiKey) return null;
+
+  try {
+    const prompt = `
+      Create a comprehensive, short financial course about: "${topic}".
+      Target audience: Indian beginner investors.
+      
+      Return a JSON object with:
+      1. "title": Engaging course title.
+      2. "description": Brief overview (1 sentence).
+      3. "icon": suggest a Lucide icon (e.g., "TrendingUp", "Bitcoin", "DollarSign", "Globe", "Zap").
+      4. "color": suggest a Tailwind text color class (e.g., "text-blue-400").
+      5. "bg": suggest a Tailwind bg color class (e.g., "bg-blue-500/10").
+      6. "lessons": Array of exactly 3 lessons. Each lesson must have:
+         - "title": Lesson title.
+         - "duration": e.g. "5 min".
+         - "content": A detailed Markdown string. It should explain the concept clearly with examples, pros/cons, and a summary. Use bolding and lists. Format it nicely for reading.
+      
+      Ensure the content is high quality and educational.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            description: { type: Type.STRING },
+            icon: { type: Type.STRING },
+            color: { type: Type.STRING },
+            bg: { type: Type.STRING },
+            lessons: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  duration: { type: Type.STRING },
+                  content: { type: Type.STRING }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return JSON.parse(response.text || "null");
+  } catch (error) {
+    console.error("Course Generation Error:", error);
+    return null;
+  }
+};
