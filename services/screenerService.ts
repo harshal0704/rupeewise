@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 const getApiKey = () => localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
 
@@ -33,8 +33,8 @@ export const screenerService = {
         }
 
         try {
-            const genAI = new GoogleGenAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
+            const genAI = new GoogleGenAI({ apiKey });
+
             const prompt = `
                 Analyze the Indian stock "${symbol}" as if you are the website Screener.in.
                 Provide the following in JSON format ONLY:
@@ -46,12 +46,15 @@ export const screenerService = {
                 Ensure the tone is analytical and factual.
             `;
 
-            const result = await model.generateContent(prompt);
-            const responseText = result.response.text();
+            const result = await genAI.models.generateContent({
+                model: 'gemini-2.0-flash-lite-preview-02-05',
+                contents: prompt,
+            });
 
-            // Clean up code blocks if present
+            // Clean up code blocks if present (assuming result.text string like in geminiService)
+            const responseText = result.text || "";
             const cleanText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-            const data = JSON.parse(cleanText);
+            const data = JSON.parse(cleanText || "{}");
 
             return {
                 symbol,
