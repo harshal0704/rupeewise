@@ -15,8 +15,10 @@ import Watchlist from './components/Watchlist';
 import Portfolio from './components/Portfolio';
 import Login from './components/Login';
 import Onboarding from './components/Onboarding';
+import Settings from './components/Settings';
 import { Transaction } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { api } from './services/api';
 
 import Layout from './components/Layout';
@@ -105,6 +107,7 @@ const AppRoutes = () => {
         <Route path="/tax" element={<TaxSimplifier />} />
         <Route path="/coach" element={<AICoach />} />
         <Route path="/sandbox" element={<SimulationSandbox />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   );
@@ -113,9 +116,11 @@ const AppRoutes = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
+      <NotificationProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 };
