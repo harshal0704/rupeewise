@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Star, TrendingUp, TrendingDown, Plus, X, RefreshCw, ArrowRight, ExternalLink, MoreHorizontal, AlertCircle } from 'lucide-react';
-import { marketstack } from '../services/marketstack';
+import { finnhub } from '../services/finnhub';
 import { supabase } from '../services/supabaseClient';
 import { screenerService } from '../services/screenerService';
 import { useAuth } from '../context/AuthContext';
@@ -42,19 +43,19 @@ const Watchlist: React.FC = () => {
             if (error) throw error;
 
             if (data && data.length > 0) {
-                const symbols = data.map(item => item.symbol);
-                const quotes = await marketstack.getRealTimePrice(symbols); // Use Marketstack for live prices
-
-                const mergedItems = data.map(item => {
-                    const quote = quotes.find(q => q.symbol === item.symbol);
+                // Fetch individually from Finnhub (Free tier logic)
+                const promises = data.map(async (item) => {
+                    const quote = await finnhub.getQuote(item.symbol);
                     return {
                         id: item.id,
                         symbol: item.symbol,
                         name: item.name,
-                        price: quote ? quote.price : 0,
-                        change: quote ? quote.changePercent : 0,
+                        price: quote ? quote.c : 0,
+                        change: quote ? quote.dp : 0, // dp is percent change in Finnhub
                     };
                 });
+
+                const mergedItems = await Promise.all(promises);
                 setItems(mergedItems);
             } else {
                 setItems([]);
@@ -71,17 +72,25 @@ const Watchlist: React.FC = () => {
         if (!newItem || !user) return;
         setLoading(true);
         try {
-            const [quote] = await marketstack.getRealTimePrice([newItem.toUpperCase()]);
+            const symbol = newItem.toUpperCase();
+            // Basic check if already exists
+            if (items.some(i => i.symbol === symbol)) {
+                alert("Symbol already in watchlist");
+                setLoading(false);
+                return;
+            }
 
-            if (quote && quote.price > 0) {
+            const quote = await finnhub.getQuote(symbol);
+
+            if (quote && quote.c > 0) {
                 const { error } = await supabase
                     .from('watchlist')
                     .insert([{
                         user_id: user.id,
-                        symbol: quote.symbol,
-                        name: quote.symbol,
-                        price: quote.price,
-                        change: quote.changePercent
+                        symbol: symbol,
+                        name: symbol, // Finnhub quote doesn't actally have name, rely on user input/symbol
+                        price: quote.c,
+                        change: quote.dp
                     }]);
 
                 if (error) throw error;
@@ -243,11 +252,15 @@ const Watchlist: React.FC = () => {
                                             <div className="grid grid-cols-2 gap-2 mb-2">
                                                 <div className="bg-slate-800/50 p-2 rounded-lg text-center">
                                                     <p className="text-[10px] text-slate-400">P/E Ratio</p>
-                                                    <p className="text-sm font-bold text-white">{insights[item.symbol].ratios.pe}</p>
+                                                    <p className="text-sm font-bold text-white">
+                                                        {insights[item.symbol]?.ratios?.find((r: any) => r.label.includes('P/E'))?.value || 'N/A'}
+                                                    </p>
                                                 </div>
                                                 <div className="bg-slate-800/50 p-2 rounded-lg text-center">
                                                     <p className="text-[10px] text-slate-400">ROE</p>
-                                                    <p className="text-sm font-bold text-green-400">{insights[item.symbol].ratios.roe}</p>
+                                                    <p className="text-sm font-bold text-green-400">
+                                                        {insights[item.symbol]?.ratios?.find((r: any) => r.label.includes('ROE'))?.value || 'N/A'}
+                                                    </p>
                                                 </div>
                                             </div>
 

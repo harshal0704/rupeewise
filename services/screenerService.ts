@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 const getApiKey = () => localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
+const getGeminiModel = () => localStorage.getItem('gemini_model') || 'gemini-2.0-flash-lite-preview-02-05';
 
 export interface ScreenerData {
     symbol: string;
@@ -47,7 +48,7 @@ export const screenerService = {
             `;
 
             const result = await genAI.models.generateContent({
-                model: 'gemini-1.5-flash',
+                model: getGeminiModel(),
                 contents: prompt,
             });
 
