@@ -33,7 +33,7 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
 
     const newTransaction: Transaction = {
       id: Date.now().toString(),
-      date: new Date().toLocaleDateString('en-IN'),
+      date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
       merchant,
       amount: parseFloat(amount),
       category: category,
@@ -282,7 +282,9 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
                 ) : (
                   transactions.slice().reverse().map((t) => (
                     <tr key={t.id} className="hover:bg-slate-800/50 transition-colors">
-                      <td className="px-6 py-4 font-medium">{t.date}</td>
+                      <td className="px-6 py-4 font-medium">
+                        {new Date(t.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </td>
                       <td className="px-6 py-4 font-semibold text-white">{t.merchant}</td>
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-900/50 text-indigo-300 border border-indigo-700/50">

@@ -1,61 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RupeeWise - Financial Intelligence for India</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              slate: {
-                850: '#1e293b',
-                900: '#0f172a',
-                950: '#020617',
-              },
-              primary: {
-                DEFAULT: '#6366f1',
-                50: '#eef2ff',
-                100: '#e0e7ff',
-                500: '#6366f1',
-                600: '#4f46e5',
-                700: '#4338ca',
-              },
-              secondary: '#06b6d4',
-              accent: '#d946ef',
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RupeeWise - Financial Intelligence for India</title>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              850: '#1e293b',
+              900: '#0f172a',
+              950: '#020617',
             },
-            fontFamily: {
-              sans: ['Outfit', 'sans-serif'],
+            primary: {
+              DEFAULT: '#6366f1',
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
             },
-            animation: {
-              'fade-in': 'fadeIn 0.5s ease-out',
-              'fade-in-up': 'fadeInUp 0.5s ease-out',
-              'float': 'float 6s ease-in-out infinite',
+            secondary: '#06b6d4',
+            accent: '#d946ef',
+          },
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-out',
+            'fade-in-up': 'fadeInUp 0.5s ease-out',
+            'float': 'float 6s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
             },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
-              },
-              fadeInUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              },
-              float: {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-10px)' },
-              }
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' },
             }
           }
         }
       }
-    </script>
-    <link rel="stylesheet" href="/index.css">
-  </head>
-  <body>
-    <div id="root"></div>
+    }
+  </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+<body>
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>

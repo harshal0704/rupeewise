@@ -85,8 +85,8 @@ const Layout: React.FC = () => {
             {/* Sidebar - Desktop */}
             <aside className="hidden md:flex flex-col w-72 glass-panel m-4 rounded-3xl border-slate-700/50 fixed h-[calc(100vh-2rem)] z-20">
                 <div className="p-6 flex items-center space-x-3 border-b border-slate-700/30">
-                    <div className="w-10 h-10 bg-gradient-to-tr from-primary to-accent rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                        <span className="text-white font-bold text-xl">₹</span>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden">
+                        <img src="/logo.png" alt="RupeeWise" className="w-full h-full object-cover" />
                     </div>
                     <div>
                         <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">RupeeWise</h1>
@@ -129,8 +129,8 @@ const Layout: React.FC = () => {
             {/* Mobile Header */}
             <div className="md:hidden fixed w-full glass-panel z-30 border-b border-slate-700/30 px-4 py-3 flex justify-between items-center">
                 <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-tr from-primary to-accent rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-lg">₹</span>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+                        <img src="/logo.png" alt="RupeeWise" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="text-xl font-bold text-white">RupeeWise</h1>
                 </div>

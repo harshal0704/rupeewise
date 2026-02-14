@@ -57,7 +57,7 @@ export const parseBankStatement = async (file: File): Promise<Transaction[]> => 
     const prompt = `
       Extract transactions from this bank statement image/PDF.
       Return a JSON array where each object has:
-      - date (string, DD/MM/YYYY)
+      - date (string, YYYY-MM-DD)
       - merchant (string, clean up the name)
       - amount (number)
       - type (string, 'debit' or 'credit')

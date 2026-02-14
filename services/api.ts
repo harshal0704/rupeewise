@@ -42,19 +42,42 @@ export const api = {
         console.error("Error fetching transactions:", error);
         return [];
       }
-      return data as Transaction[];
+
+      return data.map((t: any) => ({
+        ...t,
+        paymentMethod: t.payment_method // Map DB column to App type
+      })) as Transaction[];
     },
     add: async (transaction: Transaction) => {
-      // Remove id to let DB generate it, or keep if using UUIDs from client
-      const { id, ...txData } = transaction;
+      // Remove id to let DB generate it
+      const { id, paymentMethod, date, ...txData } = transaction;
+
+      // Ensure Date is YYYY-MM-DD for Supabase DATE column
+      // If input is DD/MM/YYYY, convert it. If already YYYY-MM-DD, keep it.
+      let formattedDate = date;
+      if (date.includes('/')) {
+        const [d, m, y] = date.split('/');
+        formattedDate = `${y}-${m}-${d}`;
+      }
+
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{ ...txData, user_id: (await supabase.auth.getUser()).data.user?.id }])
+        .insert([{
+          ...txData,
+          date: formattedDate,
+          payment_method: paymentMethod, // Map App type to DB column
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        }])
         .select()
         .single();
 
       if (error) throw error;
-      return data as Transaction;
+
+      // Return with mapped property for frontend
+      return {
+        ...data,
+        paymentMethod: data.payment_method
+      } as Transaction;
     }
   }
 };
