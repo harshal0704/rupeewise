@@ -1,7 +1,6 @@
 import { GoogleGenAI } from "@google/generative-ai";
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-const genAI = new GoogleGenAI(apiKey);
+const getApiKey = () => localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
 
 export interface ScreenerData {
     symbol: string;
@@ -20,6 +19,7 @@ export const screenerService = {
 
     analyzeStock: async (symbol: string): Promise<ScreenerData> => {
         const screenerUrl = `https://www.screener.in/company/${symbol}/`;
+        const apiKey = getApiKey();
 
         if (!apiKey) {
             return {
@@ -28,12 +28,13 @@ export const screenerService = {
                 pros: ["API Key Missing"],
                 cons: ["Cannot generate insights"],
                 ratios: [],
-                summary: "Please add your Gemini API Key to enable AI insights."
+                summary: "Please add your Gemini API Key in Settings to enable AI insights."
             };
         }
 
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            const genAI = new GoogleGenAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
             const prompt = `
                 Analyze the Indian stock "${symbol}" as if you are the website Screener.in.
                 Provide the following in JSON format ONLY:

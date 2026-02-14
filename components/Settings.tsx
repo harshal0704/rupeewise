@@ -145,6 +145,36 @@ const Settings: React.FC = () => {
                         </div>
                     </section>
 
+                    {/* API Configuration */}
+                    <section className="glass-panel p-6 rounded-3xl">
+                        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                            <Database size={20} className="text-purple-400" /> API Configuration
+                        </h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-slate-400 mb-2">Gemini API Key</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="password"
+                                        placeholder="Enter your Gemini API Key"
+                                        defaultValue={localStorage.getItem('gemini_api_key') || ''}
+                                        onChange={(e) => localStorage.setItem('gemini_api_key', e.target.value)}
+                                        className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                    />
+                                    <button
+                                        onClick={() => addNotification("API Key Saved", "Your Gemini API Key has been updated locally.", "success")}
+                                        className="px-6 bg-primary hover:bg-primary-glow text-white rounded-xl font-bold transition-all"
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-2">
+                                    Your key is stored locally in your browser. Get one from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google AI Studio</a>.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
                     {/* Data Management */}
                     <section className="glass-panel p-6 rounded-3xl">
                         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
