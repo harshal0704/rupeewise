@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { runStockSimulation, screenStocks, getHistoricalComparison, getMarketStatus } from '../services/geminiService';
-import { LineChart as LineChartIcon, Play, Bot, Search, TrendingUp, GitCompare, Plus, X, Newspaper, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { runStockSimulation, screenStocks, getHistoricalComparison } from '../services/geminiService';
+import { LineChart as LineChartIcon, Bot, Search, GitCompare, Plus, X, Newspaper, RefreshCw } from 'lucide-react';
+import { TradingViewChart } from './TradingViewChart';
+import { TickerTape } from './TickerTape';
 
 const MarketHub: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'stocks' | 'crypto' | 'screener' | 'compare'>('stocks');
-    const [marketStatus, setMarketStatus] = useState<{ text: string, sources: string[] } | null>(null);
 
-    // Simulation State
+    // Analysis State
     const [ticker, setTicker] = useState('RELIANCE');
     const [strategy, setStrategy] = useState('SIP');
     const [duration, setDuration] = useState('1 Year');
@@ -25,24 +25,15 @@ const MarketHub: React.FC = () => {
     const [compareData, setCompareData] = useState<any[]>([]);
     const [compareLoading, setCompareLoading] = useState(false);
 
-    useEffect(() => {
-        fetchMarketStatus();
-    }, []);
-
-    const fetchMarketStatus = async () => {
-        const status = await getMarketStatus();
-        setMarketStatus(status);
-    };
-
-    const handleSimulate = async () => {
+    const handleAnalyze = async () => {
         if (!ticker) return;
         setLoading(true);
         try {
-            // Simulate "Live" data or Backtest
+            // Get AI Analysis
             const data = await runStockSimulation(ticker, strategy, duration);
             setResult(data);
         } catch (error) {
-            console.error("Simulation error:", error);
+            console.error("Analysis error:", error);
         } finally {
             setLoading(false);
         }
@@ -69,52 +60,30 @@ const MarketHub: React.FC = () => {
         }
     };
 
-    const runComparison = async () => {
-        if (compareStocks.length < 2) return;
-        setCompareLoading(true);
-        try {
-            const result = await getHistoricalComparison(compareStocks);
-            setCompareData(result.chartData || []);
-        } catch (error) {
-            console.error("Comparison error:", error);
-        } finally {
-            setCompareLoading(false);
-        }
-    };
-
     return (
         <div className="space-y-6 animate-fade-in pb-20">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-                        <LineChartIcon className="text-primary" /> Market Hub
-                    </h1>
-                    <p className="text-slate-400">Advanced Trading Simulator & Analysis</p>
-                </div>
+            <div>
+                <h1 className="text-3xl font-bold text-white flex items-center gap-2 mb-2">
+                    <LineChartIcon className="text-primary" /> Market Hub
+                </h1>
+                <p className="text-slate-400 mb-6">Advanced Trading Simulator & Analysis</p>
 
-                {/* Market Ticker */}
-                <div className="glass-panel px-4 py-2 rounded-xl flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span className="text-slate-300">Market Status:</span>
-                    </div>
-                    <span className="text-white font-mono">{marketStatus?.text || "Loading..."}</span>
-                    <button onClick={fetchMarketStatus} className="p-1 hover:bg-slate-700 rounded-full transition-colors">
-                        <RefreshCw size={14} className="text-slate-400" />
-                    </button>
+                {/* Ticker Tape */}
+                <div className="rounded-xl overflow-hidden border border-slate-700/50 shadow-lg">
+                    <TickerTape />
                 </div>
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex border-b border-slate-700/50 overflow-x-auto gap-6">
-                {['stocks', 'crypto', 'screener', 'compare'].map((tab) => (
+            <div className="flex border-b border-slate-700/50 overflow-x-auto gap-6 mt-6">
+                {['stocks', 'crypto', 'screener'].map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab as any)}
                         className={`pb-3 px-2 text-sm font-semibold capitalize transition-all border-b-2 ${activeTab === tab
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-slate-400 hover:text-white'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-slate-400 hover:text-white'
                             }`}
                     >
                         {tab}
@@ -128,98 +97,44 @@ const MarketHub: React.FC = () => {
                     <>
                         <div className="lg:col-span-2 space-y-6">
                             {/* Chart Card */}
-                            <div className="glass-panel p-6 rounded-3xl min-h-[500px] flex flex-col">
-                                <div className="flex justify-between items-center mb-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-white font-bold text-xl border border-slate-700">
-                                            {ticker.substring(0, 1)}
-                                        </div>
-                                        <div>
-                                            <input
-                                                type="text"
-                                                value={ticker}
-                                                onChange={(e) => setTicker(e.target.value.toUpperCase())}
-                                                className="bg-transparent text-2xl font-bold text-white outline-none w-32 placeholder-slate-600"
-                                                placeholder="SYMBOL"
-                                            />
-                                            <p className="text-xs text-slate-400">NSE / BSE</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        {['1D', '1W', '1M', '1Y', '5Y'].map(d => (
-                                            <button
-                                                key={d}
-                                                onClick={() => setDuration(d === '1Y' ? '1 Year' : d)}
-                                                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${(duration === d || (d === '1Y' && duration === '1 Year'))
-                                                        ? 'bg-primary text-white'
-                                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                                    }`}
-                                            >
-                                                {d}
-                                            </button>
-                                        ))}
-                                    </div>
+                            <div className="glass-panel p-1 rounded-3xl min-h-[600px] flex flex-col overflow-hidden bg-[#131722]">
+                                <div className="h-full w-full">
+                                    <TradingViewChart symbol={activeTab === 'crypto' ? "BITSTAMP:BTCUSD" : `NSE:${ticker}`} />
                                 </div>
+                            </div>
 
-                                {/* Chart */}
-                                <div className="flex-1 w-full bg-slate-900/50 rounded-2xl border border-slate-800 relative overflow-hidden">
-                                    {loading && (
-                                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-slate-900/80 backdrop-blur-sm">
-                                            <div className="flex flex-col items-center">
-                                                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-                                                <p className="text-primary font-medium animate-pulse">Simulating Market Data...</p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {!result && !loading && (
-                                        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
-                                            <div className="text-center">
-                                                <LineChartIcon size={48} className="mx-auto mb-4 opacity-20" />
-                                                <p>Enter a symbol and click Simulate to view chart</p>
-                                                <button
-                                                    onClick={handleSimulate}
-                                                    className="mt-4 px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-glow transition-all"
-                                                >
-                                                    Simulate {ticker}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {result?.chartData && (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={result.chartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
-                                                <defs>
-                                                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                                    </linearGradient>
-                                                </defs>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                                                <XAxis dataKey="label" stroke="#475569" tick={{ fill: '#64748b', fontSize: 12 }} />
-                                                <YAxis stroke="#475569" tick={{ fill: '#64748b', fontSize: 12 }} domain={['auto', 'auto']} />
-                                                <Tooltip
-                                                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#f8fafc' }}
-                                                    itemStyle={{ color: '#818cf8' }}
-                                                />
-                                                <Area
-                                                    type="monotone"
-                                                    dataKey="value"
-                                                    stroke="#6366f1"
-                                                    strokeWidth={2}
-                                                    fillOpacity={1}
-                                                    fill="url(#colorPrice)"
-                                                />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    )}
+                            {/* Controls */}
+                            <div className="glass-panel p-6 rounded-3xl flex flex-wrap gap-4 items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        type="text"
+                                        value={ticker}
+                                        onChange={(e) => setTicker(e.target.value.toUpperCase())}
+                                        className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-xl outline-none focus:border-primary w-32 font-bold"
+                                        placeholder="SYMBOL"
+                                    />
+                                    <select
+                                        value={duration}
+                                        onChange={(e) => setDuration(e.target.value)}
+                                        className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-xl outline-none focus:border-primary"
+                                    >
+                                        <option value="1 Year">1 Year</option>
+                                        <option value="5 Year">5 Years</option>
+                                    </select>
                                 </div>
+                                <button
+                                    onClick={handleAnalyze}
+                                    disabled={loading}
+                                    className="px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-glow transition-all disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {loading ? <RefreshCw className="animate-spin" size={18} /> : <Bot size={18} />}
+                                    Generate AI Analysis
+                                </button>
                             </div>
 
                             {/* Analysis Card */}
                             {result?.analysis && (
-                                <div className="glass-panel p-6 rounded-3xl">
+                                <div className="glass-panel p-6 rounded-3xl animate-fade-in">
                                     <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                         <Bot size={20} className="text-accent" /> AI Market Analysis
                                     </h3>
@@ -328,78 +243,6 @@ const MarketHub: React.FC = () => {
                                 ))}
                             </div>
                         )}
-                    </div>
-                )}
-
-                {/* Compare Tab */}
-                {activeTab === 'compare' && (
-                    <div className="lg:col-span-3 glass-panel p-8 rounded-3xl">
-                        <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-2">
-                            <GitCompare className="text-accent" /> Performance Comparison
-                        </h2>
-
-                        <div className="flex gap-4 mb-8">
-                            <div className="relative flex-1 max-w-md">
-                                <input
-                                    type="text"
-                                    value={compareInput}
-                                    onChange={(e) => setCompareInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && addCompareStock()}
-                                    placeholder="Add stock symbol (e.g. TCS)"
-                                    className="w-full pl-4 pr-12 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:border-primary outline-none"
-                                />
-                                <button onClick={addCompareStock} className="absolute right-2 top-2 p-1.5 bg-slate-800 text-primary rounded-lg hover:bg-slate-700">
-                                    <Plus size={18} />
-                                </button>
-                            </div>
-                            <button
-                                onClick={runComparison}
-                                disabled={compareLoading || compareStocks.length < 2}
-                                className="px-6 py-3 bg-primary hover:bg-primary-glow text-white font-bold rounded-xl transition-all disabled:opacity-50"
-                            >
-                                {compareLoading ? 'Analyzing...' : 'Compare'}
-                            </button>
-                        </div>
-
-                        <div className="flex flex-wrap gap-3 mb-8">
-                            {compareStocks.map(s => (
-                                <div key={s} className="bg-slate-800 text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center border border-slate-700">
-                                    {s}
-                                    <button onClick={() => setCompareStocks(compareStocks.filter(st => st !== s))} className="ml-2 text-slate-400 hover:text-red-400"><X size={14} /></button>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="h-[500px] w-full bg-slate-900/50 rounded-2xl border border-slate-800 p-4">
-                            {compareData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={compareData}>
-                                        <defs>
-                                            <linearGradient id="color0" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient>
-                                            <linearGradient id="color1" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} /><stop offset="95%" stopColor="#06b6d4" stopOpacity={0} /></linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                                        <XAxis dataKey="month" stroke="#475569" />
-                                        <YAxis stroke="#475569" />
-                                        <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px' }} />
-                                        {compareStocks.map((stock, idx) => (
-                                            <Area
-                                                key={stock}
-                                                type="monotone"
-                                                dataKey={stock}
-                                                stroke={idx === 0 ? '#6366f1' : '#06b6d4'}
-                                                fill={`url(#color${idx % 2})`}
-                                                strokeWidth={3}
-                                            />
-                                        ))}
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="h-full flex items-center justify-center text-slate-500">
-                                    Add stocks to compare their relative performance
-                                </div>
-                            )}
-                        </div>
                     </div>
                 )}
             </div>

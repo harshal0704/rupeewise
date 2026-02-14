@@ -1,22 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Coins, Calculator, Radio, ExternalLink } from 'lucide-react';
-import { getMarketStatus } from '../services/geminiService';
+import { TrendingUp } from 'lucide-react';
 
 const InvestmentSimulator: React.FC = () => {
   const [amount, setAmount] = useState(5000);
   const [years, setYears] = useState(10);
   const [returnRate, setReturnRate] = useState(12);
   const [type, setType] = useState<'SIP' | 'Lumpsum'>('SIP');
-  const [marketData, setMarketData] = useState<{ text: string, sources: string[] } | null>(null);
-
-  useEffect(() => {
-    const fetchMarket = async () => {
-      const data = await getMarketStatus();
-      setMarketData(data);
-    };
-    fetchMarket();
-  }, []);
 
   const data = useMemo(() => {
     const chartData = [];
@@ -61,24 +51,6 @@ const InvestmentSimulator: React.FC = () => {
             </h1>
             <p className="text-slate-400">Visualize how your money grows with compounding power.</p>
           </div>
-          {marketData && (
-            <div className="bg-indigo-900/30 border border-indigo-800 p-3 rounded-lg text-xs max-w-xs animate-fade-in shadow-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <Radio size={14} className="text-red-500 animate-pulse" />
-                <span className="font-bold text-indigo-300 uppercase tracking-wide">Live Market Context</span>
-              </div>
-              <p className="text-indigo-200 font-medium">{marketData.text}</p>
-              {marketData.sources.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {marketData.sources.slice(0, 2).map((src, i) => (
-                    <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="flex items-center text-indigo-400 hover:text-indigo-300 underline">
-                      Source {i + 1} <ExternalLink size={10} className="ml-1" />
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </header>
 
