@@ -3,17 +3,14 @@ import { User, Settings as SettingsIcon, Database, Trash2, LogOut, Check, X, Ale
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
-import { useTheme } from '../context/ThemeContext'; // Import useTheme
+import { useTheme } from '../context/ThemeContext';
 
 const Settings: React.FC = () => {
     const { user, profile, logout } = useAuth();
     const navigate = useNavigate();
-    const { user, profile, logout } = useAuth();
-    const navigate = useNavigate();
     const { addNotification } = useNotifications();
-    const { theme, setTheme, themes } = useTheme(); // Use Theme Hook
+    const { theme, setTheme, themes } = useTheme();
     const [loading, setLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -146,6 +143,30 @@ const Settings: React.FC = () => {
                                     <option value="English">English</option>
                                     <option value="Hindi">Hindi</option>
                                 </select>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-sm text-slate-400 mb-3">Color Theme</label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                                    {themes.map((t) => (
+                                        <button
+                                            key={t.id}
+                                            onClick={() => setTheme(t.id)}
+                                            className={`group relative p-3 rounded-xl border transition-all ${theme === t.id
+                                                ? 'bg-slate-800 border-primary ring-1 ring-primary'
+                                                : 'bg-slate-900 border-slate-700 hover:border-slate-600 hover:bg-slate-800'
+                                                }`}
+                                        >
+                                            <div className="flex gap-2 mb-2 justify-center">
+                                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: t.colors['--primary'] }}></div>
+                                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: t.colors['--secondary'] }}></div>
+                                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: t.colors['--accent'] }}></div>
+                                            </div>
+                                            <span className={`block text-xs font-medium text-center ${theme === t.id ? 'text-primary' : 'text-slate-400 group-hover:text-slate-300'}`}>
+                                                {t.name}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </section>
