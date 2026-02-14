@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Briefcase, TrendingUp, DollarSign, PieChart as PieIcon, Bot, RefreshCw, Calculator } from 'lucide-react';
+import { Briefcase, TrendingUp, DollarSign, PieChart as PieIcon, Bot, RefreshCw, Calculator, Plus, X } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { analyzePortfolio } from '../services/geminiService';
+import { marketstack } from '../services/marketstack';
 
 const Portfolio: React.FC = () => {
     const { user } = useAuth();
@@ -11,6 +12,17 @@ const Portfolio: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [aiAnalysis, setAiAnalysis] = useState('');
     const [analyzing, setAnalyzing] = useState(false);
+
+    // Add Holding State
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [newHolding, setNewHolding] = useState({
+        symbol: '',
+        name: '',
+        quantity: '',
+        avg_price: '',
+        type: 'Stock'
+    });
+    const [addLoading, setAddLoading] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -23,31 +35,69 @@ const Portfolio: React.FC = () => {
             const { data, error } = await supabase
                 .from('portfolio_holdings')
                 .select('*')
-                .order('investedValue', { ascending: false }); // Note: check actual column names in DB. Schema said 'quantity', 'avg_price'. We might need to calculate value.
-
-            // Schema check: 
-            // symbol, name, quantity, avg_price, type
-            // Missing: current_price (we'd need to fetch live price, for now use mock or last known?)
-            // Let's assume we fetch current price or just use cost basis for allocations if live price missing.
-            // Actually, let's fetch it or mock it for now.
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            // Transform for charts - grouping by type
-            // For valid chart data we need value. value = quantity * avg_price (Invested Value)
-            // Ideally we want Current Value = quantity * current_price.
+            if (data && data.length > 0) {
+                // Get valid symbols for marketstack
+                const symbols = data.filter(h => h.type === 'Stock' || h.type === 'Mutual Fund').map(h => h.symbol);
 
-            const processed = data?.map(h => ({
-                ...h,
-                value: h.quantity * h.avg_price, // Using invested value for now as we don't have live price feed connected here efficiently yet for all
-                color: getTypeColor(h.type)
-            })) || [];
+                // Fetch live prices
+                const quotes = await marketstack.getRealTimePrice(symbols);
 
-            setHoldings(processed);
+                const processed = data.map(h => {
+                    const quote = quotes.find(q => q.symbol === h.symbol);
+                    const currentPrice = quote ? quote.price : h.avg_price;
+                    return {
+                        ...h,
+                        currentPrice,
+                        currentValue: h.quantity * currentPrice,
+                        investedValue: h.quantity * h.avg_price,
+                        color: getTypeColor(h.type)
+                    };
+                });
+                setHoldings(processed);
+            } else {
+                setHoldings([]);
+            }
         } catch (error) {
             console.error("Error fetching holdings:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAddHolding = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user) return;
+        setAddLoading(true);
+
+        try {
+            // Optional: Fetch name/details if not provided or to validate
+            // For now, trust user input or simple validation
+
+            const { error } = await supabase
+                .from('portfolio_holdings')
+                .insert([{
+                    user_id: user.id,
+                    symbol: newHolding.symbol.toUpperCase(),
+                    name: newHolding.name || newHolding.symbol.toUpperCase(),
+                    quantity: parseFloat(newHolding.quantity),
+                    avg_price: parseFloat(newHolding.avg_price),
+                    type: newHolding.type
+                }]);
+
+            if (error) throw error;
+
+            await fetchHoldings();
+            setIsAddModalOpen(false);
+            setNewHolding({ symbol: '', name: '', quantity: '', avg_price: '', type: 'Stock' });
+        } catch (error) {
+            console.error("Error adding holding:", error);
+            alert("Failed to add holding. Please check inputs.");
+        } finally {
+            setAddLoading(false);
         }
     };
 
@@ -65,7 +115,7 @@ const Portfolio: React.FC = () => {
     const allocationData = useMemo(() => {
         const result: Record<string, number> = {};
         holdings.forEach(h => {
-            result[h.type] = (result[h.type] || 0) + h.value;
+            result[h.type] = (result[h.type] || 0) + h.currentValue;
         });
         return Object.entries(result).map(([name, value]) => ({
             name,
@@ -74,7 +124,10 @@ const Portfolio: React.FC = () => {
         }));
     }, [holdings]);
 
-    const totalValue = holdings.reduce((acc, curr) => acc + curr.value, 0);
+    const totalCurrentValue = holdings.reduce((acc, curr) => acc + curr.currentValue, 0);
+    const totalInvestedValue = holdings.reduce((acc, curr) => acc + curr.investedValue, 0);
+    const totalReturn = totalCurrentValue - totalInvestedValue;
+    const totalReturnPercent = totalInvestedValue > 0 ? (totalReturn / totalInvestedValue) * 100 : 0;
 
     const handleAiAnalyze = async () => {
         if (holdings.length === 0) return;
@@ -92,7 +145,7 @@ const Portfolio: React.FC = () => {
     if (loading) return <div className="p-8 text-center text-slate-400">Loading portfolio...</div>;
 
     return (
-        <div className="space-y-8 animate-fade-in pb-20">
+        <div className="space-y-8 animate-fade-in pb-20 relative">
             <header className="flex justify-between items-start">
                 <div>
                     <h1 className="text-3xl font-bold text-white flex items-center gap-2">
@@ -100,14 +153,22 @@ const Portfolio: React.FC = () => {
                     </h1>
                     <p className="text-slate-400">Deep dive into your asset allocation and performance.</p>
                 </div>
-                <button
-                    onClick={handleAiAnalyze}
-                    disabled={analyzing || holdings.length === 0}
-                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                    {analyzing ? <RefreshCw className="animate-spin" size={18} /> : <Bot size={18} />}
-                    AI Audit
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="px-4 py-2 bg-slate-800 text-white rounded-xl font-medium hover:bg-slate-700 transition-all flex items-center gap-2"
+                    >
+                        <Plus size={18} /> Add Asset
+                    </button>
+                    <button
+                        onClick={handleAiAnalyze}
+                        disabled={analyzing || holdings.length === 0}
+                        className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                        {analyzing ? <RefreshCw className="animate-spin" size={18} /> : <Bot size={18} />}
+                        AI Audit
+                    </button>
+                </div>
             </header>
 
             {aiAnalysis && (
@@ -125,7 +186,13 @@ const Portfolio: React.FC = () => {
                 <div className="text-center py-20 bg-slate-900/50 rounded-3xl border border-slate-800 border-dashed">
                     <Briefcase size={48} className="text-slate-600 mx-auto mb-4" />
                     <h3 className="text-xl font-bold text-white">Portfolio is Empty</h3>
-                    <p className="text-slate-400 mt-2">Add assets via the transaction tracker or wait for integration.</p>
+                    <p className="text-slate-400 mt-2">Add assets to differntiate your portfolio.</p>
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="mt-6 px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-glow transition-all"
+                    >
+                        Add Your First Asset
+                    </button>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -168,7 +235,7 @@ const Portfolio: React.FC = () => {
                                         </div>
                                         <div className="text-right">
                                             <p className="text-white font-bold">₹{asset.value.toLocaleString()}</p>
-                                            <p className="text-xs text-slate-500">{((asset.value / totalValue) * 100).toFixed(1)}%</p>
+                                            <p className="text-xs text-slate-500">{((asset.value / totalCurrentValue) * 100).toFixed(1)}%</p>
                                         </div>
                                     </div>
                                 ))}
@@ -179,27 +246,121 @@ const Portfolio: React.FC = () => {
                     {/* Summary Cards */}
                     <div className="space-y-6">
                         <div className="glass-panel p-6 rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
-                            <p className="text-indigo-200 text-sm font-medium mb-1">Total Invested Value</p>
-                            <h2 className="text-4xl font-bold mb-4">₹{totalValue.toLocaleString()}</h2>
-                            <div className="flex items-center gap-2 text-sm bg-white/10 w-fit px-3 py-1 rounded-lg">
-                                <Calculator size={16} className="text-indigo-200" />
-                                <span>Based on purchase price</span>
+                            <p className="text-indigo-200 text-sm font-medium mb-1">Total Portfolio Value</p>
+                            <h2 className="text-4xl font-bold mb-2">₹{totalCurrentValue.toLocaleString()}</h2>
+                            <div className="flex items-center gap-2">
+                                <span className={`text-sm font-bold ${totalReturn >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                                    {totalReturn >= 0 ? '+' : ''}{totalReturnPercent.toFixed(2)}%
+                                </span>
+                                <span className="text-indigo-200 text-xs">Total Return</span>
                             </div>
                         </div>
 
                         <div className="glass-panel p-6 rounded-3xl">
-                            <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <button className="p-4 bg-slate-800 hover:bg-slate-700 rounded-xl flex flex-col items-center gap-2 transition-colors group">
-                                    <DollarSign className="text-green-400 group-hover:scale-110 transition-transform" />
-                                    <span className="text-xs text-slate-300">Add Asset</span>
-                                </button>
-                                <button className="p-4 bg-slate-800 hover:bg-slate-700 rounded-xl flex flex-col items-center gap-2 transition-colors group">
-                                    <TrendingUp className="text-blue-400 group-hover:scale-110 transition-transform" />
-                                    <span className="text-xs text-slate-300">Rebalance</span>
-                                </button>
+                            <h3 className="text-lg font-bold text-white mb-4">Holdings</h3>
+                            <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                {holdings.map((h, idx) => (
+                                    <div key={idx} className="flex justify-between items-center p-3 hover:bg-slate-800/50 rounded-xl transition-colors">
+                                        <div>
+                                            <h4 className="font-bold text-white">{h.symbol}</h4>
+                                            <p className="text-xs text-slate-400">{h.quantity} units @ ₹{h.avg_price}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-white">₹{h.currentValue?.toLocaleString()}</p>
+                                            <p className={`text-xs ${h.currentValue >= h.investedValue ? 'text-green-400' : 'text-red-400'}`}>
+                                                {((h.currentValue - h.investedValue) / h.investedValue * 100).toFixed(1)}%
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Asset Modal */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+                    <div className="glass-panel w-full max-w-md rounded-3xl p-6 border border-slate-700 animate-scale-in">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-white">Add Asset</h2>
+                            <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-white">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleAddHolding} className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-slate-400 mb-1">Asset Type</label>
+                                <select
+                                    value={newHolding.type}
+                                    onChange={(e) => setNewHolding({ ...newHolding, type: e.target.value })}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                >
+                                    <option value="Stock">Stock</option>
+                                    <option value="Mutual Fund">Mutual Fund</option>
+                                    <option value="Gold">Gold</option>
+                                    <option value="Crypto">Crypto</option>
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-slate-400 mb-1">Symbol</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. RELIANCE"
+                                        value={newHolding.symbol}
+                                        onChange={(e) => setNewHolding({ ...newHolding, symbol: e.target.value })}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-slate-400 mb-1">Name (Optional)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Reliance Ind."
+                                        value={newHolding.name}
+                                        onChange={(e) => setNewHolding({ ...newHolding, name: e.target.value })}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-slate-400 mb-1">Quantity</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        value={newHolding.quantity}
+                                        onChange={(e) => setNewHolding({ ...newHolding, quantity: e.target.value })}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-slate-400 mb-1">Avg Price</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="₹0.00"
+                                        value={newHolding.avg_price}
+                                        onChange={(e) => setNewHolding({ ...newHolding, avg_price: e.target.value })}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={addLoading}
+                                className="w-full py-3 bg-primary hover:bg-primary-glow text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/25 mt-4 disabled:opacity-50"
+                            >
+                                {addLoading ? 'Adding...' : 'Add to Portfolio'}
+                            </button>
+                        </form>
                     </div>
                 </div>
             )}

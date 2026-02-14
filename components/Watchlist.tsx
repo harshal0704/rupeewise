@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, TrendingUp, TrendingDown, Plus, X, RefreshCw, ArrowRight } from 'lucide-react';
-import { getStockPrice } from '../services/geminiService';
+import { getStockPrice } from '../services/geminiService'; // Keeping for backup or fallback
+import { marketstack } from '../services/marketstack';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -35,7 +36,28 @@ const Watchlist: React.FC = () => {
 
             if (error) throw error;
 
-            setItems(data || []);
+            if (data && data.length > 0) {
+                // 1. Get symbols
+                const symbols = data.map(item => item.symbol);
+
+                // 2. Fetch live prices from Marketstack
+                const quotes = await marketstack.getRealTimePrice(symbols);
+
+                // 3. Merge data
+                const mergedItems = data.map(item => {
+                    const quote = quotes.find(q => q.symbol === item.symbol);
+                    return {
+                        id: item.id,
+                        symbol: item.symbol,
+                        name: item.name,
+                        price: quote ? quote.price : 0,
+                        change: quote ? quote.changePercent : 0,
+                    };
+                });
+                setItems(mergedItems);
+            } else {
+                setItems([]);
+            }
         } catch (error) {
             console.error("Error fetching watchlist:", error);
         } finally {
@@ -48,22 +70,25 @@ const Watchlist: React.FC = () => {
         if (!newItem || !user) return;
         setLoading(true);
         try {
-            const data = await getStockPrice(newItem.toUpperCase());
-            if (data.price > 0) {
+            const [quote] = await marketstack.getRealTimePrice([newItem.toUpperCase()]);
+
+            if (quote && quote.price > 0) {
                 const { error } = await supabase
                     .from('watchlist')
                     .insert([{
                         user_id: user.id,
-                        symbol: newItem.toUpperCase(),
-                        name: data.name,
-                        price: data.price,
-                        change: (Math.random() * 4) - 2
+                        symbol: quote.symbol,
+                        name: quote.symbol, // Marketstack free EOD doesn't always give name, fallback to symbol
+                        price: quote.price,
+                        change: quote.changePercent
                     }]);
 
                 if (error) throw error;
 
                 await fetchWatchlist();
                 setNewItem('');
+            } else {
+                alert("Invalid Symbol or API Issue");
             }
         } catch (error) {
             console.error("Failed to add stock:", error);
