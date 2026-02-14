@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Transaction } from "../types";
 
-const apiKey = process.env.API_KEY || '';
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 const INDIAN_FINANCE_SYSTEM_INSTRUCTION = `
@@ -373,5 +373,41 @@ export const getStockPrice = async (symbol: string): Promise<{ price: number, na
   } catch (error) {
     console.error("Price Fetch Error:", error);
     return { price: 0, name: symbol };
+  }
+};
+
+export const analyzePortfolio = async (holdings: any[]) => {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+  if (!apiKey) return "API Key missing.";
+
+  try {
+    const prompt = `
+      Analyze the following investment portfolio and provide a brief assessment of its diversification, risk level, and suggestions for improvement.
+      
+      Portfolio Holdings:
+      ${JSON.stringify(holdings, null, 2)}
+      
+      Output format:
+      1. **Assessment**: [Brief summary]
+      2. **Risk Profile**: [Low/Medium/High]
+      3. **Suggestions**: [Bulleted list of 2-3 actionable tips]
+      
+      Keep the tone professional yet easy to understand for an Indian investor.
+    `;
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+      config: {
+        systemInstruction: INDIAN_FINANCE_SYSTEM_INSTRUCTION
+      }
+    });
+
+    return response.text?.trim() || "Unable to generate analysis.";
+  } catch (error) {
+    console.error("Gemini Portfolio Analysis Error:", error);
+    return "Unable to generate portfolio analysis at this time. Please try again later.";
   }
 };

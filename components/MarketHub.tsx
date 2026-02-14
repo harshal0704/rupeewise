@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { runStockSimulation, screenStocks, getHistoricalComparison } from '../services/geminiService';
+import { finnhub, NewsItem } from '../services/finnhub';
 import { LineChart as LineChartIcon, Bot, Search, GitCompare, Plus, X, Newspaper, RefreshCw } from 'lucide-react';
 import { TradingViewChart } from './TradingViewChart';
 import { TickerTape } from './TickerTape';
@@ -24,6 +25,45 @@ const MarketHub: React.FC = () => {
     const [compareInput, setCompareInput] = useState('');
     const [compareData, setCompareData] = useState<any[]>([]);
     const [compareLoading, setCompareLoading] = useState(false);
+
+    // News State
+    const [news, setNews] = useState<NewsItem[]>([]);
+    const [newsLoading, setNewsLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchNews = async () => {
+            setNewsLoading(true);
+            try {
+                let data;
+                if (activeTab === 'crypto') {
+                    data = await finnhub.getMarketNews('crypto');
+                } else if (ticker) {
+                    // Append .NS if it looks like an Indian stock and doesn't have a suffix
+                    // Simple heuristic: if no dot, assume NSE
+                    const symbolQuery = ticker.includes('.') ? ticker : `${ticker}.NS`;
+                    data = await finnhub.getCompanyNews(symbolQuery);
+
+                    // Fallback to general news if company news is empty (often happens with free API tiers for some symbols)
+                    if (data.length === 0) {
+                        data = await finnhub.getMarketNews('general');
+                    }
+                } else {
+                    data = await finnhub.getMarketNews('general');
+                }
+                setNews(data);
+            } catch (error) {
+                console.error("News fetch error:", error);
+            } finally {
+                setNewsLoading(false);
+            }
+        };
+
+        const timeoutId = setTimeout(() => {
+            fetchNews();
+        }, 500); // Debounce slightly to avoid rapid API calls on typing
+
+        return () => clearTimeout(timeoutId);
+    }, [ticker, activeTab]);
 
     const handleAnalyze = async () => {
         if (!ticker) return;
@@ -179,19 +219,46 @@ const MarketHub: React.FC = () => {
                             </div>
 
                             {/* News Feed */}
-                            <div className="glass-panel p-6 rounded-3xl">
-                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                    <Newspaper size={18} className="text-secondary" /> Market News
+                            <div className="glass-panel p-6 rounded-3xl max-h-[600px] overflow-y-auto custom-scrollbar">
+                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 sticky top-0 bg-[#131722]/95 backdrop-blur-sm py-2 z-10">
+                                    <Newspaper size={18} className="text-secondary" />
+                                    {activeTab === 'crypto' ? 'Crypto News' : `${ticker} News`}
                                 </h3>
                                 <div className="space-y-4">
-                                    {[1, 2, 3].map((i) => (
-                                        <div key={i} className="group cursor-pointer">
-                                            <p className="text-sm text-slate-300 group-hover:text-primary transition-colors line-clamp-2 font-medium">
-                                                "Sensex crosses 75k mark as foreign investors pump in record funds this quarter."
-                                            </p>
-                                            <span className="text-xs text-slate-500 mt-1 block">2 hours ago • Economic Times</span>
+                                    {newsLoading ? (
+                                        <div className="flex justify-center py-8">
+                                            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                                         </div>
-                                    ))}
+                                    ) : news.length === 0 ? (
+                                        <p className="text-slate-500 text-center py-4">No recent news found.</p>
+                                    ) : (
+                                        news.map((item) => (
+                                            <a
+                                                key={item.id}
+                                                href={item.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block group cursor-pointer border-b border-slate-800 pb-4 last:border-0"
+                                            >
+                                                <div className="flex gap-3">
+                                                    {item.image && (
+                                                        <img src={item.image} alt="" className="w-16 h-16 object-cover rounded-lg bg-slate-800" />
+                                                    )}
+                                                    <div>
+                                                        <p className="text-sm text-slate-300 group-hover:text-primary transition-colors line-clamp-3 font-medium">
+                                                            {item.headline}
+                                                        </p>
+                                                        <div className="flex items-center justify-between mt-2">
+                                                            <span className="text-[10px] text-slate-500 uppercase tracking-wider">{item.source}</span>
+                                                            <span className="text-[10px] text-slate-600">
+                                                                {new Date(item.datetime * 1000).toLocaleDateString()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </div>
