@@ -14,15 +14,17 @@ import GoalPlanner from './components/GoalPlanner';
 import Watchlist from './components/Watchlist';
 import Portfolio from './components/Portfolio';
 import Login from './components/Login';
+import Onboarding from './components/Onboarding';
 import { Transaction } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { api } from './services/api';
 
 import Layout from './components/Layout';
 
-// --- PROTECTED ROUTE ---
+// --- PROTECTED ROUTE (Requires Auth & Onboarding) ---
 const ProtectedRoute = () => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -36,7 +38,22 @@ const ProtectedRoute = () => {
     </div>
   );
 
-  return user ? <Layout /> : <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+
+  // If user is logged in but hasn't completed onboarding, redirect there
+  // (unless we are already trying to go there, though this component is for *other* routes)
+  if (profile && !profile.onboarding_completed) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <Layout />;
+};
+
+// --- AUTH REQUIRED ROUTE (Just Auth, No Onboarding Check) ---
+const AuthRequired = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  if (loading) return null; // Let the main loader handle it or simple null
+  return user ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 const AppRoutes = () => {
@@ -67,6 +84,15 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+
+      {/* Onboarding Route - Protected by Auth only */}
+      <Route path="/onboarding" element={
+        <AuthRequired>
+          <Onboarding />
+        </AuthRequired>
+      } />
+
+      {/* Main App Routes - Protected by Auth AND Onboarding */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Dashboard transactions={transactions} />} />
         <Route path="/upi" element={<UPITracker transactions={transactions} addTransaction={addTransaction} />} />
