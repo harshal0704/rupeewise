@@ -17,7 +17,10 @@ export const api = {
         email,
         password,
         options: {
-          data: { name },
+          data: {
+            name: name,
+            full_name: name // Add both common keys to be safe
+          },
         },
       });
       if (error) throw error;

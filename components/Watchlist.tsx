@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Star, TrendingUp, TrendingDown, Plus, X, RefreshCw, ArrowRight, ExternalLink, MoreHorizontal, AlertCircle } from 'lucide-react';
-import { finnhub } from '../services/finnhub';
+import { eodhdService } from '../services/eodhdService';
 import { supabase } from '../services/supabaseClient';
 import { screenerService } from '../services/screenerService';
 import { useAuth } from '../context/AuthContext';
@@ -43,15 +43,15 @@ const Watchlist: React.FC = () => {
             if (error) throw error;
 
             if (data && data.length > 0) {
-                // Fetch individually from Finnhub (Free tier logic)
+                // Fetch individually from EODHD
                 const promises = data.map(async (item) => {
-                    const quote = await finnhub.getQuote(item.symbol);
+                    const quote = await eodhdService.getLivePrice(item.symbol);
                     return {
                         id: item.id,
                         symbol: item.symbol,
                         name: item.name,
-                        price: quote ? quote.c : 0,
-                        change: quote ? quote.dp : 0, // dp is percent change in Finnhub
+                        price: quote.price,
+                        change: quote.change_p, // change_p is percent change in EODHD
                     };
                 });
 
@@ -80,17 +80,17 @@ const Watchlist: React.FC = () => {
                 return;
             }
 
-            const quote = await finnhub.getQuote(symbol);
+            const quote = await eodhdService.getLivePrice(symbol);
 
-            if (quote && quote.c > 0) {
+            if (quote && quote.price > 0) {
                 const { error } = await supabase
                     .from('watchlist')
                     .insert([{
                         user_id: user.id,
                         symbol: symbol,
-                        name: symbol, // Finnhub quote doesn't actally have name, rely on user input/symbol
-                        price: quote.c,
-                        change: quote.dp
+                        name: symbol, // EODHD search could provide name, but for now using symbol
+                        price: quote.price,
+                        change: quote.change_p
                     }]);
 
                 if (error) throw error;
@@ -277,7 +277,7 @@ const Watchlist: React.FC = () => {
 
                                             <div className="mt-auto pt-3">
                                                 <a
-                                                    href={screenerService.getScreenerUrl(item.symbol)}
+                                                    href={`https://www.screener.in/company/${item.symbol}/`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="w-full py-1.5 bg-primary/20 hover:bg-primary/30 text-primary hover:text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
@@ -299,8 +299,9 @@ const Watchlist: React.FC = () => {
                         </div>
                     ))}
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 };
 
