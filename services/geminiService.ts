@@ -298,7 +298,7 @@ export const screenStocks = async (query: string): Promise<any> => {
       1. "results": Array of MAX 5 stock objects. Each object: { symbol, name, price (string), reasoning (concise string) }
       2. "summary": A brief market outlook (string).
       
-      Do not generate excessive text. Keep it strictly valid JSON.
+      IMPORTANT: Return ONLY valid JSON. Do not include markdown formatting like \`\`\`json.
       `,
       config: {
         tools: [{ googleSearch: {} }],
@@ -324,14 +324,21 @@ export const screenStocks = async (query: string): Promise<any> => {
       }
     });
 
-    // Clean up potential Markdown formatting if the model ignores MIME type
+    // Robust JSON parsing
     let cleanText = response.text || "{}";
-    cleanText = cleanText.replace(/```json\n?|\n?```/g, "").trim();
+    // Remove markdown code blocks if they exist
+    cleanText = cleanText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    // Sometimes models add explanatory text before/after JSON even with responseSchema
+    const jsonStart = cleanText.indexOf('{');
+    const jsonEnd = cleanText.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1) {
+      cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
+    }
 
     return JSON.parse(cleanText);
   } catch (error) {
     console.error("Screener Error:", error);
-    // Return a graceful fallback instead of null to prevent UI crashes if checks are missing
     return {
       results: [],
       summary: "We encountered an error processing the market data. Please try a more specific query."

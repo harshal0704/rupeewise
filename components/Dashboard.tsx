@@ -112,7 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
       <div className="flex flex-col md:flex-row justify-between items-end gap-4">
         <div>
           <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
-            Namaste, <span className="gradient-text">{user?.name?.split(' ')[0] || 'User'}</span>! 🙏
+            Namaste, <span className="gradient-text">{user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || 'User'}</span>! 🙏
           </h1>
           <p className="text-slate-400 font-medium">Your financial command center is ready.</p>
         </div>

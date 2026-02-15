@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { runStockSimulation, screenStocks, getHistoricalComparison } from '../services/geminiService';
-import { finnhub, NewsItem } from '../services/finnhub';
-import { LineChart as LineChartIcon, Bot, Search, GitCompare, Plus, X, Newspaper, RefreshCw } from 'lucide-react';
+import { eodhdService, EODHDNewsItem } from '../services/eodhdService';
+import { supabase } from '../services/supabaseClient';
+import { useAuth } from '../context/AuthContext';
+import { LineChart as LineChartIcon, Bot, Search, GitCompare, Plus, X, Newspaper, RefreshCw, CheckCircle } from 'lucide-react';
 import { TradingViewChart } from './TradingViewChart';
 import { TickerTape } from './TickerTape';
 
@@ -27,29 +29,21 @@ const MarketHub: React.FC = () => {
     const [compareLoading, setCompareLoading] = useState(false);
 
     // News State
-    const [news, setNews] = useState<NewsItem[]>([]);
+    const [news, setNews] = useState<EODHDNewsItem[]>([]);
     const [newsLoading, setNewsLoading] = useState(false);
+
+    // Order State
+    const [orderQuantity, setOrderQuantity] = useState(1);
+    const [orderPrice, setOrderPrice] = useState<string>('');
+    const [orderLoading, setOrderLoading] = useState(false);
+    const { user } = useAuth();
 
     useEffect(() => {
         const fetchNews = async () => {
             setNewsLoading(true);
             try {
-                let data;
-                if (activeTab === 'crypto') {
-                    data = await finnhub.getMarketNews('crypto');
-                } else if (ticker) {
-                    // Append .NS if it looks like an Indian stock and doesn't have a suffix
-                    // Simple heuristic: if no dot, assume NSE
-                    const symbolQuery = ticker.includes('.') ? ticker : `${ticker}.NS`;
-                    data = await finnhub.getCompanyNews(symbolQuery);
-
-                    // Fallback to general news if company news is empty (often happens with free API tiers for some symbols)
-                    if (data.length === 0) {
-                        data = await finnhub.getMarketNews('general');
-                    }
-                } else {
-                    data = await finnhub.getMarketNews('general');
-                }
+                // Use EODHD Service
+                const data = await eodhdService.getMarketNews(5);
                 setNews(data);
             } catch (error) {
                 console.error("News fetch error:", error);
@@ -58,11 +52,7 @@ const MarketHub: React.FC = () => {
             }
         };
 
-        const timeoutId = setTimeout(() => {
-            fetchNews();
-        }, 500); // Debounce slightly to avoid rapid API calls on typing
-
-        return () => clearTimeout(timeoutId);
+        fetchNews();
     }, [ticker, activeTab]);
 
     const handleAnalyze = async () => {
@@ -97,6 +87,48 @@ const MarketHub: React.FC = () => {
         if (compareInput && !compareStocks.includes(compareInput.toUpperCase())) {
             setCompareStocks([...compareStocks, compareInput.toUpperCase()]);
             setCompareInput('');
+        }
+    };
+
+    const handleBuy = async () => {
+        if (!user || !ticker) return;
+        setOrderLoading(true);
+        try {
+            // 1. Fetch current price if not set
+            let price = parseFloat(orderPrice);
+            if (!price || isNaN(price)) {
+                // Fetch real-time price
+                const quote = await eodhdService.getLivePrice(ticker);
+                price = quote.price;
+            }
+
+            if (price <= 0) {
+                alert("Could not fetch valid price. Please enter manually.");
+                setOrderLoading(false);
+                return;
+            }
+
+            // 2. Insert into Portfolio
+            const { error } = await supabase.from('portfolio_holdings').insert([{
+                user_id: user.id,
+                symbol: ticker,
+                name: ticker, //Ideally fetch name
+                quantity: orderQuantity,
+                avg_price: price,
+                type: activeTab === 'crypto' ? 'Crypto' : 'Stock'
+            }]);
+
+            if (error) throw error;
+
+            alert(`Successfully bought ${orderQuantity} shares of ${ticker} at ₹${price}`);
+            setOrderQuantity(1);
+            setOrderPrice('');
+
+        } catch (error: any) {
+            console.error("Buy Error:", error);
+            alert("Failed to place order: " + error.message);
+        } finally {
+            setOrderLoading(false);
         }
     };
 
@@ -200,11 +232,23 @@ const MarketHub: React.FC = () => {
                                 <div className="space-y-4">
                                     <div>
                                         <label className="text-xs text-slate-500 font-semibold uppercase">Quantity</label>
-                                        <input type="number" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary mt-1" defaultValue="1" />
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={orderQuantity}
+                                            onChange={(e) => setOrderQuantity(parseInt(e.target.value) || 0)}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary mt-1"
+                                        />
                                     </div>
                                     <div>
                                         <label className="text-xs text-slate-500 font-semibold uppercase">Price Limit (₹)</label>
-                                        <input type="number" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary mt-1" placeholder="Market Price" />
+                                        <input
+                                            type="number"
+                                            value={orderPrice}
+                                            onChange={(e) => setOrderPrice(e.target.value)}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary mt-1"
+                                            placeholder="Market Price"
+                                        />
                                     </div>
 
                                     <div className="pt-4 border-t border-slate-700/50 flex justify-between items-center text-sm">
@@ -212,8 +256,12 @@ const MarketHub: React.FC = () => {
                                         <span className="text-white font-bold">₹2,450.00</span>
                                     </div>
 
-                                    <button className="w-full py-4 bg-primary hover:bg-primary-glow text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/20">
-                                        Execute Trade
+                                    <button
+                                        onClick={handleBuy}
+                                        disabled={orderLoading || !ticker}
+                                        className="w-full py-4 bg-primary hover:bg-primary-glow text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                                    >
+                                        {orderLoading ? <RefreshCw className="animate-spin" /> : "Execute Trade"}
                                     </button>
                                 </div>
                             </div>
@@ -222,7 +270,7 @@ const MarketHub: React.FC = () => {
                             <div className="glass-panel p-6 rounded-3xl max-h-[600px] overflow-y-auto custom-scrollbar">
                                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 sticky top-0 bg-[#131722]/95 backdrop-blur-sm py-2 z-10">
                                     <Newspaper size={18} className="text-secondary" />
-                                    {activeTab === 'crypto' ? 'Crypto News' : `${ticker} News`}
+                                    Market News
                                 </h3>
                                 <div className="space-y-4">
                                     {newsLoading ? (
@@ -232,26 +280,24 @@ const MarketHub: React.FC = () => {
                                     ) : news.length === 0 ? (
                                         <p className="text-slate-500 text-center py-4">No recent news found.</p>
                                     ) : (
-                                        news.map((item) => (
+                                        news.map((item, idx) => (
                                             <a
-                                                key={item.id}
-                                                href={item.url}
+                                                key={idx}
+                                                href={item.link}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="block group cursor-pointer border-b border-slate-800 pb-4 last:border-0"
                                             >
                                                 <div className="flex gap-3">
-                                                    {item.image && (
-                                                        <img src={item.image} alt="" className="w-16 h-16 object-cover rounded-lg bg-slate-800" />
-                                                    )}
+                                                    {/* Image removed as EODHD doesn't always provide it reliably in free tier or formatted nicely */}
                                                     <div>
                                                         <p className="text-sm text-slate-300 group-hover:text-primary transition-colors line-clamp-3 font-medium">
-                                                            {item.headline}
+                                                            {item.title}
                                                         </p>
                                                         <div className="flex items-center justify-between mt-2">
-                                                            <span className="text-[10px] text-slate-500 uppercase tracking-wider">{item.source}</span>
+                                                            <span className="text-[10px] text-slate-500 uppercase tracking-wider">EODHD</span>
                                                             <span className="text-[10px] text-slate-600">
-                                                                {new Date(item.datetime * 1000).toLocaleDateString()}
+                                                                {new Date(item.date).toLocaleDateString()}
                                                             </span>
                                                         </div>
                                                     </div>
