@@ -61,16 +61,18 @@ const Onboarding: React.FC = () => {
         try {
             const { error } = await supabase
                 .from('profiles')
-                .update({
+                .upsert({ // Changed to upsert to handle missing rows
+                    id: user.id,
                     investment_goal: formData.investmentGoal,
                     experience_level: formData.experienceLevel,
                     job_title: formData.jobTitle,
                     dream: formData.dream,
-                    goals: formData.goals, // Ensure schema supports jsonb or text array
+                    goals: formData.goals,
                     avatar_url: formData.avatarUrl,
-                    onboarding_completed: true
+                    onboarding_completed: true,
+                    updated_at: new Date().toISOString()
                 })
-                .eq('id', user.id);
+                .select();
 
             if (error) throw error;
 

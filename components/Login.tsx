@@ -20,10 +20,11 @@ const Login: React.FC = () => {
     try {
       if (isLogin) {
         await login(email, password);
+        navigate('/');
       } else {
         await signup(name, email, password);
+        navigate('/onboarding');
       }
-      navigate('/');
     } catch (err: any) {
       console.error("Auth Error:", err);
       setError(err.message || 'Authentication failed. Please check your credentials.');
