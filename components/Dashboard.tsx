@@ -1,17 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import { Transaction } from '../types';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { IndianRupee, TrendingUp, Wallet, ArrowUp, ArrowDown, Target, Zap, ChevronRight } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import {
+  IndianRupee, TrendingUp, Wallet, ArrowUp, ArrowDown, Target, Zap,
+  ChevronRight, Plus, LineChart, Bot, Sparkles, Calendar
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { supabase } from '../services/supabaseClient';
 import { getFinancialAdvice } from '../services/geminiService';
+import { Link } from 'react-router-dom';
 
 interface DashboardProps {
   transactions: Transaction[];
 }
 
 const COLORS = ['#6366f1', '#06b6d4', '#d946ef', '#f43f5e', '#8b5cf6', '#ec4899'];
+
+// ─── Quick Action Button ───
+const QuickAction: React.FC<{ to: string; icon: React.ReactNode; label: string; color: string }> = ({ to, icon, label, color }) => (
+  <Link to={to} className="flex flex-col items-center gap-2 p-4 glass-panel rounded-2xl card-hover-lift group cursor-pointer min-w-[100px]">
+    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${color}`}>
+      {icon}
+    </div>
+    <span className="text-xs font-semibold text-slate-300 group-hover:text-white transition-colors whitespace-nowrap">{label}</span>
+  </Link>
+);
+
+// ─── Progress Ring SVG ───
+const ProgressRing: React.FC<{ progress: number; size?: number; stroke?: number }> = ({ progress, size = 80, stroke = 6 }) => {
+  const radius = (size - stroke) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (progress / 100) * circumference;
+  return (
+    <svg width={size} height={size} className="rotate-[-90deg]">
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(99,102,241,0.1)" strokeWidth={stroke} />
+      <circle
+        cx={size / 2} cy={size / 2} r={radius} fill="none"
+        stroke="url(#progressGradient)" strokeWidth={stroke}
+        strokeLinecap="round" strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        className="progress-ring-circle"
+      />
+      <defs>
+        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#6366f1" />
+          <stop offset="100%" stopColor="#d946ef" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+};
+
+// ─── Time-based greeting ───
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+};
+
+const getFormattedDate = (): string => {
+  return new Date().toLocaleDateString('en-IN', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+};
 
 const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions }) => {
   const { user } = useAuth();
@@ -20,24 +73,20 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
   const [topGoal, setTopGoal] = useState<any>(null);
 
   useEffect(() => {
-    if (propTransactions && propTransactions.length > 0) {
-      setLocalTransactions(propTransactions);
-    }
+    if (propTransactions && propTransactions.length > 0) setLocalTransactions(propTransactions);
   }, [propTransactions]);
 
   useEffect(() => {
-    // Fetch Top Goal
     const fetchTopGoal = async () => {
       const { data } = await supabase
         .from('goals')
         .select('*')
-        .order('target_amount', { ascending: false }) // Prioritize biggest goal
+        .order('target_amount', { ascending: false })
         .limit(1)
         .single();
       if (data) setTopGoal(data);
     };
 
-    // Generate Insight
     const fetchInsight = async () => {
       const prompt = "Give me a one-sentence, motivating financial tip for an Indian investor.";
       const response = await getFinancialAdvice([{ role: 'user', parts: [{ text: prompt }] }]);
@@ -50,28 +99,16 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
     }
   }, [user]);
 
-  const totalSpent = localTransactions
-    .filter(t => t.type === 'debit')
-    .reduce((acc, curr) => acc + curr.amount, 0);
-
-  const totalIncome = localTransactions
-    .filter(t => t.type === 'credit')
-    .reduce((acc, curr) => acc + curr.amount, 0);
-
+  const totalSpent = localTransactions.filter(t => t.type === 'debit').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalIncome = localTransactions.filter(t => t.type === 'credit').reduce((acc, curr) => acc + curr.amount, 0);
   const balance = totalIncome - totalSpent;
+  const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalSpent) / totalIncome) * 100) : 0;
 
-  // Dynamic Chart Data from Transactions
   const processChartData = () => {
     const monthlyData: { [key: string]: number } = {};
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    // Initialize with some base value or 0
     let cumulative = 0;
-
-    // Sort transactions by date
     const sorted = [...localTransactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    // Group by month
     sorted.forEach(t => {
       const date = new Date(t.date);
       const month = months[date.getMonth()];
@@ -79,74 +116,96 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
       else cumulative -= t.amount;
       monthlyData[month] = cumulative;
     });
-
-    // Fill in gaps or just return what we have. 
-    // For simplicity, returning last 6 months found or defaults.
     return Object.keys(monthlyData).map(m => ({ name: m, value: monthlyData[m] }));
   };
 
-  const netWorthData = localTransactions.length > 0
-    ? processChartData()
-    : [
-      { name: 'Jan', value: 10000 }, { name: 'Feb', value: 12000 },
-      { name: 'Mar', value: 11000 }, { name: 'Apr', value: 15000 },
-      { name: 'May', value: 18000 }, { name: 'Jun', value: 20000 }
-    ];
+  const netWorthData = localTransactions.length > 0 ? processChartData() : [
+    { name: 'Jan', value: 10000 }, { name: 'Feb', value: 12000 },
+    { name: 'Mar', value: 11000 }, { name: 'Apr', value: 15000 },
+    { name: 'May', value: 18000 }, { name: 'Jun', value: 20000 }
+  ];
 
   const categoryData = localTransactions
     .filter(t => t.type === 'debit')
     .reduce((acc, curr) => {
       const existing = acc.find(a => a.name === curr.category);
-      if (existing) {
-        existing.value += curr.amount;
-      } else {
-        acc.push({ name: curr.category, value: curr.amount });
-      }
+      if (existing) existing.value += curr.amount;
+      else acc.push({ name: curr.category, value: curr.amount });
       return acc;
     }, [] as { name: string; value: number }[])
     .sort((a, b) => b.value - a.value);
 
+  const userName = user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
+  const goalProgress = topGoal ? Math.min(100, Math.round((topGoal.current_amount / topGoal.target_amount) * 100)) : 0;
+
   return (
-    <div className="space-y-8 animate-fade-in-up pb-20">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-4">
-        <div>
-          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
-            Namaste, <span className="gradient-text">{user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}</span>! 🙏
-          </h1>
-          <p className="text-slate-400 font-medium">Your financial command center is ready.</p>
-        </div>
-        <div className="glass-panel px-6 py-3 rounded-2xl flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Net Worth</p>
-            <p className="text-2xl font-bold text-white">₹{balance.toLocaleString('en-IN')}</p>
+    <div className="space-y-6 pb-8">
+      {/* ═══ WELCOME BANNER — "The Pulse" ═══ */}
+      <div className="glass-panel rounded-2xl p-6 md:p-8 relative overflow-hidden animate-fade-in-up">
+        {/* Decorative Glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -mr-20 -mt-20 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/8 rounded-full blur-[60px] -ml-16 -mb-16 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
+              <Calendar size={14} />
+              <span>{getFormattedDate()}</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+              {getGreeting()}, <span className="gradient-text">{userName}</span> 👋
+            </h1>
+            <p className="text-slate-400 mt-1 font-medium">Your financial command center is ready.</p>
           </div>
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/30">
-            <Wallet size={24} />
+
+          {/* Wealth Pulse Card */}
+          <div className="glass-panel px-6 py-4 rounded-2xl relative overflow-hidden min-w-[200px]">
+            {/* Pulse Line BG */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30 L20 30 L30 10 L40 50 L50 20 L60 40 L70 30 L200 30' fill='none' stroke='%236366f1' stroke-width='2'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'repeat-x',
+              backgroundPosition: 'center',
+              backgroundSize: '200px 60px',
+            }} />
+            <div className="relative z-10">
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Net Worth</p>
+              <p className="text-3xl font-extrabold text-white stat-counter">₹{balance.toLocaleString('en-IN')}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingUp size={12} className="text-green-400" />
+                <span className="text-xs text-green-400 font-semibold">+12.5% this month</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Hero Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Chart Card */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-3xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+      {/* ═══ QUICK ACTIONS ═══ */}
+      <div className="flex gap-3 overflow-x-auto pb-1 animate-fade-in-up" style={{ animationDelay: '100ms', scrollbarWidth: 'none' }}>
+        <QuickAction to="/upi" icon={<Plus size={20} className="text-emerald-400" />} label="Add Transaction" color="bg-emerald-500/10" />
+        <QuickAction to="/stocks" icon={<LineChart size={20} className="text-cyan-400" />} label="Check Markets" color="bg-cyan-500/10" />
+        <QuickAction to="/goals" icon={<Target size={20} className="text-fuchsia-400" />} label="Set Goal" color="bg-fuchsia-500/10" />
+        <QuickAction to="/coach" icon={<Bot size={20} className="text-primary" />} label="Ask Coach" color="bg-primary/10" />
+      </div>
 
-          <div className="flex justify-between items-center mb-6 relative z-10">
+      {/* ═══ BENTO GRID — Main Content ═══ */}
+      <div className="bento-grid animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+
+        {/* Net Worth Chart — Large */}
+        <div className="bento-span-2 glass-panel p-6 rounded-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-primary/8 rounded-full blur-[60px] -mr-12 -mt-12 pointer-events-none" />
+          <div className="flex justify-between items-center mb-5 relative z-10">
             <div>
-              <h3 className="text-lg font-bold text-white">Net Worth Growth</h3>
-              <p className="text-sm text-green-400 flex items-center mt-1">
-                <TrendingUp size={14} className="mr-1" /> +12.5% this month
+              <h3 className="text-base font-bold text-white">Net Worth Growth</h3>
+              <p className="text-xs text-green-400 flex items-center mt-0.5">
+                <TrendingUp size={12} className="mr-1" /> +12.5% this month
               </p>
             </div>
-            <select className="bg-slate-800/50 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-primary">
+            <select className="bg-surface-2 border border-slate-700/50 text-slate-400 text-xs rounded-lg px-3 py-1.5 outline-none focus:border-primary">
               <option>6 Months</option>
               <option>1 Year</option>
             </select>
           </div>
-
-          <div className="h-64 w-full">
+          <div className="h-52 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={netWorthData}>
                 <defs>
@@ -155,175 +214,171 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
                     <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                <YAxis hide />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#f8fafc' }}
+                  formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Value']}
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#f8fafc', fontSize: '13px', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}
                   itemStyle={{ color: '#818cf8' }}
+                  cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '4 4' }}
                 />
                 <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#6366f1"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorValue)"
+                  type="monotone" dataKey="value"
+                  stroke="#6366f1" strokeWidth={2.5}
+                  fillOpacity={1} fill="url(#colorValue)"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Side Widgets */}
-        <div className="space-y-6">
-          {/* Goal Widget */}
-          <div className="glass-panel p-6 rounded-3xl relative overflow-hidden">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-accent/10 rounded-xl text-accent">
-                <Target size={24} />
-              </div>
-              <span className="text-xs font-bold bg-accent/20 text-accent px-2 py-1 rounded-full">Top Goal</span>
+        {/* Top Goal — Progress Ring */}
+        <div className="glass-panel p-6 rounded-2xl relative overflow-hidden">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2.5 bg-accent/10 rounded-xl text-accent">
+              <Target size={20} />
             </div>
-            {topGoal ? (
-              <>
-                <h3 className="text-lg font-bold text-white mb-1">{topGoal.title}</h3>
-                <p className="text-sm text-slate-400 mb-4">Target: ₹{topGoal.target_amount.toLocaleString()}</p>
-
-                <div className="w-full bg-slate-800 rounded-full h-2.5 mb-2">
-                  <div
-                    className="bg-gradient-to-r from-accent to-purple-500 h-2.5 rounded-full"
-                    style={{ width: `${Math.min(100, (topGoal.current_amount / topGoal.target_amount) * 100)}%` }}
-                  ></div>
+            <span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-1 rounded-full uppercase tracking-wider">Top Goal</span>
+          </div>
+          {topGoal ? (
+            <div className="flex flex-col items-center text-center">
+              <div className="relative mb-3">
+                <ProgressRing progress={goalProgress} size={90} stroke={7} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-extrabold text-white">{goalProgress}%</span>
                 </div>
-                <div className="flex justify-between text-xs text-slate-400">
-                  <span>₹{topGoal.current_amount.toLocaleString()} saved</span>
-                  <span>{Math.round((topGoal.current_amount / topGoal.target_amount) * 100)}%</span>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-slate-400 text-sm">No goals set yet.</p>
-                <a href="#/goals" className="text-primary text-xs font-bold mt-2 inline-block">Create One</a>
               </div>
-            )}
-          </div>
-
-          {/* AI Insight Widget */}
-          <div className="glass-panel p-6 rounded-3xl relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-            <div className="flex items-center gap-3 mb-3">
-              <Zap size={20} className="text-yellow-400 fill-yellow-400" />
-              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wide">Daily Insight</h3>
+              <h3 className="text-base font-bold text-white mb-0.5">{topGoal.title}</h3>
+              <p className="text-xs text-slate-400">₹{topGoal.current_amount?.toLocaleString()} / ₹{topGoal.target_amount?.toLocaleString()}</p>
             </div>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              "{insight}"
-            </p>
-            <div className="mt-4 flex items-center text-primary text-xs font-bold group-hover:translate-x-1 transition-transform">
-              ASK COACH <ChevronRight size={14} className="ml-1" />
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-4xl mb-2">🎯</p>
+              <p className="text-slate-400 text-sm mb-3">No goals set yet</p>
+              <Link to="/goals" className="text-primary text-xs font-bold hover:text-primary/80 transition-colors">Create One →</Link>
+            </div>
+          )}
+        </div>
+
+        {/* Stats Row — Full Width */}
+        <div className="bento-span-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Income */}
+          <div className="glass-panel p-5 rounded-2xl flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-xs mb-1 font-medium">Monthly Income</p>
+              <p className="text-2xl font-extrabold text-white stat-counter">₹{totalIncome.toLocaleString('en-IN')}</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
+              <ArrowUp size={20} />
+            </div>
+          </div>
+          {/* Expenses */}
+          <div className="glass-panel p-5 rounded-2xl flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-xs mb-1 font-medium">Monthly Expenses</p>
+              <p className="text-2xl font-extrabold text-white stat-counter">₹{totalSpent.toLocaleString('en-IN')}</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500">
+              <ArrowDown size={20} />
+            </div>
+          </div>
+          {/* Savings Rate */}
+          <div className="glass-panel p-5 rounded-2xl flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-xs mb-1 font-medium">Savings Rate</p>
+              <p className="text-2xl font-extrabold text-white stat-counter">{savingsRate}%</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+              <TrendingUp size={20} />
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-panel p-5 rounded-2xl flex items-center justify-between">
-          <div>
-            <p className="text-slate-400 text-sm mb-1">Monthly Income</p>
-            <p className="text-2xl font-bold text-white">₹{totalIncome.toLocaleString('en-IN')}</p>
+        {/* AI Insight */}
+        <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group cursor-pointer card-hover-lift shimmer-overlay" onClick={() => window.location.hash = '/coach'}>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/8 rounded-full blur-[50px] -mr-8 -mt-8 pointer-events-none" />
+          <div className="flex items-center gap-2 mb-3 relative z-10">
+            <Sparkles size={16} className="text-yellow-400" />
+            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Daily Insight</h3>
           </div>
-          <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-            <ArrowUp size={20} />
-          </div>
-        </div>
-        <div className="glass-panel p-5 rounded-2xl flex items-center justify-between">
-          <div>
-            <p className="text-slate-400 text-sm mb-1">Monthly Expenses</p>
-            <p className="text-2xl font-bold text-white">₹{totalSpent.toLocaleString('en-IN')}</p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
-            <ArrowDown size={20} />
+          <p className="text-sm text-slate-300 leading-relaxed relative z-10 italic">"{insight}"</p>
+          <div className="mt-4 flex items-center text-primary text-xs font-bold group-hover:translate-x-1 transition-transform relative z-10">
+            Ask Coach <ChevronRight size={14} className="ml-1" />
           </div>
         </div>
-        <div className="glass-panel p-5 rounded-2xl flex items-center justify-between">
-          <div>
-            <p className="text-slate-400 text-sm mb-1">Savings Rate</p>
-            <p className="text-2xl font-bold text-white">
-              {totalIncome > 0 ? Math.round(((totalIncome - totalSpent) / totalIncome) * 100) : 0}%
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-            <TrendingUp size={20} />
-          </div>
-        </div>
-      </div>
 
-      {/* Bottom Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Spending Breakdown */}
-        <div className="glass-panel p-6 rounded-3xl">
-          <h3 className="text-lg font-bold text-white mb-6">Spending Breakdown</h3>
-          <div className="h-64 w-full flex items-center justify-center">
+        <div className="glass-panel p-6 rounded-2xl">
+          <h3 className="text-base font-bold text-white mb-4">Spending Breakdown</h3>
+          <div className="h-48 w-full flex items-center justify-center">
             {categoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
+                    data={categoryData} cx="50%" cy="50%"
+                    innerRadius={50} outerRadius={70}
+                    paddingAngle={4} dataKey="value" stroke="none"
                   >
-                    {categoryData.map((entry, index) => (
+                    {categoryData.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip
                     formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#f8fafc' }}
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#f8fafc', fontSize: '12px' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-slate-500">No data available</div>
+              <div className="text-center text-slate-600">
+                <p className="text-3xl mb-2">📊</p>
+                <p className="text-sm">No spending data yet</p>
+              </div>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            {categoryData.slice(0, 4).map((entry, index) => (
-              <div key={index} className="flex items-center gap-2 text-sm text-slate-300">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                <span className="truncate">{entry.name}</span>
-              </div>
-            ))}
-          </div>
+          {categoryData.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              {categoryData.slice(0, 4).map((entry, index) => (
+                <div key={index} className="flex items-center gap-2 text-xs text-slate-400">
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <span className="truncate">{entry.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent Transactions */}
-        <div className="glass-panel p-6 rounded-3xl">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-white">Recent Activity</h3>
-            <button className="text-sm text-primary hover:text-primary-glow transition-colors">View All</button>
+        <div className="glass-panel p-6 rounded-2xl">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-base font-bold text-white">Recent Activity</h3>
+            <Link to="/upi" className="text-xs text-primary font-semibold hover:text-primary/80 transition-colors flex items-center gap-1">
+              View All <ChevronRight size={12} />
+            </Link>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {localTransactions.slice(0, 5).map((t) => (
-              <div key={t.id} className="flex justify-between items-center p-3 hover:bg-slate-800/50 rounded-xl transition-colors group">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${t.type === 'debit' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
-                    <IndianRupee size={16} />
+              <div key={t.id} className="flex justify-between items-center p-2.5 hover:bg-slate-800/30 rounded-xl transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${t.type === 'debit' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+                    <IndianRupee size={14} />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-200 group-hover:text-primary transition-colors">{t.merchant}</p>
-                    <p className="text-xs text-slate-500">{t.date} • {t.category}</p>
+                    <p className="font-semibold text-sm text-slate-200 group-hover:text-white transition-colors">{t.merchant}</p>
+                    <p className="text-[10px] text-slate-500">{t.date} · {t.category}</p>
                   </div>
                 </div>
-                <span className={`font-bold ${t.type === 'debit' ? 'text-slate-200' : 'text-green-400'}`}>
+                <span className={`font-bold text-sm ${t.type === 'debit' ? 'text-slate-300' : 'text-green-400'}`}>
                   {t.type === 'debit' ? '-' : '+'}₹{t.amount.toLocaleString('en-IN')}
                 </span>
               </div>
             ))}
             {localTransactions.length === 0 && (
-              <p className="text-slate-500 text-center py-4">No recent transactions.</p>
+              <div className="text-center py-8">
+                <p className="text-3xl mb-2">💳</p>
+                <p className="text-slate-500 text-sm mb-3">No transactions yet</p>
+                <Link to="/upi" className="text-primary text-xs font-bold hover:text-primary/80 transition-colors">Add One →</Link>
+              </div>
             )}
           </div>
         </div>
