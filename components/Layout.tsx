@@ -16,13 +16,13 @@ const SidebarLink = ({ to, icon: Icon, label, active, collapsed, onClick }: any)
         onClick={onClick}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mx-2 transition-all duration-200 group relative ${active
             ? 'bg-primary/15 text-white'
-            : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+            : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
             }`}
         title={collapsed ? label : undefined}
     >
         {/* Glow Accent Bar */}
         {active && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-primary shadow-[0_0_8px_var(--primary-glow)]" />
+            <div className="absolute left-0 top-1/2 -tranzinc-y-1/2 w-[3px] h-5 rounded-full bg-primary shadow-[0_0_8px_var(--primary-glow)]" />
         )}
         <Icon size={20} className={`shrink-0 transition-transform duration-300 ${active ? 'text-primary scale-110' : 'group-hover:scale-110'}`} />
         {!collapsed && <span className="font-medium text-sm truncate">{label}</span>}
@@ -31,10 +31,10 @@ const SidebarLink = ({ to, icon: Icon, label, active, collapsed, onClick }: any)
 
 // ─── Section Label ───
 const SectionLabel: React.FC<{ label: string; collapsed?: boolean }> = ({ label, collapsed }) => {
-    if (collapsed) return <div className="mx-2 my-2 border-t border-slate-800/80" />;
+    if (collapsed) return <div className="mx-2 my-2 border-t border-zinc-800/80" />;
     return (
         <div className="px-5 pt-4 pb-1.5">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">{label}</span>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.1em]">{label}</span>
         </div>
     );
 };
@@ -111,15 +111,15 @@ const Layout: React.FC = () => {
     };
 
     return (
-        <div className="flex min-h-screen font-sans text-slate-100 overflow-hidden relative">
+        <div className="flex min-h-screen font-sans text-zinc-100 overflow-hidden relative">
             {/* Background Blobs */}
             <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[150px] pointer-events-none" />
             <div className="fixed bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
 
             {/* ═══ SIDEBAR — Desktop ═══ */}
-            <aside className={`hidden md:flex flex-col glass-panel m-3 rounded-2xl border-slate-700/30 fixed h-[calc(100vh-1.5rem)] z-20 transition-all duration-300 ${collapsed ? 'w-[72px]' : 'w-[260px]'}`}>
+            <aside className={`hidden md:flex flex-col glass-panel m-3 rounded-2xl border-zinc-700/30 fixed h-[calc(100vh-1.5rem)] z-20 transition-all duration-300 ${collapsed ? 'w-[72px]' : 'w-[260px]'}`}>
                 {/* Logo */}
-                <div className={`p-4 flex items-center border-b border-slate-800/50 ${collapsed ? 'justify-center' : 'gap-3'}`}>
+                <div className={`p-4 flex items-center border-b border-zinc-800/50 ${collapsed ? 'justify-center' : 'gap-3'}`}>
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md overflow-hidden shrink-0">
                         <img src="/logo.png" alt="RupeeWise" className="w-full h-full object-cover" />
                     </div>
@@ -155,19 +155,19 @@ const Layout: React.FC = () => {
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="mx-2 mb-2 p-2 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center"
+                    className="mx-2 mb-2 p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800/50 transition-all flex items-center justify-center"
                 >
                     {collapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
                 </button>
 
                 {/* User Profile */}
-                <div className="p-3 border-t border-slate-800/50">
-                    <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} p-2 rounded-xl hover:bg-slate-800/40 transition-colors`}>
+                <div className="p-3 border-t border-zinc-800/50">
+                    <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} p-2 rounded-xl hover:bg-zinc-800/40 transition-colors`}>
                         <div className="relative shrink-0">
                             <img
                                 src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=6366f1&color=fff&size=36`}
                                 alt="User"
-                                className="w-9 h-9 rounded-full border border-slate-700"
+                                className="w-9 h-9 rounded-full border border-zinc-700"
                             />
                             <div className="absolute -bottom-0.5 -right-0.5 glow-dot" style={{ width: '8px', height: '8px' }} />
                         </div>
@@ -175,9 +175,9 @@ const Layout: React.FC = () => {
                             <>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-white truncate">{user?.name || user?.user_metadata?.full_name || 'User'}</p>
-                                    <p className="text-[10px] text-slate-500">Premium</p>
+                                    <p className="text-[10px] text-zinc-500">Premium</p>
                                 </div>
-                                <button onClick={logout} className="text-slate-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-500/10 rounded-lg" title="Sign Out">
+                                <button onClick={logout} className="text-zinc-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-500/10 rounded-lg" title="Sign Out">
                                     <LogOut size={16} />
                                 </button>
                             </>
@@ -187,7 +187,7 @@ const Layout: React.FC = () => {
             </aside>
 
             {/* ═══ MOBILE HEADER ═══ */}
-            <div className="md:hidden fixed w-full glass-panel z-30 border-b border-slate-800/50 px-4 py-3 flex justify-between items-center">
+            <div className="md:hidden fixed w-full glass-panel z-30 border-b border-zinc-800/50 px-4 py-3 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg overflow-hidden">
                         <img src="/logo.png" alt="RupeeWise" className="w-full h-full object-cover" />
@@ -197,12 +197,12 @@ const Layout: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowNotifications(!showNotifications)}
-                        className="p-2 text-slate-400 hover:text-white rounded-lg transition-colors relative"
+                        className="p-2 text-zinc-400 hover:text-white rounded-lg transition-colors relative"
                     >
                         <Bell size={20} />
                         {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
                     </button>
-                    <Link to="/settings" className="p-2 text-slate-400 hover:text-white rounded-lg transition-colors">
+                    <Link to="/settings" className="p-2 text-zinc-400 hover:text-white rounded-lg transition-colors">
                         <Settings size={20} />
                     </Link>
                 </div>
@@ -233,18 +233,18 @@ const Layout: React.FC = () => {
             {/* ═══ MAIN CONTENT ═══ */}
             <main className={`flex-1 transition-all duration-300 min-h-screen ${collapsed ? 'md:ml-[84px]' : 'md:ml-[272px]'} p-4 md:p-5 pt-20 md:pt-5 pb-24 md:pb-5`}>
                 {/* Top Header (Desktop) */}
-                <header className="hidden md:flex items-center justify-between mb-6 glass-panel px-5 py-3 rounded-2xl sticky top-5 z-10 border-slate-800/30">
-                    <div className="flex items-center text-slate-400 w-80 bg-surface-0/50 rounded-xl px-4 py-2.5 border border-slate-800/50 focus-within:border-primary/50 focus-within:text-primary transition-colors">
+                <header className="hidden md:flex items-center justify-between mb-6 glass-panel px-5 py-3 rounded-2xl sticky top-5 z-10 border-zinc-800/30">
+                    <div className="flex items-center text-zinc-400 w-80 bg-surface-0/50 rounded-xl px-4 py-2.5 border border-zinc-800/50 focus-within:border-primary/50 focus-within:text-primary transition-colors">
                         <Search size={16} className="mr-2.5 shrink-0" />
                         <input
                             type="text"
                             placeholder="Search features, stocks..."
-                            className="bg-transparent border-none outline-none text-sm w-full text-slate-200 placeholder-slate-500"
+                            className="bg-transparent border-none outline-none text-sm w-full text-zinc-200 placeholder-zinc-500"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={handleSearch}
                         />
-                        <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-semibold text-slate-500 bg-surface-2 rounded-md border border-slate-700/50 ml-2 shrink-0">
+                        <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-semibold text-zinc-500 bg-surface-2 rounded-md border border-zinc-700/50 ml-2 shrink-0">
                             ⌘K
                         </kbd>
                     </div>
@@ -253,7 +253,7 @@ const Layout: React.FC = () => {
                         <div className="relative">
                             <button
                                 onClick={() => setShowNotifications(!showNotifications)}
-                                className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-xl transition-colors relative"
+                                className="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-colors relative"
                             >
                                 <Bell size={18} />
                                 {unreadCount > 0 && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
@@ -261,33 +261,33 @@ const Layout: React.FC = () => {
 
                             {/* Notification Dropdown */}
                             {showNotifications && (
-                                <div className="absolute right-0 top-12 w-80 glass-panel rounded-2xl border border-slate-700/50 shadow-2xl z-50 animate-scale-in origin-top-right overflow-hidden">
-                                    <div className="p-4 border-b border-slate-800/50 flex justify-between items-center bg-surface-1/50">
+                                <div className="absolute right-0 top-12 w-80 glass-panel rounded-2xl border border-zinc-700/50 shadow-2xl z-50 animate-scale-in origin-top-right overflow-hidden">
+                                    <div className="p-4 border-b border-zinc-800/50 flex justify-between items-center bg-surface-1/50">
                                         <h3 className="font-bold text-white text-sm">Notifications</h3>
                                         <div className="flex gap-2">
                                             <button onClick={markAllAsRead} className="text-xs text-primary hover:text-primary/80 transition-colors font-semibold">Mark all read</button>
-                                            <button onClick={clearAll} className="text-xs text-slate-500 hover:text-red-400 transition-colors">Clear</button>
+                                            <button onClick={clearAll} className="text-xs text-zinc-500 hover:text-red-400 transition-colors">Clear</button>
                                         </div>
                                     </div>
                                     <div className="max-h-72 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
                                         {notifications.length === 0 ? (
-                                            <div className="p-10 text-center text-slate-600">
+                                            <div className="p-10 text-center text-zinc-600">
                                                 <Bell size={24} className="mx-auto mb-3 opacity-30" />
                                                 <p className="text-sm font-medium">All caught up!</p>
-                                                <p className="text-xs text-slate-700 mt-1">No new notifications</p>
+                                                <p className="text-xs text-zinc-700 mt-1">No new notifications</p>
                                             </div>
                                         ) : (
                                             notifications.map(notification => (
                                                 <div
                                                     key={notification.id}
-                                                    className={`p-4 border-b border-slate-800/30 hover:bg-slate-800/30 transition-colors cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`}
+                                                    className={`p-4 border-b border-zinc-800/30 hover:bg-zinc-800/30 transition-colors cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`}
                                                     onClick={() => markAsRead(notification.id)}
                                                 >
                                                     <div className="flex justify-between items-start mb-1">
-                                                        <h4 className={`text-sm font-semibold ${!notification.read ? 'text-white' : 'text-slate-400'}`}>{notification.title}</h4>
-                                                        <span className="text-[10px] text-slate-600 ml-2 shrink-0">{new Date(notification.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        <h4 className={`text-sm font-semibold ${!notification.read ? 'text-white' : 'text-zinc-400'}`}>{notification.title}</h4>
+                                                        <span className="text-[10px] text-zinc-600 ml-2 shrink-0">{new Date(notification.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                     </div>
-                                                    <p className="text-xs text-slate-500 leading-relaxed">{notification.message}</p>
+                                                    <p className="text-xs text-zinc-500 leading-relaxed">{notification.message}</p>
                                                 </div>
                                             ))
                                         )}
@@ -296,7 +296,7 @@ const Layout: React.FC = () => {
                             )}
                         </div>
 
-                        <Link to="/settings" className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-xl transition-colors group">
+                        <Link to="/settings" className="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-colors group">
                             <Settings size={18} className="group-hover:rotate-90 transition-transform duration-500" />
                         </Link>
                     </div>
@@ -318,7 +318,7 @@ const Layout: React.FC = () => {
                                 to={item.path}
                                 className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${isActive
                                         ? 'text-primary'
-                                        : 'text-slate-500 hover:text-white'
+                                        : 'text-zinc-500 hover:text-white'
                                     }`}
                             >
                                 <item.icon size={20} className={isActive ? 'scale-110' : ''} />
@@ -329,7 +329,7 @@ const Layout: React.FC = () => {
                     })}
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${mobileMenuOpen ? 'text-primary' : 'text-slate-500 hover:text-white'}`}
+                        className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${mobileMenuOpen ? 'text-primary' : 'text-zinc-500 hover:text-white'}`}
                     >
                         {mobileMenuOpen ? <X size={20} /> : <MoreHorizontal size={20} />}
                         <span className="text-[10px] font-semibold">More</span>

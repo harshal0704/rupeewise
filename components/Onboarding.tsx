@@ -61,13 +61,13 @@ const Onboarding: React.FC = () => {
 
     const goals = [
         { id: 'wealth', label: 'Wealth Creation', icon: <Target className="text-emerald-400" size={22} />, desc: 'Build long-term wealth through compounding.', emoji: '💰' },
-        { id: 'retirement', label: 'Retirement Planning', icon: <Briefcase className="text-blue-400" size={22} />, desc: 'Secure a financially independent retirement.', emoji: '🏖️' },
-        { id: 'tax', label: 'Tax Saving', icon: <Check className="text-purple-400" size={22} />, desc: 'Optimize tax liabilities efficiently.', emoji: '📊' },
+        { id: 'retirement', label: 'Retirement Planning', icon: <Briefcase className="text-amber-400" size={22} />, desc: 'Secure a financially independent retirement.', emoji: '🏖️' },
+        { id: 'tax', label: 'Tax Saving', icon: <Check className="text-yellow-400" size={22} />, desc: 'Optimize tax liabilities efficiently.', emoji: '📊' },
     ];
 
     const experience = [
         { id: 'beginner', label: 'Beginner', desc: 'I am new to investing.', emoji: '🌱', accent: 'border-amber-500/30 bg-amber-500/5' },
-        { id: 'intermediate', label: 'Intermediate', desc: 'I have some experience with stocks/MFs.', emoji: '⚡', accent: 'border-slate-400/30 bg-slate-400/5' },
+        { id: 'intermediate', label: 'Intermediate', desc: 'I have some experience with stocks/MFs.', emoji: '⚡', accent: 'border-zinc-400/30 bg-zinc-400/5' },
         { id: 'pro', label: 'Pro', desc: 'I actively trade and understand markets.', emoji: '🏆', accent: 'border-yellow-500/30 bg-yellow-500/5' },
     ];
 
@@ -128,7 +128,7 @@ const Onboarding: React.FC = () => {
                         <Sparkles size={12} /> Setting Up Your Account
                     </div>
                     <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">Welcome to RupeeWise</h1>
-                    <p className="text-slate-400">Let's personalize your financial journey.</p>
+                    <p className="text-zinc-400">Let's personalize your financial journey.</p>
                 </div>
 
                 {/* ═══ Progress Bar with Labels ═══ */}
@@ -140,16 +140,16 @@ const Onboarding: React.FC = () => {
                                         ? 'bg-primary text-white shadow-lg shadow-primary/30'
                                         : step === i
                                             ? 'bg-primary/20 text-primary border-2 border-primary shadow-lg shadow-primary/20'
-                                            : 'bg-slate-800 text-slate-500'
+                                            : 'bg-zinc-800 text-zinc-500'
                                     }`}>
                                     {step > i ? <Check size={14} /> : s.emoji}
                                 </div>
-                                <span className={`text-[10px] font-semibold transition-colors ${step >= i ? 'text-white' : 'text-slate-600'}`}>
+                                <span className={`text-[10px] font-semibold transition-colors ${step >= i ? 'text-white' : 'text-zinc-600'}`}>
                                     {s.label}
                                 </span>
                             </div>
                             {i < STEPS.length - 1 && (
-                                <div className={`flex-1 h-0.5 rounded-full mx-1 transition-all duration-500 mt-[-18px] ${step > i ? 'bg-primary' : 'bg-slate-800'}`} />
+                                <div className={`flex-1 h-0.5 rounded-full mx-1 transition-all duration-500 mt-[-18px] ${step > i ? 'bg-primary' : 'bg-zinc-800'}`} />
                             )}
                         </React.Fragment>
                     ))}
@@ -163,7 +163,7 @@ const Onboarding: React.FC = () => {
                         <div className="text-center py-12 animate-scale-in">
                             <div className="text-6xl mb-4">🎉</div>
                             <h2 className="text-2xl font-extrabold text-white mb-2">You're All Set!</h2>
-                            <p className="text-slate-400">Redirecting to your dashboard...</p>
+                            <p className="text-zinc-400">Redirecting to your dashboard...</p>
                             <div className="mt-6 w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                         </div>
                     )}
@@ -173,16 +173,16 @@ const Onboarding: React.FC = () => {
                         <div className="space-y-8 text-center animate-fade-in-up">
                             <div>
                                 <h2 className="text-2xl font-extrabold text-white mb-2">Let's see that smile! 📸</h2>
-                                <p className="text-slate-400 text-sm">Upload a profile photo to personalize your experience.</p>
+                                <p className="text-zinc-400 text-sm">Upload a profile photo to personalize your experience.</p>
                             </div>
 
                             <div className="relative w-32 h-32 mx-auto group cursor-pointer">
-                                <div className={`w-full h-full rounded-full overflow-hidden border-4 transition-all bg-surface-1 flex items-center justify-center ${formData.avatarUrl ? 'border-primary/50' : 'border-slate-700 border-dashed group-hover:border-primary/50'
+                                <div className={`w-full h-full rounded-full overflow-hidden border-4 transition-all bg-surface-1 flex items-center justify-center ${formData.avatarUrl ? 'border-primary/50' : 'border-zinc-700 border-dashed group-hover:border-primary/50'
                                     }`}>
                                     {formData.avatarUrl ? (
                                         <img src={formData.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
                                     ) : (
-                                        <User size={48} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+                                        <User size={48} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
                                     )}
                                 </div>
                                 <label className="absolute bottom-0 right-0 p-2.5 bg-gradient-to-br from-primary to-secondary text-white rounded-full cursor-pointer hover:scale-110 transition-transform shadow-lg shadow-primary/30">
@@ -208,11 +208,11 @@ const Onboarding: React.FC = () => {
                         <div className="space-y-6 animate-fade-in-up">
                             <div className="text-center">
                                 <h2 className="text-2xl font-extrabold text-white mb-2">Tell us about yourself ✍️</h2>
-                                <p className="text-slate-400 text-sm">This helps us personalize your experience.</p>
+                                <p className="text-zinc-400 text-sm">This helps us personalize your experience.</p>
                             </div>
                             <div className="space-y-5">
                                 <div>
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Job Title / Profession</label>
+                                    <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2">Job Title / Profession</label>
                                     <input
                                         type="text"
                                         value={formData.jobTitle}
@@ -223,8 +223,8 @@ const Onboarding: React.FC = () => {
                                 </div>
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">My Big Dream</label>
-                                        <span className="text-xs text-slate-600">{formData.dream.length}/200</span>
+                                        <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">My Big Dream</label>
+                                        <span className="text-xs text-zinc-600">{formData.dream.length}/200</span>
                                     </div>
                                     <textarea
                                         value={formData.dream}
@@ -242,7 +242,7 @@ const Onboarding: React.FC = () => {
                         <div className="space-y-6 animate-fade-in-up">
                             <div className="text-center">
                                 <h2 className="text-2xl font-extrabold text-white mb-2">What are your goals? 🎯</h2>
-                                <p className="text-slate-400 text-sm">Pick presets or add custom goals.</p>
+                                <p className="text-zinc-400 text-sm">Pick presets or add custom goals.</p>
                             </div>
 
                             {/* Preset Chips */}
@@ -253,7 +253,7 @@ const Onboarding: React.FC = () => {
                                         onClick={() => togglePresetGoal(pg.value)}
                                         className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${formData.goals.includes(pg.value)
                                                 ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm shadow-primary/10'
-                                                : 'bg-surface-2 text-slate-400 border border-transparent hover:border-slate-600 hover:text-white'
+                                                : 'bg-surface-2 text-zinc-400 border border-transparent hover:border-zinc-600 hover:text-white'
                                             }`}
                                     >
                                         {pg.label}
@@ -271,7 +271,7 @@ const Onboarding: React.FC = () => {
                                     className="neumorph-input !pl-4 flex-1"
                                     placeholder="Add a custom goal..."
                                 />
-                                <button onClick={addGoal} className="p-3 bg-surface-2 text-slate-400 rounded-xl hover:bg-primary hover:text-white transition-all">
+                                <button onClick={addGoal} className="p-3 bg-surface-2 text-zinc-400 rounded-xl hover:bg-primary hover:text-white transition-all">
                                     <Plus size={20} />
                                 </button>
                             </div>
@@ -303,17 +303,17 @@ const Onboarding: React.FC = () => {
                                         onClick={() => setFormData({ ...formData, investmentGoal: goal.id })}
                                         className={`p-5 rounded-2xl border flex items-center gap-4 transition-all text-left group ${formData.investmentGoal === goal.id
                                             ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
-                                            : 'border-slate-800 bg-surface-1 hover:border-slate-600'
+                                            : 'border-zinc-800 bg-surface-1 hover:border-zinc-600'
                                             }`}
                                     >
                                         <div className="text-2xl">{goal.emoji}</div>
                                         <div className="flex-1">
                                             <h3 className="font-bold text-white">{goal.label}</h3>
-                                            <p className="text-sm text-slate-400 mt-0.5">{goal.desc}</p>
+                                            <p className="text-sm text-zinc-400 mt-0.5">{goal.desc}</p>
                                         </div>
                                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${formData.investmentGoal === goal.id
                                                 ? 'border-primary bg-primary'
-                                                : 'border-slate-600'
+                                                : 'border-zinc-600'
                                             }`}>
                                             {formData.investmentGoal === goal.id && <Check size={14} className="text-white animate-scale-in" />}
                                         </div>
@@ -336,18 +336,18 @@ const Onboarding: React.FC = () => {
                                         onClick={() => setFormData({ ...formData, experienceLevel: exp.id })}
                                         className={`p-5 rounded-2xl border text-left transition-all ${formData.experienceLevel === exp.id
                                             ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
-                                            : `${exp.accent} hover:border-slate-500`
+                                            : `${exp.accent} hover:border-zinc-500`
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <span className="text-2xl">{exp.emoji}</span>
                                             <div className="flex-1">
                                                 <h3 className="font-bold text-white text-lg">{exp.label}</h3>
-                                                <p className="text-sm text-slate-400 mt-0.5">{exp.desc}</p>
+                                                <p className="text-sm text-zinc-400 mt-0.5">{exp.desc}</p>
                                             </div>
                                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${formData.experienceLevel === exp.id
                                                     ? 'border-primary bg-primary'
-                                                    : 'border-slate-600'
+                                                    : 'border-zinc-600'
                                                 }`}>
                                                 {formData.experienceLevel === exp.id && <Check size={14} className="text-white animate-scale-in" />}
                                             </div>

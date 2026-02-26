@@ -33,7 +33,7 @@ const ProtectedRoute = () => {
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--surface-0)' }}>
       <div className="relative w-24 h-24">
-        <div className="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
+        <div className="absolute inset-0 border-4 border-zinc-800 rounded-full"></div>
         <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-2xl font-bold text-white">₹</span>

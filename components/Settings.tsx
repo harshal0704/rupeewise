@@ -87,9 +87,9 @@ const Settings: React.FC = () => {
         <div className="space-y-8 animate-fade-in pb-20">
             <header>
                 <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-                    <SettingsIcon className="text-slate-400" /> Settings
+                    <SettingsIcon className="text-zinc-400" /> Settings
                 </h1>
-                <p className="text-slate-400">Manage your profile, preferences, and data.</p>
+                <p className="text-zinc-400">Manage your profile, preferences, and data.</p>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -105,11 +105,11 @@ const Settings: React.FC = () => {
                             <img
                                 src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}`}
                                 alt="Avatar"
-                                className="w-16 h-16 rounded-full border-2 border-slate-700"
+                                className="w-16 h-16 rounded-full border-2 border-zinc-700"
                             />
                             <div>
                                 <h3 className="text-lg font-bold text-white">{user?.name}</h3>
-                                <p className="text-slate-400 text-sm">{user?.email}</p>
+                                <p className="text-zinc-400 text-sm">{user?.email}</p>
                                 <span className="inline-block mt-1 px-2 py-0.5 bg-primary/10 text-primary text-[10px] uppercase font-bold rounded-full border border-primary/20">
                                     Pro Plan
                                 </span>
@@ -124,11 +124,11 @@ const Settings: React.FC = () => {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm text-slate-400 mb-2">Default Currency</label>
+                                <label className="block text-sm text-zinc-400 mb-2">Default Currency</label>
                                 <select
                                     value={currency}
                                     onChange={(e) => setCurrency(e.target.value)}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
                                 >
                                     <option value="INR">INR (₹)</option>
                                     <option value="USD">USD ($)</option>
@@ -136,26 +136,26 @@ const Settings: React.FC = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm text-slate-400 mb-2">Language</label>
+                                <label className="block text-sm text-zinc-400 mb-2">Language</label>
                                 <select
                                     value={language}
                                     onChange={(e) => setLanguage(e.target.value)}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
                                 >
                                     <option value="English">English</option>
                                     <option value="Hindi">Hindi</option>
                                 </select>
                             </div>
                             <div className="md:col-span-2">
-                                <label className="block text-sm text-slate-400 mb-3">Color Theme</label>
+                                <label className="block text-sm text-zinc-400 mb-3">Color Theme</label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                                     {themes.map((t) => (
                                         <button
                                             key={t.id}
                                             onClick={() => setTheme(t.id)}
                                             className={`group relative p-3 rounded-xl border transition-all ${theme === t.id
-                                                ? 'bg-slate-800 border-primary ring-1 ring-primary'
-                                                : 'bg-slate-900 border-slate-700 hover:border-slate-600 hover:bg-slate-800'
+                                                ? 'bg-zinc-800 border-primary ring-1 ring-primary'
+                                                : 'bg-zinc-900 border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800'
                                                 }`}
                                         >
                                             <div className="flex gap-2 mb-2 justify-center">
@@ -163,7 +163,7 @@ const Settings: React.FC = () => {
                                                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: t.colors['--secondary'] }}></div>
                                                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: t.colors['--accent'] }}></div>
                                             </div>
-                                            <span className={`block text-xs font-medium text-center ${theme === t.id ? 'text-primary' : 'text-slate-400 group-hover:text-slate-300'}`}>
+                                            <span className={`block text-xs font-medium text-center ${theme === t.id ? 'text-primary' : 'text-zinc-400 group-hover:text-zinc-300'}`}>
                                                 {t.name}
                                             </span>
                                         </button>
@@ -176,18 +176,18 @@ const Settings: React.FC = () => {
                     {/* API Configuration */}
                     <section className="glass-panel p-6 rounded-3xl">
                         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                            <Database size={20} className="text-purple-400" /> API Configuration
+                            <Database size={20} className="text-yellow-400" /> API Configuration
                         </h2>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm text-slate-400 mb-2">Gemini API Key</label>
+                                <label className="block text-sm text-zinc-400 mb-2">Gemini API Key</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="password"
                                         placeholder="Enter your Gemini API Key"
                                         defaultValue={localStorage.getItem('gemini_api_key') || ''}
                                         onChange={(e) => localStorage.setItem('gemini_api_key', e.target.value)}
-                                        className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
                                     />
                                     <button
                                         onClick={() => addNotification("API Key Saved", "Your Gemini API Key has been updated locally.", "success")}
@@ -196,12 +196,12 @@ const Settings: React.FC = () => {
                                         Save
                                     </button>
                                 </div>
-                                <p className="text-xs text-slate-500 mt-2">
+                                <p className="text-xs text-zinc-500 mt-2">
                                     Your key is stored locally in your browser. Get one from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google AI Studio</a>.
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-sm text-slate-400 mb-2">Gemini Model Name</label>
+                                <label className="block text-sm text-zinc-400 mb-2">Gemini Model Name</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
@@ -211,10 +211,10 @@ const Settings: React.FC = () => {
                                             setGeminiModel(e.target.value);
                                             localStorage.setItem('gemini_model', e.target.value);
                                         }}
-                                        className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
                                     />
                                 </div>
-                                <p className="text-xs text-slate-500 mt-2">
+                                <p className="text-xs text-zinc-500 mt-2">
                                     Enter the model ID (e.g., <code>gemini-2.0-flash-lite-preview-02-05</code>, <code>gemini-1.5-pro</code>).
                                 </p>
                             </div>
@@ -224,26 +224,26 @@ const Settings: React.FC = () => {
                     {/* Data Management */}
                     <section className="glass-panel p-6 rounded-3xl">
                         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                            <Database size={20} className="text-blue-400" /> Data Management
+                            <Database size={20} className="text-amber-400" /> Data Management
                         </h2>
                         <div className="flex flex-col md:flex-row gap-4">
                             <button
                                 onClick={handleExportData}
                                 disabled={loading}
-                                className="flex-1 px-6 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl text-left transition-colors flex items-center justify-between group"
+                                className="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-left transition-colors flex items-center justify-between group"
                             >
                                 <div>
                                     <h4 className="font-bold text-white mb-1">Export Data</h4>
-                                    <p className="text-xs text-slate-400">Download all your personal data</p>
+                                    <p className="text-xs text-zinc-400">Download all your personal data</p>
                                 </div>
-                                <Download className="text-slate-500 group-hover:text-white transition-colors" />
+                                <Download className="text-zinc-500 group-hover:text-white transition-colors" />
                             </button>
-                            <button className="flex-1 px-6 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl text-left transition-colors flex items-center justify-between group">
+                            <button className="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-left transition-colors flex items-center justify-between group">
                                 <div>
                                     <h4 className="font-bold text-white mb-1">Clear Cache</h4>
-                                    <p className="text-xs text-slate-400">Free up local storage space</p>
+                                    <p className="text-xs text-zinc-400">Free up local storage space</p>
                                 </div>
-                                <RefreshCw className="text-slate-500 group-hover:text-white transition-colors" />
+                                <RefreshCw className="text-zinc-500 group-hover:text-white transition-colors" />
                             </button>
                         </div>
                     </section>
@@ -256,7 +256,7 @@ const Settings: React.FC = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h4 className="font-bold text-white mb-1">Delete Account</h4>
-                                <p className="text-xs text-slate-400">Permanently remove your account and all data.</p>
+                                <p className="text-xs text-zinc-400">Permanently remove your account and all data.</p>
                             </div>
                             <button
                                 onClick={() => setShowDeleteConfirm(true)}
@@ -278,14 +278,14 @@ const Settings: React.FC = () => {
                                 <Trash2 size={32} className="text-red-500" />
                             </div>
                             <h2 className="text-2xl font-bold text-white mb-2">Are you sure?</h2>
-                            <p className="text-slate-400">
+                            <p className="text-zinc-400">
                                 This action cannot be undone. This will permanently delete your account and remove your data from our servers.
                             </p>
                         </div>
                         <div className="flex gap-4">
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
-                                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors"
+                                className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-colors"
                             >
                                 Cancel
                             </button>

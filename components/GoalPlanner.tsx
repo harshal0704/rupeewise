@@ -129,7 +129,7 @@ const GoalPlanner: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-slate-400">Loading goals...</div>;
+    if (loading) return <div className="p-8 text-center text-zinc-400">Loading goals...</div>;
 
     return (
         <div className="space-y-8 animate-fade-in pb-20">
@@ -138,7 +138,7 @@ const GoalPlanner: React.FC = () => {
                     <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                         <Target className="text-primary" /> Goal Planner
                     </h1>
-                    <p className="text-slate-400">Visualize and track your financial dreams.</p>
+                    <p className="text-zinc-400">Visualize and track your financial dreams.</p>
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
@@ -149,10 +149,10 @@ const GoalPlanner: React.FC = () => {
             </header>
 
             {goals.length === 0 ? (
-                <div className="text-center py-20 bg-slate-900/50 rounded-3xl border border-slate-800 border-dashed">
-                    <Target size={48} className="text-slate-600 mx-auto mb-4" />
+                <div className="text-center py-20 bg-zinc-900/50 rounded-3xl border border-zinc-800 border-dashed">
+                    <Target size={48} className="text-zinc-600 mx-auto mb-4" />
                     <h3 className="text-xl font-bold text-white">No Goals Yet</h3>
-                    <p className="text-slate-400 mt-2">Start by adding your first financial goal.</p>
+                    <p className="text-zinc-400 mt-2">Start by adding your first financial goal.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -180,7 +180,7 @@ const GoalPlanner: React.FC = () => {
                             <div key={goal.id} className="glass-panel rounded-2xl overflow-hidden group hover:border-primary/50 transition-all flex flex-col h-full relative">
                                 {/* Image Header */}
                                 <div className="h-40 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent z-10" />
                                     <img
                                         src={unsplashUrl}
                                         alt={goal.title}
@@ -211,12 +211,12 @@ const GoalPlanner: React.FC = () => {
                                     <div className="space-y-4 mb-6">
                                         <div className="flex justify-between items-end">
                                             <div>
-                                                <p className="text-xs text-slate-400 mb-1">Saved</p>
+                                                <p className="text-xs text-zinc-400 mb-1">Saved</p>
                                                 <p className="text-xl font-bold text-white">₹{goal.current_amount.toLocaleString()}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs text-slate-400 mb-1">Target</p>
-                                                <p className="text-sm font-medium text-slate-300">₹{goal.target_amount.toLocaleString()}</p>
+                                                <p className="text-xs text-zinc-400 mb-1">Target</p>
+                                                <p className="text-sm font-medium text-zinc-300">₹{goal.target_amount.toLocaleString()}</p>
                                             </div>
                                         </div>
 
@@ -228,7 +228,7 @@ const GoalPlanner: React.FC = () => {
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="overflow-hidden h-3 mb-4 text-xs flex rounded-full bg-slate-800">
+                                            <div className="overflow-hidden h-3 mb-4 text-xs flex rounded-full bg-zinc-800">
                                                 <div
                                                     style={{ width: `${progress}%` }}
                                                     className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${isCompleted ? 'bg-green-500' : 'bg-primary'} transition-all duration-1000 ease-out`}
@@ -237,10 +237,10 @@ const GoalPlanner: React.FC = () => {
                                         </div>
 
                                         {!isCompleted ? (
-                                            <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                                            <div className="flex items-start gap-3 p-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
                                                 <Calculator size={18} className="text-secondary mt-0.5" />
                                                 <div>
-                                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                                    <p className="text-xs text-zinc-400 leading-relaxed">
                                                         Save <span className="text-white font-bold">₹{monthlyNeeded.toLocaleString()}/mo</span> to reach your goal by {new Date(goal.deadline).toLocaleDateString()}.
                                                     </p>
                                                 </div>
@@ -255,7 +255,7 @@ const GoalPlanner: React.FC = () => {
                                     <div className="mt-auto">
                                         <button
                                             onClick={() => handleAddFunds(goal)}
-                                            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 group-hover:bg-primary group-hover:text-white"
+                                            className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 group-hover:bg-primary group-hover:text-white"
                                         >
                                             <Plus size={18} /> Add Funds
                                         </button>
@@ -269,18 +269,18 @@ const GoalPlanner: React.FC = () => {
 
             {/* Add Goal Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-                    <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-700 shadow-2xl animate-scale-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-4">
+                    <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-zinc-700 shadow-2xl animate-scale-in">
                         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
                             <Target className="text-primary" /> Create New Goal
                         </h2>
                         <form onSubmit={handleAddGoal} className="space-y-4">
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Goal Title</label>
+                                <label className="block text-sm text-zinc-400 mb-1">Goal Title</label>
                                 <input
                                     type="text"
                                     placeholder="e.g. Dream Home"
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary"
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary"
                                     value={newGoal.title || ''}
                                     onChange={e => setNewGoal({ ...newGoal, title: e.target.value })}
                                     required
@@ -288,32 +288,32 @@ const GoalPlanner: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Target Amount (₹)</label>
+                                    <label className="block text-sm text-zinc-400 mb-1">Target Amount (₹)</label>
                                     <input
                                         type="number"
                                         placeholder="500000"
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary"
+                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary"
                                         value={newGoal.target_amount || ''}
                                         onChange={e => setNewGoal({ ...newGoal, target_amount: Number(e.target.value) })}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Saved So Far (₹)</label>
+                                    <label className="block text-sm text-zinc-400 mb-1">Saved So Far (₹)</label>
                                     <input
                                         type="number"
                                         placeholder="0"
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary"
+                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary"
                                         value={newGoal.current_amount || ''}
                                         onChange={e => setNewGoal({ ...newGoal, current_amount: Number(e.target.value) })}
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Target Date</label>
+                                <label className="block text-sm text-zinc-400 mb-1">Target Date</label>
                                 <input
                                     type="date"
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary"
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary"
                                     value={newGoal.deadline || ''}
                                     onChange={e => setNewGoal({ ...newGoal, deadline: e.target.value })}
                                     required
@@ -323,7 +323,7 @@ const GoalPlanner: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowAddModal(false)}
-                                    className="flex-1 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl hover:bg-slate-700 transition-colors"
+                                    className="flex-1 py-3 bg-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-700 transition-colors"
                                 >
                                     Cancel
                                 </button>

@@ -96,13 +96,13 @@ const SimulationSandbox: React.FC = () => {
        <div className="bg-white p-2 rounded-xl border border-gray-200 inline-flex shadow-sm mb-4">
           <button
             onClick={() => setActiveTab('virtual-trade')}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 ${activeTab === 'virtual-trade' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 ${activeTab === 'virtual-trade' ? 'bg-amber-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             <Briefcase size={16} /> Virtual Portfolio
           </button>
           <button
             onClick={() => setActiveTab('life-scenarios')}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 ${activeTab === 'life-scenarios' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 ${activeTab === 'life-scenarios' ? 'bg-amber-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             <Play size={16} /> Life Scenarios
           </button>
@@ -129,7 +129,7 @@ const SimulationSandbox: React.FC = () => {
               {/* Holdings List */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                  <h3 className="font-bold text-gray-800 flex items-center gap-2"><Wallet size={18} className="text-indigo-600"/> Your Holdings</h3>
+                  <h3 className="font-bold text-gray-800 flex items-center gap-2"><Wallet size={18} className="text-amber-600"/> Your Holdings</h3>
                 </div>
                 {portfolio.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400">
@@ -161,24 +161,24 @@ const SimulationSandbox: React.FC = () => {
             {/* Trading Sidebar */}
             <div className="lg:col-span-1 space-y-6">
                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <h3 className="font-bold text-gray-800 mb-4 flex items-center"><Search size={18} className="mr-2 text-indigo-600"/> Buy Stocks</h3>
+                  <h3 className="font-bold text-gray-800 mb-4 flex items-center"><Search size={18} className="mr-2 text-amber-600"/> Buy Stocks</h3>
                   <form onSubmit={handleStockSearch} className="relative">
                     <input 
                       type="text" 
                       placeholder="Search (e.g. TATAMOTORS)" 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
-                    <button type="submit" disabled={loadingPrice} className="absolute right-2 top-2 p-1 text-indigo-600 hover:bg-indigo-50 rounded-md">
-                      {loadingPrice ? <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"/> : <Search size={20}/>}
+                    <button type="submit" disabled={loadingPrice} className="absolute right-2 top-2 p-1 text-amber-600 hover:bg-amber-50 rounded-md">
+                      {loadingPrice ? <div className="w-5 h-5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"/> : <Search size={20}/>}
                     </button>
                   </form>
                   <p className="text-xs text-gray-500 mt-2">Prices fetched live via Gemini Search.</p>
                </div>
                
                {/* Quick Tips */}
-               <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 text-blue-900">
+               <div className="bg-amber-50 p-6 rounded-xl border border-amber-100 text-amber-900">
                  <h4 className="font-bold flex items-center mb-2"><Info size={16} className="mr-2"/> Did you know?</h4>
                  <p className="text-sm leading-relaxed opacity-80">
                    When you buy delivery shares in India, you pay STT (0.1%), Stamp Duty (0.015%), and Exchange charges apart from Brokerage!
@@ -203,7 +203,7 @@ const SimulationSandbox: React.FC = () => {
                <div className="p-6 space-y-6">
                   <div className="flex justify-between items-center">
                      <span className="text-gray-600 font-medium">Current Price</span>
-                     <span className="text-xl font-bold text-indigo-700">₹{searchedStock.price.toLocaleString('en-IN')}</span>
+                     <span className="text-xl font-bold text-amber-700">₹{searchedStock.price.toLocaleString('en-IN')}</span>
                   </div>
                   
                   <div>
@@ -261,7 +261,7 @@ const SimulationSandbox: React.FC = () => {
               <p className="text-gray-600">Validate your big financial decisions.</p>
             </header>
 
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-indigo-100">
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-amber-100">
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Describe your scenario
               </label>
@@ -269,14 +269,14 @@ const SimulationSandbox: React.FC = () => {
                 value={scenario}
                 onChange={(e) => setScenario(e.target.value)}
                 placeholder="e.g. I want to save for a destination wedding in Goa in 2 years..."
-                className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all"
+                className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none resize-none transition-all"
               />
               
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={handleScenarioSimulate}
                   disabled={!scenario || scenarioLoading}
-                  className="flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-70"
+                  className="flex items-center px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-70"
                 >
                   {scenarioLoading ? (
                     <span className="flex items-center">

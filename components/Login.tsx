@@ -36,7 +36,7 @@ const Login: React.FC = () => {
 
   const features = [
     { icon: <Bot size={20} />, label: 'AI-Powered Insights', color: 'text-primary', bg: 'bg-primary/10 border-primary/20' },
-    { icon: <Shield size={20} />, label: 'Bank-Grade Security', color: 'text-cyan-400', bg: 'bg-cyan-500/10 border-cyan-500/20' },
+    { icon: <Shield size={20} />, label: 'Bank-Grade Security', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
     { icon: <TrendingUp size={20} />, label: 'Zero Commission', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
   ];
 
@@ -65,7 +65,7 @@ const Login: React.FC = () => {
               <span className="gradient-text-hero">future</span>{' '}
               of personal finance
             </h1>
-            <p className="text-slate-400 text-lg max-w-md leading-relaxed">
+            <p className="text-zinc-400 text-lg max-w-md leading-relaxed">
               Join thousands of Indians mastering their money with AI-powered intelligence.
             </p>
           </div>
@@ -88,10 +88,10 @@ const Login: React.FC = () => {
           </div>
 
           {/* Social Proof */}
-          <div className="flex items-center gap-3 text-slate-500 text-sm animate-fade-in" style={{ animationDelay: '800ms' }}>
+          <div className="flex items-center gap-3 text-zinc-500 text-sm animate-fade-in" style={{ animationDelay: '800ms' }}>
             <div className="flex -space-x-2">
               {['🧑‍💼', '👩‍💻', '👨‍🎓', '👩‍🔬'].map((emoji, i) => (
-                <div key={i} className="w-8 h-8 rounded-full bg-slate-800 border-2 border-surface-0 flex items-center justify-center text-sm">
+                <div key={i} className="w-8 h-8 rounded-full bg-zinc-800 border-2 border-surface-0 flex items-center justify-center text-sm">
                   {emoji}
                 </div>
               ))}
@@ -112,7 +112,7 @@ const Login: React.FC = () => {
                 <h2 className="text-2xl font-extrabold text-white">
                   {isLogin ? 'Welcome Back' : 'Create Account'}
                 </h2>
-                <p className="text-slate-400 text-sm mt-2">
+                <p className="text-zinc-400 text-sm mt-2">
                   {isLogin ? 'Sign in to access your financial command center' : 'Start your journey to financial freedom'}
                 </p>
               </div>
@@ -121,7 +121,7 @@ const Login: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {!isLogin && (
                   <div className="relative group animate-fade-in-up">
-                    <User className="absolute left-3.5 top-3.5 text-slate-500 group-focus-within:text-primary transition-colors z-10" size={18} />
+                    <User className="absolute left-3.5 top-3.5 text-zinc-500 group-focus-within:text-primary transition-colors z-10" size={18} />
                     <input
                       type="text"
                       placeholder="Full Name"
@@ -134,7 +134,7 @@ const Login: React.FC = () => {
                 )}
 
                 <div className="relative group">
-                  <Mail className="absolute left-3.5 top-3.5 text-slate-500 group-focus-within:text-primary transition-colors z-10" size={18} />
+                  <Mail className="absolute left-3.5 top-3.5 text-zinc-500 group-focus-within:text-primary transition-colors z-10" size={18} />
                   <input
                     type="email"
                     placeholder="Email Address"
@@ -146,7 +146,7 @@ const Login: React.FC = () => {
                 </div>
 
                 <div className="relative group">
-                  <Lock className="absolute left-3.5 top-3.5 text-slate-500 group-focus-within:text-primary transition-colors z-10" size={18} />
+                  <Lock className="absolute left-3.5 top-3.5 text-zinc-500 group-focus-within:text-primary transition-colors z-10" size={18} />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Password"
@@ -158,7 +158,7 @@ const Login: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300 transition-colors z-10"
+                    className="absolute right-3.5 top-3.5 text-zinc-500 hover:text-zinc-300 transition-colors z-10"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -190,15 +190,15 @@ const Login: React.FC = () => {
               {/* Divider */}
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-800" />
+                  <div className="w-full border-t border-zinc-800" />
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="px-3 text-slate-500 bg-surface-1">or continue with</span>
+                  <span className="px-3 text-zinc-500 bg-surface-1">or continue with</span>
                 </div>
               </div>
 
               {/* Social Button */}
-              <button className="w-full py-3.5 glass-button rounded-xl text-slate-300 font-semibold text-sm flex items-center justify-center gap-3 hover:text-white">
+              <button className="w-full py-3.5 glass-button rounded-xl text-zinc-300 font-semibold text-sm flex items-center justify-center gap-3 hover:text-white">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -209,8 +209,8 @@ const Login: React.FC = () => {
               </button>
 
               {/* Toggle */}
-              <div className="mt-8 text-center border-t border-slate-800/50 pt-6">
-                <p className="text-slate-400 text-sm">
+              <div className="mt-8 text-center border-t border-zinc-800/50 pt-6">
+                <p className="text-zinc-400 text-sm">
                   {isLogin ? "Don't have an account?" : "Already have an account?"}
                   <button
                     onClick={() => { setIsLogin(!isLogin); setError(''); }}

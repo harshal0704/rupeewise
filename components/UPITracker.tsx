@@ -71,17 +71,17 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Input Section */}
       <div className="lg:col-span-1">
-        <div className="bg-slate-900/50 p-6 rounded-xl shadow-lg border border-slate-700 sticky top-6">
-          <div className="flex space-x-2 mb-6 bg-slate-800 p-1 rounded-lg">
+        <div className="bg-zinc-900/50 p-6 rounded-xl shadow-lg border border-zinc-700 sticky top-6">
+          <div className="flex space-x-2 mb-6 bg-zinc-800 p-1 rounded-lg">
             <button
               onClick={() => setActiveTab('manual')}
-              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'manual' ? 'bg-indigo-600 shadow text-white' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'manual' ? 'bg-amber-600 shadow text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
               Manual Entry
             </button>
             <button
               onClick={() => setActiveTab('upload')}
-              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'upload' ? 'bg-indigo-600 shadow text-white' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'upload' ? 'bg-amber-600 shadow text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
               Upload PDF/Img
             </button>
@@ -90,39 +90,39 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
           {activeTab === 'manual' ? (
             <form onSubmit={handleManualSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1">Amount (₹)</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1">Amount (₹)</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-gray-400 font-bold">₹</span>
                   <input
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow placeholder-slate-500"
+                    className="w-full pl-8 pr-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow placeholder-zinc-500"
                     placeholder="0.00"
                     required
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1">Merchant / Description</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1">Merchant / Description</label>
                 <input
                   type="text"
                   value={merchant}
                   onChange={(e) => setMerchant(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow placeholder-slate-500"
+                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow placeholder-zinc-500"
                   placeholder="e.g. Swiggy, Uber, Rent"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Payment Method</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-2">Payment Method</label>
                 <div className="flex space-x-2">
                   {['UPI', 'Card', 'Cash'].map((m) => (
                     <button
                       key={m}
                       type="button"
                       onClick={() => setMethod(m as any)}
-                      className={`flex-1 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center space-x-1 border transition-all ${method === m ? 'bg-indigo-600 border-indigo-500 text-white ring-1 ring-indigo-400' : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-slate-700'}`}
+                      className={`flex-1 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center space-x-1 border transition-all ${method === m ? 'bg-amber-600 border-amber-500 text-white ring-1 ring-amber-400' : 'bg-zinc-800 border-zinc-600 text-zinc-400 hover:bg-zinc-700'}`}
                     >
                       {m === 'UPI' && <Smartphone size={16} />}
                       {m === 'Card' && <CreditCard size={16} />}
@@ -135,7 +135,7 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
               <button
                 type="submit"
                 disabled={loadingCategory}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center transform active:scale-[0.98]"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center transform active:scale-[0.98]"
               >
                 {loadingCategory ? (
                   <span className="flex items-center">
@@ -155,7 +155,7 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
           ) : (
             <div className="space-y-6">
               <div
-                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${uploadFile ? 'border-indigo-500 bg-indigo-900/20' : 'border-slate-600 hover:border-indigo-500 hover:bg-slate-800'}`}
+                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${uploadFile ? 'border-amber-500 bg-amber-900/20' : 'border-zinc-600 hover:border-amber-500 hover:bg-zinc-800'}`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <input
@@ -167,8 +167,8 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
                 />
                 {uploadFile ? (
                   <>
-                    <FileText size={48} className="text-indigo-600 mb-2" />
-                    <p className="text-sm font-medium text-slate-200">{uploadFile.name}</p>
+                    <FileText size={48} className="text-amber-600 mb-2" />
+                    <p className="text-sm font-medium text-zinc-200">{uploadFile.name}</p>
                     <p className="text-xs text-gray-500">{(uploadFile.size / 1024).toFixed(1)} KB</p>
                     <button
                       onClick={(e) => { e.stopPropagation(); setUploadFile(null); }}
@@ -180,7 +180,7 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
                 ) : (
                   <>
                     <Upload size={48} className="text-gray-400 mb-2" />
-                    <p className="text-sm font-medium text-slate-300">Click to upload statement</p>
+                    <p className="text-sm font-medium text-zinc-300">Click to upload statement</p>
                     <p className="text-xs text-gray-500">Supports PDF, JPG, PNG</p>
                   </>
                 )}
@@ -190,7 +190,7 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
                 <button
                   onClick={processStatement}
                   disabled={isProcessingFile}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all flex justify-center items-center"
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all flex justify-center items-center"
                 >
                   {isProcessingFile ? (
                     <span className="flex items-center">
@@ -212,21 +212,21 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
                     <Check size={16} className="mr-2" />
                     Found {previewTransactions.length} transactions
                   </div>
-                  <div className="max-h-60 overflow-y-auto border border-slate-700 rounded-lg divide-y divide-slate-700">
+                  <div className="max-h-60 overflow-y-auto border border-zinc-700 rounded-lg divide-y divide-zinc-700">
                     {previewTransactions.map((t, i) => (
                       <div key={i} className="p-3 text-sm flex justify-between">
                         <div>
-                          <p className="font-medium text-slate-200">{t.merchant}</p>
+                          <p className="font-medium text-zinc-200">{t.merchant}</p>
                           <p className="text-xs text-gray-500">{t.date}</p>
                         </div>
-                        <span className="font-bold text-slate-200">₹{t.amount}</span>
+                        <span className="font-bold text-zinc-200">₹{t.amount}</span>
                       </div>
                     ))}
                   </div>
                   <div className="flex space-x-3">
                     <button
                       onClick={() => { setPreviewTransactions([]); setUploadFile(null); }}
-                      className="flex-1 py-3 border border-slate-600 rounded-lg text-slate-300 font-medium hover:bg-slate-800"
+                      className="flex-1 py-3 border border-zinc-600 rounded-lg text-zinc-300 font-medium hover:bg-zinc-800"
                     >
                       Discard
                     </button>
@@ -246,21 +246,21 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
 
       {/* List */}
       <div className="lg:col-span-2">
-        <div className="bg-slate-900/50 rounded-xl shadow-lg border border-slate-700 overflow-hidden">
-          <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+        <div className="bg-zinc-900/50 rounded-xl shadow-lg border border-zinc-700 overflow-hidden">
+          <div className="p-6 border-b border-zinc-700 flex justify-between items-center bg-zinc-800/50">
             <h2 className="text-xl font-bold text-white">Transaction History</h2>
             <div className="relative">
               <input
                 type="text"
                 placeholder="Search..."
-                className="pl-9 pr-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm placeholder-slate-400"
+                className="pl-9 pr-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm placeholder-zinc-400"
               />
               <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-800/80 text-slate-300 uppercase font-semibold text-xs tracking-wider">
+            <table className="w-full text-left text-sm text-zinc-300">
+              <thead className="bg-zinc-800/80 text-zinc-300 uppercase font-semibold text-xs tracking-wider">
                 <tr>
                   <th className="px-6 py-4">Date</th>
                   <th className="px-6 py-4">Merchant</th>
@@ -269,11 +269,11 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
                   <th className="px-6 py-4 text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700 bg-slate-900/30">
+              <tbody className="divide-y divide-zinc-700 bg-zinc-900/30">
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500 flex flex-col items-center">
-                      <div className="bg-slate-800 p-4 rounded-full mb-3">
+                    <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 flex flex-col items-center">
+                      <div className="bg-zinc-800 p-4 rounded-full mb-3">
                         <Banknote size={24} className="text-gray-300" />
                       </div>
                       <p>No transactions yet. Add one manually or upload a statement!</p>
@@ -281,17 +281,17 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
                   </tr>
                 ) : (
                   transactions.slice().reverse().map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-800/50 transition-colors">
+                    <tr key={t.id} className="hover:bg-zinc-800/50 transition-colors">
                       <td className="px-6 py-4 font-medium">
                         {new Date(t.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </td>
                       <td className="px-6 py-4 font-semibold text-white">{t.merchant}</td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-900/50 text-indigo-300 border border-indigo-700/50">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-900/50 text-amber-300 border border-amber-700/50">
                           {t.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-400">{t.paymentMethod}</td>
+                      <td className="px-6 py-4 text-zinc-400">{t.paymentMethod}</td>
                       <td className="px-6 py-4 text-right font-bold text-white">
                         <span className={t.type === 'debit' ? 'text-white' : 'text-emerald-400'}>
                           {t.type === 'debit' ? '-' : '+'}₹{t.amount.toLocaleString('en-IN')}
