@@ -4,8 +4,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RupeeWise - Financial Intelligence for India</title>
+  <title>RupeeWise — AI-Powered Financial Intelligence for India</title>
+  <meta name="description"
+    content="Master your money with AI-powered insights. Track expenses, plan investments, analyze markets, and grow your wealth — all in one premium platform built for India." />
+  <meta name="keywords"
+    content="RupeeWise, finance app, Indian fintech, investment tracker, UPI tracker, AI financial advisor, stock market India, tax planner, mutual funds, wealth management" />
+  <meta name="author" content="RupeeWise" />
+  <meta name="theme-color" content="#030712" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="RupeeWise — Financial Intelligence for India" />
+  <meta property="og:description"
+    content="AI-powered personal finance platform. Track, plan, and grow your wealth effortlessly." />
+  <meta property="og:image" content="/logo.png" />
+  <meta property="og:url" content="https://rupeewise.app" />
+  <meta property="og:site_name" content="RupeeWise" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="RupeeWise — Financial Intelligence for India" />
+  <meta name="twitter:description"
+    content="AI-powered personal finance platform. Track, plan, and grow your wealth effortlessly." />
+  <meta name="twitter:image" content="/logo.png" />
+
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+
+  <!-- Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -27,34 +58,95 @@
             },
             secondary: '#06b6d4',
             accent: '#d946ef',
+            surface: {
+              0: '#030712',
+              1: '#0f172a',
+              2: '#1e293b',
+              3: '#334155',
+            }
           },
           fontFamily: {
-            sans: ['Outfit', 'sans-serif'],
+            sans: ['Outfit', 'system-ui', 'sans-serif'],
           },
           animation: {
-            'fade-in': 'fadeIn 0.5s ease-out',
-            'fade-in-up': 'fadeInUp 0.5s ease-out',
+            'fade-in': 'fadeIn 0.5s ease-out both',
+            'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16,1,0.3,1) both',
+            'fade-in-down': 'fadeInDown 0.6s cubic-bezier(0.16,1,0.3,1) both',
+            'scale-in': 'scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
             'float': 'float 6s ease-in-out infinite',
+            'float-delayed': 'float 6s ease-in-out 2s infinite',
+            'float-slow': 'float 8s ease-in-out 1s infinite',
+            'shimmer': 'shimmerSweep 0.8s ease forwards',
+            'shake': 'shake 0.5s ease-in-out',
+            'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+            'marquee': 'marquee 30s linear infinite',
+            'mesh': 'meshGradient 20s ease infinite',
           },
           keyframes: {
             fadeIn: {
-              '0%': { opacity: '0' },
-              '100%': { opacity: '1' },
+              'from': { opacity: '0' },
+              'to': { opacity: '1' },
             },
             fadeInUp: {
-              '0%': { opacity: '0', transform: 'translateY(20px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
+              'from': { opacity: '0', transform: 'translateY(24px)' },
+              'to': { opacity: '1', transform: 'translateY(0)' },
+            },
+            fadeInDown: {
+              'from': { opacity: '0', transform: 'translateY(-24px)' },
+              'to': { opacity: '1', transform: 'translateY(0)' },
+            },
+            scaleIn: {
+              'from': { opacity: '0', transform: 'scale(0.9)' },
+              'to': { opacity: '1', transform: 'scale(1)' },
             },
             float: {
               '0%, 100%': { transform: 'translateY(0)' },
-              '50%': { transform: 'translateY(-10px)' },
-            }
+              '50%': { transform: 'translateY(-12px)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.6' },
+            },
+            meshGradient: {
+              '0%': { 'background-position': '0% 50%' },
+              '50%': { 'background-position': '100% 50%' },
+              '100%': { 'background-position': '0% 50%' },
+            },
+            shimmerSweep: {
+              'to': { left: '130%' },
+            },
+            marquee: {
+              '0%': { transform: 'translateX(0)' },
+              '100%': { transform: 'translateX(-50%)' },
+            },
+            shake: {
+              '0%, 100%': { transform: 'translateX(0)' },
+              '20%, 60%': { transform: 'translateX(-6px)' },
+              '40%, 80%': { transform: 'translateX(6px)' },
+            },
           }
         }
       }
     }
   </script>
   <link rel="stylesheet" href="/index.css">
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "RupeeWise",
+    "description": "AI-powered financial intelligence platform for India. Track expenses, plan investments, analyze markets, and grow wealth.",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "INR"
+    }
+  }
+  </script>
 </head>
 
 <body>
