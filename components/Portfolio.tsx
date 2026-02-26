@@ -147,7 +147,7 @@ const Portfolio: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-slate-400">Loading portfolio...</div>;
+    if (loading) return <div className="p-8 text-center text-zinc-400">Loading portfolio...</div>;
 
     return (
         <div className="space-y-8 animate-fade-in pb-20 relative">
@@ -156,19 +156,19 @@ const Portfolio: React.FC = () => {
                     <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                         <Briefcase className="text-primary" /> Portfolio Analysis
                     </h1>
-                    <p className="text-slate-400">Deep dive into your asset allocation and performance.</p>
+                    <p className="text-zinc-400">Deep dive into your asset allocation and performance.</p>
                 </div>
                 <div className="flex gap-3">
                     <button
                         onClick={() => setIsAddModalOpen(true)}
-                        className="px-4 py-2 bg-slate-800 text-white rounded-xl font-medium hover:bg-slate-700 transition-all flex items-center gap-2"
+                        className="px-4 py-2 bg-zinc-800 text-white rounded-xl font-medium hover:bg-zinc-700 transition-all flex items-center gap-2"
                     >
                         <Plus size={18} /> Add Asset
                     </button>
                     <button
                         onClick={handleAiAnalyze}
                         disabled={analyzing || holdings.length === 0}
-                        className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                        className="px-4 py-2 bg-gradient-to-r from-amber-600 to-yellow-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
                     >
                         {analyzing ? <RefreshCw className="animate-spin" size={18} /> : <Bot size={18} />}
                         AI Audit
@@ -177,21 +177,21 @@ const Portfolio: React.FC = () => {
             </header>
 
             {aiAnalysis && (
-                <div className="glass-panel p-6 rounded-3xl bg-indigo-900/20 border-indigo-500/30 animate-scale-in">
-                    <h3 className="text-xl font-bold text-indigo-300 mb-4 flex items-center gap-2">
+                <div className="glass-panel p-6 rounded-3xl bg-amber-900/20 border-amber-500/30 animate-scale-in">
+                    <h3 className="text-xl font-bold text-amber-300 mb-4 flex items-center gap-2">
                         <Bot size={24} /> AI Wealth Insights
                     </h3>
-                    <div className="prose prose-invert max-w-none text-slate-300 whitespace-pre-line">
+                    <div className="prose prose-invert max-w-none text-zinc-300 whitespace-pre-line">
                         {aiAnalysis}
                     </div>
                 </div>
             )}
 
             {holdings.length === 0 ? (
-                <div className="text-center py-20 bg-slate-900/50 rounded-3xl border border-slate-800 border-dashed">
-                    <Briefcase size={48} className="text-slate-600 mx-auto mb-4" />
+                <div className="text-center py-20 bg-zinc-900/50 rounded-3xl border border-zinc-800 border-dashed">
+                    <Briefcase size={48} className="text-zinc-600 mx-auto mb-4" />
                     <h3 className="text-xl font-bold text-white">Portfolio is Empty</h3>
-                    <p className="text-slate-400 mt-2">Add assets to differntiate your portfolio.</p>
+                    <p className="text-zinc-400 mt-2">Add assets to differntiate your portfolio.</p>
                     <button
                         onClick={() => setIsAddModalOpen(true)}
                         className="mt-6 px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-glow transition-all"
@@ -233,14 +233,14 @@ const Portfolio: React.FC = () => {
                             </div>
                             <div className="space-y-4">
                                 {allocationData.map((asset) => (
-                                    <div key={asset.name} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-800/50 transition-colors">
+                                    <div key={asset.name} className="flex items-center justify-between p-3 rounded-xl hover:bg-zinc-800/50 transition-colors">
                                         <div className="flex items-center gap-3">
                                             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: asset.color }}></div>
-                                            <span className="text-slate-300 font-medium">{asset.name}</span>
+                                            <span className="text-zinc-300 font-medium">{asset.name}</span>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-white font-bold">₹{asset.value.toLocaleString()}</p>
-                                            <p className="text-xs text-slate-500">{((asset.value / totalCurrentValue) * 100).toFixed(1)}%</p>
+                                            <p className="text-xs text-zinc-500">{((asset.value / totalCurrentValue) * 100).toFixed(1)}%</p>
                                         </div>
                                     </div>
                                 ))}
@@ -250,14 +250,14 @@ const Portfolio: React.FC = () => {
 
                     {/* Summary Cards */}
                     <div className="space-y-6">
-                        <div className="glass-panel p-6 rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
-                            <p className="text-indigo-200 text-sm font-medium mb-1">Total Portfolio Value</p>
+                        <div className="glass-panel p-6 rounded-3xl bg-gradient-to-br from-amber-600 to-yellow-700 text-white">
+                            <p className="text-amber-200 text-sm font-medium mb-1">Total Portfolio Value</p>
                             <h2 className="text-4xl font-bold mb-2">₹{totalCurrentValue.toLocaleString()}</h2>
                             <div className="flex items-center gap-2">
                                 <span className={`text-sm font-bold ${totalReturn >= 0 ? 'text-green-300' : 'text-red-300'}`}>
                                     {totalReturn >= 0 ? '+' : ''}{totalReturnPercent.toFixed(2)}%
                                 </span>
-                                <span className="text-indigo-200 text-xs">Total Return</span>
+                                <span className="text-amber-200 text-xs">Total Return</span>
                             </div>
                         </div>
 
@@ -265,10 +265,10 @@ const Portfolio: React.FC = () => {
                             <h3 className="text-lg font-bold text-white mb-4">Holdings</h3>
                             <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar">
                                 {holdings.map((h, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-3 hover:bg-slate-800/50 rounded-xl transition-colors">
+                                    <div key={idx} className="flex justify-between items-center p-3 hover:bg-zinc-800/50 rounded-xl transition-colors">
                                         <div>
                                             <h4 className="font-bold text-white">{h.symbol}</h4>
-                                            <p className="text-xs text-slate-400">{h.quantity} units @ ₹{h.avg_price}</p>
+                                            <p className="text-xs text-zinc-400">{h.quantity} units @ ₹{h.avg_price}</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="font-bold text-white">₹{h.currentValue?.toLocaleString()}</p>
@@ -287,20 +287,20 @@ const Portfolio: React.FC = () => {
             {/* Add Asset Modal */}
             {isAddModalOpen && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-                    <div className="glass-panel w-full max-w-md rounded-3xl p-6 border border-slate-700 animate-scale-in">
+                    <div className="glass-panel w-full max-w-md rounded-3xl p-6 border border-zinc-700 animate-scale-in">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-white">Add Asset</h2>
-                            <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-white">
+                            <button onClick={() => setIsAddModalOpen(false)} className="text-zinc-400 hover:text-white">
                                 <X size={24} />
                             </button>
                         </div>
                         <form onSubmit={handleAddHolding} className="space-y-4">
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Asset Type</label>
+                                <label className="block text-sm text-zinc-400 mb-1">Asset Type</label>
                                 <select
                                     value={newHolding.type}
                                     onChange={(e) => setNewHolding({ ...newHolding, type: e.target.value })}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
                                 >
                                     <option value="Stock">Stock</option>
                                     <option value="Mutual Fund">Mutual Fund</option>
@@ -310,49 +310,49 @@ const Portfolio: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Symbol</label>
+                                    <label className="block text-sm text-zinc-400 mb-1">Symbol</label>
                                     <input
                                         type="text"
                                         placeholder="e.g. RELIANCE"
                                         value={newHolding.symbol}
                                         onChange={(e) => setNewHolding({ ...newHolding, symbol: e.target.value })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Name (Optional)</label>
+                                    <label className="block text-sm text-zinc-400 mb-1">Name (Optional)</label>
                                     <input
                                         type="text"
                                         placeholder="Reliance Ind."
                                         value={newHolding.name}
                                         onChange={(e) => setNewHolding({ ...newHolding, name: e.target.value })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
                                     />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Quantity</label>
+                                    <label className="block text-sm text-zinc-400 mb-1">Quantity</label>
                                     <input
                                         type="number"
                                         step="0.01"
                                         placeholder="0.00"
                                         value={newHolding.quantity}
                                         onChange={(e) => setNewHolding({ ...newHolding, quantity: e.target.value })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Avg Price</label>
+                                    <label className="block text-sm text-zinc-400 mb-1">Avg Price</label>
                                     <input
                                         type="number"
                                         step="0.01"
                                         placeholder="₹0.00"
                                         value={newHolding.avg_price}
                                         onChange={(e) => setNewHolding({ ...newHolding, avg_price: e.target.value })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
                                         required
                                     />
                                 </div>

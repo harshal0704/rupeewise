@@ -149,7 +149,7 @@ const Watchlist: React.FC = () => {
         }
     };
 
-    if (initialLoading) return <div className="p-8 text-center text-slate-400">Loading watchlist...</div>;
+    if (initialLoading) return <div className="p-8 text-center text-zinc-400">Loading watchlist...</div>;
 
     return (
         <div className="space-y-8 animate-fade-in pb-20">
@@ -158,7 +158,7 @@ const Watchlist: React.FC = () => {
                     <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                         <Star className="text-yellow-400 fill-yellow-400" /> Watchlist
                     </h1>
-                    <p className="text-slate-400">Track your favorite assets in real-time.</p>
+                    <p className="text-zinc-400">Track your favorite assets in real-time.</p>
                 </div>
                 <form onSubmit={handleAdd} className="flex gap-2">
                     <input
@@ -166,7 +166,7 @@ const Watchlist: React.FC = () => {
                         value={newItem}
                         onChange={(e) => setNewItem(e.target.value)}
                         placeholder="Add Symbol (e.g. INFY)"
-                        className="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white outline-none focus:border-primary w-48"
+                        className="bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2 text-white outline-none focus:border-primary w-48"
                     />
                     <button
                         type="submit"
@@ -179,10 +179,10 @@ const Watchlist: React.FC = () => {
             </header>
 
             {items.length === 0 ? (
-                <div className="text-center py-20 bg-slate-900/50 rounded-3xl border border-slate-800 border-dashed">
-                    <Star size={48} className="text-slate-600 mx-auto mb-4" />
+                <div className="text-center py-20 bg-zinc-900/50 rounded-3xl border border-zinc-800 border-dashed">
+                    <Star size={48} className="text-zinc-600 mx-auto mb-4" />
                     <h3 className="text-xl font-bold text-white">Watchlist is Empty</h3>
-                    <p className="text-slate-400 mt-2">Add symbols to track their performance.</p>
+                    <p className="text-zinc-400 mt-2">Add symbols to track their performance.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -195,18 +195,18 @@ const Watchlist: React.FC = () => {
                             <div className={`relative w-full h-full transition-all duration-700 preserve-3d ${flippedId === item.symbol ? 'rotate-y-180' : ''}`}>
 
                                 {/* FRONT FACE */}
-                                <div className="absolute inset-0 backface-hidden glass-panel p-6 rounded-2xl border border-slate-700/50 hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all flex flex-col justify-between">
+                                <div className="absolute inset-0 backface-hidden glass-panel p-6 rounded-2xl border border-zinc-700/50 hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all flex flex-col justify-between">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h3 className="text-xl font-bold text-white flex items-center gap-2">
                                                 {item.symbol}
-                                                <ExternalLink size={14} className="text-slate-500 opacity-0 group-hover:opacity-100 transition-all" />
+                                                <ExternalLink size={14} className="text-zinc-500 opacity-0 group-hover:opacity-100 transition-all" />
                                             </h3>
-                                            <p className="text-xs text-slate-400">{item.name}</p>
+                                            <p className="text-xs text-zinc-400">{item.name}</p>
                                         </div>
                                         <button
                                             onClick={(e) => handleFlip(item.symbol, e)}
-                                            className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors z-20"
+                                            className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors z-20"
                                             title="View Screen Insights"
                                         >
                                             <MoreHorizontal size={20} />
@@ -215,7 +215,7 @@ const Watchlist: React.FC = () => {
 
                                     <div className="flex items-end justify-between mt-auto">
                                         <div>
-                                            <p className="text-xs text-slate-500 uppercase font-semibold">Current Price</p>
+                                            <p className="text-xs text-zinc-500 uppercase font-semibold">Current Price</p>
                                             <p className="text-2xl font-bold text-white">₹{item.price?.toLocaleString()}</p>
                                         </div>
                                         <div className={`flex items-center gap-1 text-sm font-bold ${item.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -225,18 +225,18 @@ const Watchlist: React.FC = () => {
                                     </div>
 
                                     {/* Mini Chart Decoration */}
-                                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800 rounded-b-2xl overflow-hidden">
+                                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-800 rounded-b-2xl overflow-hidden">
                                         <div className={`h-full ${item.change >= 0 ? 'bg-green-500' : 'bg-red-500'} transition-all`} style={{ width: `${Math.random() * 60 + 20}%` }}></div>
                                     </div>
                                 </div>
 
                                 {/* BACK FACE */}
-                                <div className="absolute inset-0 backface-hidden rotate-y-180 glass-panel p-6 rounded-2xl border border-primary/30 bg-slate-900/95 flex flex-col">
-                                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                                <div className="absolute inset-0 backface-hidden rotate-y-180 glass-panel p-6 rounded-2xl border border-primary/30 bg-zinc-900/95 flex flex-col">
+                                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-zinc-800">
                                         <h3 className="font-bold text-white text-sm">Screener Insights</h3>
                                         <button
                                             onClick={(e) => handleFlip(item.symbol, e)}
-                                            className="text-xs text-slate-400 hover:text-white flex items-center gap-1"
+                                            className="text-xs text-zinc-400 hover:text-white flex items-center gap-1"
                                         >
                                             <X size={14} /> Close
                                         </button>
@@ -245,19 +245,19 @@ const Watchlist: React.FC = () => {
                                     {insightLoading && !insights[item.symbol] ? (
                                         <div className="flex-1 flex items-center justify-center flex-col gap-2">
                                             <RefreshCw className="animate-spin text-primary" size={24} />
-                                            <p className="text-xs text-slate-500">Analyzing fundamentals...</p>
+                                            <p className="text-xs text-zinc-500">Analyzing fundamentals...</p>
                                         </div>
                                     ) : insights[item.symbol] ? (
                                         <div className="flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
                                             <div className="grid grid-cols-2 gap-2 mb-2">
-                                                <div className="bg-slate-800/50 p-2 rounded-lg text-center">
-                                                    <p className="text-[10px] text-slate-400">P/E Ratio</p>
+                                                <div className="bg-zinc-800/50 p-2 rounded-lg text-center">
+                                                    <p className="text-[10px] text-zinc-400">P/E Ratio</p>
                                                     <p className="text-sm font-bold text-white">
                                                         {insights[item.symbol]?.ratios?.find((r: any) => r.label.includes('P/E'))?.value || 'N/A'}
                                                     </p>
                                                 </div>
-                                                <div className="bg-slate-800/50 p-2 rounded-lg text-center">
-                                                    <p className="text-[10px] text-slate-400">ROE</p>
+                                                <div className="bg-zinc-800/50 p-2 rounded-lg text-center">
+                                                    <p className="text-[10px] text-zinc-400">ROE</p>
                                                     <p className="text-sm font-bold text-green-400">
                                                         {insights[item.symbol]?.ratios?.find((r: any) => r.label.includes('ROE'))?.value || 'N/A'}
                                                     </p>
@@ -268,7 +268,7 @@ const Watchlist: React.FC = () => {
                                                 <p className="text-[10px] font-bold text-green-400 flex items-center gap-1">
                                                     <TrendingUp size={10} /> PROS
                                                 </p>
-                                                <ul className="text-[10px] text-slate-300 list-disc ml-3 space-y-0.5">
+                                                <ul className="text-[10px] text-zinc-300 list-disc ml-3 space-y-0.5">
                                                     {insights[item.symbol].pros.slice(0, 2).map((p: string, i: number) => (
                                                         <li key={i}>{p}</li>
                                                     ))}
@@ -290,7 +290,7 @@ const Watchlist: React.FC = () => {
                                         <div className="flex-1 flex items-center justify-center text-center p-4">
                                             <div className="space-y-2">
                                                 <AlertCircle className="text-red-400 mx-auto" size={24} />
-                                                <p className="text-xs text-slate-400">Could not load insights.</p>
+                                                <p className="text-xs text-zinc-400">Could not load insights.</p>
                                             </div>
                                         </div>
                                     )}

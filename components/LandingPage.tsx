@@ -46,7 +46,7 @@ const FeatureCard: React.FC<{
             {icon}
         </div>
         <h3 className={`font-bold text-white mb-2 ${large ? 'text-xl' : 'text-lg'}`}>{title}</h3>
-        <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+        <p className="text-zinc-400 text-sm leading-relaxed">{desc}</p>
         <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
             Learn more <ChevronRight size={14} />
         </div>
@@ -57,21 +57,21 @@ const FeatureCard: React.FC<{
 const StatItem: React.FC<{ value: string; label: string }> = ({ value, label }) => (
     <div className="text-center">
         <p className="text-3xl md:text-4xl font-extrabold gradient-text stat-counter">{value}</p>
-        <p className="text-slate-400 text-sm mt-1 font-medium">{label}</p>
+        <p className="text-zinc-400 text-sm mt-1 font-medium">{label}</p>
     </div>
 );
 
 // ─── Step Card ───
 const StepCard: React.FC<{ number: string; title: string; desc: string; icon: React.ReactNode; color: string }> = ({ number, title, desc, icon, color }) => (
     <div className="flex-1 text-center glass-panel rounded-2xl p-8 card-hover-lift relative">
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-primary/30">
+        <div className="absolute -top-4 left-1/2 -tranzinc-x-1/2 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-primary/30">
             {number}
         </div>
         <div className={`w-14 h-14 rounded-xl mx-auto flex items-center justify-center mb-4 mt-2 ${color}`}>
             {icon}
         </div>
         <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-        <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+        <p className="text-zinc-400 text-sm leading-relaxed">{desc}</p>
     </div>
 );
 
@@ -104,7 +104,7 @@ const LandingPage: React.FC = () => {
                     </div>
 
                     {/* Subheadline */}
-                    <p className="animate-fade-in-up text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed" style={{ animationDelay: '400ms' }}>
+                    <p className="animate-fade-in-up text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed" style={{ animationDelay: '400ms' }}>
                         AI-powered insights to track expenses, plan investments, analyze markets, and grow your wealth — built for the new India.
                     </p>
 
@@ -133,25 +133,25 @@ const LandingPage: React.FC = () => {
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary"><IndianRupee size={16} /></div>
                                         <div>
-                                            <div className="h-3 w-24 bg-slate-800 rounded-full" />
-                                            <div className="h-2 w-16 bg-slate-800/60 rounded-full mt-1.5" />
+                                            <div className="h-3 w-24 bg-zinc-800 rounded-full" />
+                                            <div className="h-2 w-16 bg-zinc-800/60 rounded-full mt-1.5" />
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <div className="w-8 h-8 rounded-lg bg-slate-800/80" />
-                                        <div className="w-8 h-8 rounded-lg bg-slate-800/80" />
+                                        <div className="w-8 h-8 rounded-lg bg-zinc-800/80" />
+                                        <div className="w-8 h-8 rounded-lg bg-zinc-800/80" />
                                     </div>
                                 </div>
                                 {/* Mock Stats Row */}
                                 <div className="grid grid-cols-3 gap-3 mb-4">
-                                    {[['bg-green-500/10', 'text-green-500'], ['bg-red-500/10', 'text-red-500'], ['bg-blue-500/10', 'text-blue-500']].map(([bg, text], i) => (
+                                    {[['bg-green-500/10', 'text-green-500'], ['bg-red-500/10', 'text-red-500'], ['bg-amber-500/10', 'text-amber-500']].map(([bg, text], i) => (
                                         <div key={i} className="rounded-xl bg-surface-1 p-3 flex items-center gap-3">
                                             <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center`}>
-                                                <div className={`w-4 h-4 rounded-sm ${text === 'text-green-500' ? 'bg-green-500/40' : text === 'text-red-500' ? 'bg-red-500/40' : 'bg-blue-500/40'}`} />
+                                                <div className={`w-4 h-4 rounded-sm ${text === 'text-green-500' ? 'bg-green-500/40' : text === 'text-red-500' ? 'bg-red-500/40' : 'bg-amber-500/40'}`} />
                                             </div>
                                             <div>
-                                                <div className="h-2 w-12 bg-slate-700 rounded-full" />
-                                                <div className="h-3 w-16 bg-slate-600 rounded-full mt-1.5" />
+                                                <div className="h-2 w-12 bg-zinc-700 rounded-full" />
+                                                <div className="h-3 w-16 bg-zinc-600 rounded-full mt-1.5" />
                                             </div>
                                         </div>
                                     ))}
@@ -168,28 +168,28 @@ const LandingPage: React.FC = () => {
                             </div>
                         </div>
                         {/* Glow Effect Under Mockup */}
-                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-16 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+                        <div className="absolute -bottom-8 left-1/2 -tranzinc-x-1/2 w-3/4 h-16 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
                     </div>
                 </div>
             </section>
 
             {/* ═══ SOCIAL PROOF TICKER ═══ */}
             <RevealSection>
-                <div className="py-8 border-y border-slate-800/50 bg-surface-0/50">
+                <div className="py-8 border-y border-zinc-800/50 bg-surface-0/50">
                     <div className="marquee-container">
                         <div className="marquee-track">
                             {[...Array(2)].map((_, setIdx) => (
                                 <div key={setIdx} className="flex items-center gap-12 px-6">
-                                    <span className="text-slate-500 font-medium whitespace-nowrap flex items-center gap-2"><Shield size={16} className="text-primary" /> Trusted by 10,000+ Indian Investors</span>
-                                    <span className="text-slate-700">•</span>
-                                    <span className="text-slate-500 font-medium whitespace-nowrap flex items-center gap-2"><IndianRupee size={16} className="text-green-500" /> ₹50Cr+ Transactions Tracked</span>
-                                    <span className="text-slate-700">•</span>
-                                    <span className="text-slate-500 font-medium whitespace-nowrap flex items-center gap-2"><Zap size={16} className="text-yellow-500" /> 98% User Satisfaction</span>
-                                    <span className="text-slate-700">•</span>
-                                    <span className="text-slate-500 font-medium whitespace-nowrap flex items-center gap-2"><Lock size={16} className="text-cyan-500" /> 256-bit SSL Encrypted</span>
-                                    <span className="text-slate-700">•</span>
-                                    <span className="text-slate-500 font-medium whitespace-nowrap flex items-center gap-2"><Globe size={16} className="text-purple-500" /> RBI Compliant</span>
-                                    <span className="text-slate-700 mr-12">•</span>
+                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><Shield size={16} className="text-primary" /> Trusted by 10,000+ Indian Investors</span>
+                                    <span className="text-zinc-700">•</span>
+                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><IndianRupee size={16} className="text-green-500" /> ₹50Cr+ Transactions Tracked</span>
+                                    <span className="text-zinc-700">•</span>
+                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><Zap size={16} className="text-yellow-500" /> 98% User Satisfaction</span>
+                                    <span className="text-zinc-700">•</span>
+                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><Lock size={16} className="text-emerald-500" /> 256-bit SSL Encrypted</span>
+                                    <span className="text-zinc-700">•</span>
+                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><Globe size={16} className="text-yellow-500" /> RBI Compliant</span>
+                                    <span className="text-zinc-700 mr-12">•</span>
                                 </div>
                             ))}
                         </div>
@@ -203,7 +203,7 @@ const LandingPage: React.FC = () => {
                     <div className="text-center mb-14">
                         <span className="text-primary text-sm font-semibold uppercase tracking-wider">Everything You Need</span>
                         <h2 className="text-3xl md:text-5xl font-extrabold text-white mt-3 mb-4">One Platform. Total Control.</h2>
-                        <p className="text-slate-400 max-w-xl mx-auto">From daily UPI tracking to AI-driven investment insights — RupeeWise puts your entire financial life at your fingertips.</p>
+                        <p className="text-zinc-400 max-w-xl mx-auto">From daily UPI tracking to AI-driven investment insights — RupeeWise puts your entire financial life at your fingertips.</p>
                     </div>
 
                     <div className="bento-grid stagger-children">
@@ -215,10 +215,10 @@ const LandingPage: React.FC = () => {
                             large
                         />
                         <FeatureCard
-                            icon={<LineChart size={24} className="text-cyan-400" />}
+                            icon={<LineChart size={24} className="text-emerald-400" />}
                             title="Market Hub"
                             desc="Real-time stock data, charts, and screener. Track every move in the Indian market."
-                            color="bg-cyan-500/10"
+                            color="bg-emerald-500/10"
                         />
                         <FeatureCard
                             icon={<Smartphone size={24} className="text-emerald-400" />}
@@ -227,10 +227,10 @@ const LandingPage: React.FC = () => {
                             color="bg-emerald-500/10"
                         />
                         <FeatureCard
-                            icon={<Target size={24} className="text-fuchsia-400" />}
+                            icon={<Target size={24} className="text-orange-400" />}
                             title="Goal Planner"
                             desc="Set financial goals — dream home, retirement, travel — and track your progress with smart milestones."
-                            color="bg-fuchsia-500/10"
+                            color="bg-orange-500/10"
                         />
                         <FeatureCard
                             icon={<FileText size={24} className="text-amber-400" />}
@@ -271,7 +271,7 @@ const LandingPage: React.FC = () => {
 
                     <div className="flex flex-col md:flex-row gap-8 md:gap-6 relative stagger-children">
                         {/* Connecting Line (Desktop) */}
-                        <div className="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-px border-t-2 border-dashed border-slate-700 -translate-y-1/2 pointer-events-none" />
+                        <div className="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-px border-t-2 border-dashed border-zinc-700 -tranzinc-y-1/2 pointer-events-none" />
 
                         <StepCard
                             number="1"
@@ -311,7 +311,7 @@ const LandingPage: React.FC = () => {
                         <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4">
                             Your Financial Future <br className="hidden md:block" />Starts with <span className="gradient-text">₹0</span>
                         </h2>
-                        <p className="text-slate-400 text-lg mb-8 max-w-md mx-auto">
+                        <p className="text-zinc-400 text-lg mb-8 max-w-md mx-auto">
                             No credit card required. No hidden fees. Just smarter money management.
                         </p>
                         <button
@@ -322,7 +322,7 @@ const LandingPage: React.FC = () => {
                         </button>
 
                         {/* Trust Badges */}
-                        <div className="mt-10 flex flex-wrap justify-center gap-6 text-slate-500 text-xs font-medium">
+                        <div className="mt-10 flex flex-wrap justify-center gap-6 text-zinc-500 text-xs font-medium">
                             <span className="flex items-center gap-1.5"><Lock size={12} /> 256-bit SSL</span>
                             <span className="flex items-center gap-1.5"><Shield size={12} /> RBI Compliant</span>
                             <span className="flex items-center gap-1.5"><Globe size={12} /> No Hidden Fees</span>
@@ -332,13 +332,13 @@ const LandingPage: React.FC = () => {
             </RevealSection>
 
             {/* ═══ FOOTER ═══ */}
-            <footer className="py-10 px-4 border-t border-slate-800/50">
+            <footer className="py-10 px-4 border-t border-zinc-800/50">
                 <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-sm">₹</div>
                         <span className="text-white font-bold text-lg">RupeeWise</span>
                     </div>
-                    <p className="text-slate-500 text-sm">© 2026 RupeeWise. Built with ❤️ for India.</p>
+                    <p className="text-zinc-500 text-sm">© 2026 RupeeWise. Built with ❤️ for India.</p>
                 </div>
             </footer>
         </div>

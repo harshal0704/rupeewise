@@ -139,23 +139,23 @@ const MarketHub: React.FC = () => {
                 <h1 className="text-3xl font-bold text-white flex items-center gap-2 mb-2">
                     <LineChartIcon className="text-primary" /> Market Hub
                 </h1>
-                <p className="text-slate-400 mb-6">Advanced Trading Simulator & Analysis</p>
+                <p className="text-zinc-400 mb-6">Advanced Trading Simulator & Analysis</p>
 
                 {/* Ticker Tape */}
-                <div className="rounded-xl overflow-hidden border border-slate-700/50 shadow-lg">
+                <div className="rounded-xl overflow-hidden border border-zinc-700/50 shadow-lg">
                     <TickerTape />
                 </div>
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex border-b border-slate-700/50 overflow-x-auto gap-6 mt-6">
+            <div className="flex border-b border-zinc-700/50 overflow-x-auto gap-6 mt-6">
                 {['stocks', 'crypto', 'screener'].map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab as any)}
                         className={`pb-3 px-2 text-sm font-semibold capitalize transition-all border-b-2 ${activeTab === tab
                             ? 'border-primary text-primary'
-                            : 'border-transparent text-slate-400 hover:text-white'
+                            : 'border-transparent text-zinc-400 hover:text-white'
                             }`}
                     >
                         {tab}
@@ -182,13 +182,13 @@ const MarketHub: React.FC = () => {
                                         type="text"
                                         value={ticker}
                                         onChange={(e) => setTicker(e.target.value.toUpperCase())}
-                                        className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-xl outline-none focus:border-primary w-32 font-bold"
+                                        className="bg-zinc-900 border border-zinc-700 text-white px-4 py-2 rounded-xl outline-none focus:border-primary w-32 font-bold"
                                         placeholder="SYMBOL"
                                     />
                                     <select
                                         value={duration}
                                         onChange={(e) => setDuration(e.target.value)}
-                                        className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-xl outline-none focus:border-primary"
+                                        className="bg-zinc-900 border border-zinc-700 text-white px-4 py-2 rounded-xl outline-none focus:border-primary"
                                     >
                                         <option value="1 Year">1 Year</option>
                                         <option value="5 Year">5 Years</option>
@@ -210,7 +210,7 @@ const MarketHub: React.FC = () => {
                                     <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                         <Bot size={20} className="text-accent" /> AI Market Analysis
                                     </h3>
-                                    <div className="prose prose-invert prose-sm max-w-none text-slate-300">
+                                    <div className="prose prose-invert prose-sm max-w-none text-zinc-300">
                                         <div className="whitespace-pre-line leading-relaxed">
                                             {result.analysis}
                                         </div>
@@ -224,35 +224,35 @@ const MarketHub: React.FC = () => {
                             {/* Trading Panel */}
                             <div className="glass-panel p-6 rounded-3xl">
                                 <h3 className="text-lg font-bold text-white mb-4">Place Order</h3>
-                                <div className="flex gap-2 mb-4 p-1 bg-slate-800 rounded-xl">
+                                <div className="flex gap-2 mb-4 p-1 bg-zinc-800 rounded-xl">
                                     <button className="flex-1 py-2 rounded-lg bg-green-500/20 text-green-400 font-bold hover:bg-green-500/30 transition-colors">Buy</button>
-                                    <button className="flex-1 py-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">Sell</button>
+                                    <button className="flex-1 py-2 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">Sell</button>
                                 </div>
 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="text-xs text-slate-500 font-semibold uppercase">Quantity</label>
+                                        <label className="text-xs text-zinc-500 font-semibold uppercase">Quantity</label>
                                         <input
                                             type="number"
                                             min="1"
                                             value={orderQuantity}
                                             onChange={(e) => setOrderQuantity(parseInt(e.target.value) || 0)}
-                                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary mt-1"
+                                            className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary mt-1"
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-slate-500 font-semibold uppercase">Price Limit (₹)</label>
+                                        <label className="text-xs text-zinc-500 font-semibold uppercase">Price Limit (₹)</label>
                                         <input
                                             type="number"
                                             value={orderPrice}
                                             onChange={(e) => setOrderPrice(e.target.value)}
-                                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary mt-1"
+                                            className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white outline-none focus:border-primary mt-1"
                                             placeholder="Market Price"
                                         />
                                     </div>
 
-                                    <div className="pt-4 border-t border-slate-700/50 flex justify-between items-center text-sm">
-                                        <span className="text-slate-400">Margin Required</span>
+                                    <div className="pt-4 border-t border-zinc-700/50 flex justify-between items-center text-sm">
+                                        <span className="text-zinc-400">Margin Required</span>
                                         <span className="text-white font-bold">₹2,450.00</span>
                                     </div>
 
@@ -278,7 +278,7 @@ const MarketHub: React.FC = () => {
                                             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                                         </div>
                                     ) : news.length === 0 ? (
-                                        <p className="text-slate-500 text-center py-4">No recent news found.</p>
+                                        <p className="text-zinc-500 text-center py-4">No recent news found.</p>
                                     ) : (
                                         news.map((item, idx) => (
                                             <a
@@ -286,17 +286,17 @@ const MarketHub: React.FC = () => {
                                                 href={item.link}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="block group cursor-pointer border-b border-slate-800 pb-4 last:border-0"
+                                                className="block group cursor-pointer border-b border-zinc-800 pb-4 last:border-0"
                                             >
                                                 <div className="flex gap-3">
                                                     {/* Image removed as EODHD doesn't always provide it reliably in free tier or formatted nicely */}
                                                     <div>
-                                                        <p className="text-sm text-slate-300 group-hover:text-primary transition-colors line-clamp-3 font-medium">
+                                                        <p className="text-sm text-zinc-300 group-hover:text-primary transition-colors line-clamp-3 font-medium">
                                                             {item.title}
                                                         </p>
                                                         <div className="flex items-center justify-between mt-2">
-                                                            <span className="text-[10px] text-slate-500 uppercase tracking-wider">EODHD</span>
-                                                            <span className="text-[10px] text-slate-600">
+                                                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">EODHD</span>
+                                                            <span className="text-[10px] text-zinc-600">
                                                                 {new Date(item.date).toLocaleDateString()}
                                                             </span>
                                                         </div>
@@ -316,7 +316,7 @@ const MarketHub: React.FC = () => {
                     <div className="lg:col-span-3">
                         <div className="glass-panel p-8 rounded-3xl text-center max-w-3xl mx-auto mb-12">
                             <h2 className="text-3xl font-bold text-white mb-4">AI Stock Screener</h2>
-                            <p className="text-slate-400 mb-8">Find hidden gems using natural language. Try "High growth IT stocks with low debt".</p>
+                            <p className="text-zinc-400 mb-8">Find hidden gems using natural language. Try "High growth IT stocks with low debt".</p>
 
                             <form onSubmit={handleScreenerSearch} className="relative max-w-xl mx-auto">
                                 <input
@@ -324,7 +324,7 @@ const MarketHub: React.FC = () => {
                                     value={screenerQuery}
                                     onChange={(e) => setScreenerQuery(e.target.value)}
                                     placeholder="Describe your strategy..."
-                                    className="w-full pl-6 pr-14 py-4 rounded-full bg-slate-900 border border-slate-700 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                    className="w-full pl-6 pr-14 py-4 rounded-full bg-zinc-900 border border-zinc-700 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                                 />
                                 <button
                                     type="submit"
@@ -343,13 +343,13 @@ const MarketHub: React.FC = () => {
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <h4 className="font-bold text-xl text-white group-hover:text-primary transition-colors">{item.symbol}</h4>
-                                                <p className="text-xs text-slate-400">{item.name}</p>
+                                                <p className="text-xs text-zinc-400">{item.name}</p>
                                             </div>
-                                            <span className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-lg border border-slate-700">
+                                            <span className="bg-zinc-800 text-white text-xs font-bold px-3 py-1 rounded-lg border border-zinc-700">
                                                 {item.price}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-slate-300 leading-relaxed border-t border-slate-700/50 pt-4">
+                                        <p className="text-sm text-zinc-300 leading-relaxed border-t border-zinc-700/50 pt-4">
                                             {item.reasoning}
                                         </p>
                                     </div>

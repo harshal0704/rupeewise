@@ -49,33 +49,33 @@ const InvestmentSimulator: React.FC = () => {
             <h1 className="text-3xl font-bold text-white flex items-center gap-2">
               <TrendingUp className="text-emerald-400" /> Investment Simulator
             </h1>
-            <p className="text-slate-400">Visualize how your money grows with compounding power.</p>
+            <p className="text-zinc-400">Visualize how your money grows with compounding power.</p>
           </div>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Controls */}
-        <div className="bg-slate-900/50 p-6 rounded-xl shadow-sm border border-slate-700 space-y-6 h-fit">
-          <div className="flex bg-slate-800 p-1 rounded-lg">
+        <div className="bg-zinc-900/50 p-6 rounded-xl shadow-sm border border-zinc-700 space-y-6 h-fit">
+          <div className="flex bg-zinc-800 p-1 rounded-lg">
             <button
               onClick={() => setType('SIP')}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${type === 'SIP' ? 'bg-indigo-600 shadow text-white' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${type === 'SIP' ? 'bg-amber-600 shadow text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
               SIP
             </button>
             <button
               onClick={() => setType('Lumpsum')}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${type === 'Lumpsum' ? 'bg-indigo-600 shadow text-white' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${type === 'Lumpsum' ? 'bg-amber-600 shadow text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
               Lumpsum
             </button>
           </div>
 
           <div>
-            <label className="flex justify-between text-sm font-medium text-slate-300 mb-2">
+            <label className="flex justify-between text-sm font-medium text-zinc-300 mb-2">
               <span>{type === 'SIP' ? 'Monthly Investment' : 'Total Investment'}</span>
-              <span className="text-indigo-600">₹{amount.toLocaleString('en-IN')}</span>
+              <span className="text-amber-600">₹{amount.toLocaleString('en-IN')}</span>
             </label>
             <input
               type="range"
@@ -84,14 +84,14 @@ const InvestmentSimulator: React.FC = () => {
               step={type === 'SIP' ? 500 : 5000}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
-              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
             />
           </div>
 
           <div>
-            <label className="flex justify-between text-sm font-medium text-slate-300 mb-2">
+            <label className="flex justify-between text-sm font-medium text-zinc-300 mb-2">
               <span>Time Period</span>
-              <span className="text-indigo-600">{years} Years</span>
+              <span className="text-amber-600">{years} Years</span>
             </label>
             <input
               type="range"
@@ -99,14 +99,14 @@ const InvestmentSimulator: React.FC = () => {
               max="40"
               value={years}
               onChange={(e) => setYears(Number(e.target.value))}
-              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
             />
           </div>
 
           <div>
-            <label className="flex justify-between text-sm font-medium text-slate-300 mb-2">
+            <label className="flex justify-between text-sm font-medium text-zinc-300 mb-2">
               <span>Expected Annual Return</span>
-              <span className="text-indigo-600">{returnRate}%</span>
+              <span className="text-amber-600">{returnRate}%</span>
             </label>
             <input
               type="range"
@@ -115,28 +115,28 @@ const InvestmentSimulator: React.FC = () => {
               step="0.5"
               value={returnRate}
               onChange={(e) => setReturnRate(Number(e.target.value))}
-              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
             />
           </div>
 
           <div className="pt-4 border-t border-gray-100">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-slate-400 text-sm">Invested Amount</span>
+              <span className="text-zinc-400 text-sm">Invested Amount</span>
               <span className="font-semibold text-white">₹{totalInvested.toLocaleString('en-IN')}</span>
             </div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-slate-400 text-sm">Est. Returns</span>
+              <span className="text-zinc-400 text-sm">Est. Returns</span>
               <span className="font-semibold text-emerald-400">+₹{totalGain.toLocaleString('en-IN')}</span>
             </div>
-            <div className="flex justify-between items-center mt-4 pt-4 border-t border-dashed border-slate-700">
+            <div className="flex justify-between items-center mt-4 pt-4 border-t border-dashed border-zinc-700">
               <span className="text-lg font-bold text-white">Total Value</span>
-              <span className="text-2xl font-bold text-indigo-400">₹{totalValue.toLocaleString('en-IN')}</span>
+              <span className="text-2xl font-bold text-amber-400">₹{totalValue.toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>
 
         {/* Chart */}
-        <div className="lg:col-span-2 bg-slate-900/50 p-6 rounded-xl shadow-sm border border-slate-700 flex flex-col">
+        <div className="lg:col-span-2 bg-zinc-900/50 p-6 rounded-xl shadow-sm border border-zinc-700 flex flex-col">
           <h3 className="text-lg font-semibold text-white mb-6">Wealth Projection</h3>
           <div className="flex-1 min-h-[400px]">
             <ResponsiveContainer width="100%" height="100%">

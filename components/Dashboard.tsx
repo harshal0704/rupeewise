@@ -23,7 +23,7 @@ const QuickAction: React.FC<{ to: string; icon: React.ReactNode; label: string; 
     <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${color}`}>
       {icon}
     </div>
-    <span className="text-xs font-semibold text-slate-300 group-hover:text-white transition-colors whitespace-nowrap">{label}</span>
+    <span className="text-xs font-semibold text-zinc-300 group-hover:text-white transition-colors whitespace-nowrap">{label}</span>
   </Link>
 );
 
@@ -148,14 +148,14 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
+            <div className="flex items-center gap-2 text-zinc-400 text-sm mb-2">
               <Calendar size={14} />
               <span>{getFormattedDate()}</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
               {getGreeting()}, <span className="gradient-text">{userName}</span> 👋
             </h1>
-            <p className="text-slate-400 mt-1 font-medium">Your financial command center is ready.</p>
+            <p className="text-zinc-400 mt-1 font-medium">Your financial command center is ready.</p>
           </div>
 
           {/* Wealth Pulse Card */}
@@ -168,7 +168,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
               backgroundSize: '200px 60px',
             }} />
             <div className="relative z-10">
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Net Worth</p>
+              <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold mb-1">Net Worth</p>
               <p className="text-3xl font-extrabold text-white stat-counter">₹{balance.toLocaleString('en-IN')}</p>
               <div className="flex items-center gap-1 mt-1">
                 <TrendingUp size={12} className="text-green-400" />
@@ -182,8 +182,8 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
       {/* ═══ QUICK ACTIONS ═══ */}
       <div className="flex gap-3 overflow-x-auto pb-1 animate-fade-in-up" style={{ animationDelay: '100ms', scrollbarWidth: 'none' }}>
         <QuickAction to="/upi" icon={<Plus size={20} className="text-emerald-400" />} label="Add Transaction" color="bg-emerald-500/10" />
-        <QuickAction to="/stocks" icon={<LineChart size={20} className="text-cyan-400" />} label="Check Markets" color="bg-cyan-500/10" />
-        <QuickAction to="/goals" icon={<Target size={20} className="text-fuchsia-400" />} label="Set Goal" color="bg-fuchsia-500/10" />
+        <QuickAction to="/stocks" icon={<LineChart size={20} className="text-emerald-400" />} label="Check Markets" color="bg-emerald-500/10" />
+        <QuickAction to="/goals" icon={<Target size={20} className="text-orange-400" />} label="Set Goal" color="bg-orange-500/10" />
         <QuickAction to="/coach" icon={<Bot size={20} className="text-primary" />} label="Ask Coach" color="bg-primary/10" />
       </div>
 
@@ -200,7 +200,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
                 <TrendingUp size={12} className="mr-1" /> +12.5% this month
               </p>
             </div>
-            <select className="bg-surface-2 border border-slate-700/50 text-slate-400 text-xs rounded-lg px-3 py-1.5 outline-none focus:border-primary">
+            <select className="bg-surface-2 border border-zinc-700/50 text-zinc-400 text-xs rounded-lg px-3 py-1.5 outline-none focus:border-primary">
               <option>6 Months</option>
               <option>1 Year</option>
             </select>
@@ -249,12 +249,12 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
                 </div>
               </div>
               <h3 className="text-base font-bold text-white mb-0.5">{topGoal.title}</h3>
-              <p className="text-xs text-slate-400">₹{topGoal.current_amount?.toLocaleString()} / ₹{topGoal.target_amount?.toLocaleString()}</p>
+              <p className="text-xs text-zinc-400">₹{topGoal.current_amount?.toLocaleString()} / ₹{topGoal.target_amount?.toLocaleString()}</p>
             </div>
           ) : (
             <div className="text-center py-6">
               <p className="text-4xl mb-2">🎯</p>
-              <p className="text-slate-400 text-sm mb-3">No goals set yet</p>
+              <p className="text-zinc-400 text-sm mb-3">No goals set yet</p>
               <Link to="/goals" className="text-primary text-xs font-bold hover:text-primary/80 transition-colors">Create One →</Link>
             </div>
           )}
@@ -265,7 +265,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
           {/* Income */}
           <div className="glass-panel p-5 rounded-2xl flex items-center justify-between">
             <div>
-              <p className="text-slate-400 text-xs mb-1 font-medium">Monthly Income</p>
+              <p className="text-zinc-400 text-xs mb-1 font-medium">Monthly Income</p>
               <p className="text-2xl font-extrabold text-white stat-counter">₹{totalIncome.toLocaleString('en-IN')}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
@@ -275,7 +275,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
           {/* Expenses */}
           <div className="glass-panel p-5 rounded-2xl flex items-center justify-between">
             <div>
-              <p className="text-slate-400 text-xs mb-1 font-medium">Monthly Expenses</p>
+              <p className="text-zinc-400 text-xs mb-1 font-medium">Monthly Expenses</p>
               <p className="text-2xl font-extrabold text-white stat-counter">₹{totalSpent.toLocaleString('en-IN')}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500">
@@ -285,10 +285,10 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
           {/* Savings Rate */}
           <div className="glass-panel p-5 rounded-2xl flex items-center justify-between">
             <div>
-              <p className="text-slate-400 text-xs mb-1 font-medium">Savings Rate</p>
+              <p className="text-zinc-400 text-xs mb-1 font-medium">Savings Rate</p>
               <p className="text-2xl font-extrabold text-white stat-counter">{savingsRate}%</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
               <TrendingUp size={20} />
             </div>
           </div>
@@ -299,10 +299,10 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/8 rounded-full blur-[50px] -mr-8 -mt-8 pointer-events-none" />
           <div className="flex items-center gap-2 mb-3 relative z-10">
             <Sparkles size={16} className="text-yellow-400" />
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Daily Insight</h3>
+            <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Daily Insight</h3>
           </div>
-          <p className="text-sm text-slate-300 leading-relaxed relative z-10 italic">"{insight}"</p>
-          <div className="mt-4 flex items-center text-primary text-xs font-bold group-hover:translate-x-1 transition-transform relative z-10">
+          <p className="text-sm text-zinc-300 leading-relaxed relative z-10 italic">"{insight}"</p>
+          <div className="mt-4 flex items-center text-primary text-xs font-bold group-hover:tranzinc-x-1 transition-transform relative z-10">
             Ask Coach <ChevronRight size={14} className="ml-1" />
           </div>
         </div>
@@ -330,7 +330,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-center text-slate-600">
+              <div className="text-center text-zinc-600">
                 <p className="text-3xl mb-2">📊</p>
                 <p className="text-sm">No spending data yet</p>
               </div>
@@ -339,7 +339,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
           {categoryData.length > 0 && (
             <div className="grid grid-cols-2 gap-2 mt-3">
               {categoryData.slice(0, 4).map((entry, index) => (
-                <div key={index} className="flex items-center gap-2 text-xs text-slate-400">
+                <div key={index} className="flex items-center gap-2 text-xs text-zinc-400">
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                   <span className="truncate">{entry.name}</span>
                 </div>
@@ -358,17 +358,17 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
           </div>
           <div className="space-y-3">
             {localTransactions.slice(0, 5).map((t) => (
-              <div key={t.id} className="flex justify-between items-center p-2.5 hover:bg-slate-800/30 rounded-xl transition-colors group">
+              <div key={t.id} className="flex justify-between items-center p-2.5 hover:bg-zinc-800/30 rounded-xl transition-colors group">
                 <div className="flex items-center gap-3">
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${t.type === 'debit' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
                     <IndianRupee size={14} />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-slate-200 group-hover:text-white transition-colors">{t.merchant}</p>
-                    <p className="text-[10px] text-slate-500">{t.date} · {t.category}</p>
+                    <p className="font-semibold text-sm text-zinc-200 group-hover:text-white transition-colors">{t.merchant}</p>
+                    <p className="text-[10px] text-zinc-500">{t.date} · {t.category}</p>
                   </div>
                 </div>
-                <span className={`font-bold text-sm ${t.type === 'debit' ? 'text-slate-300' : 'text-green-400'}`}>
+                <span className={`font-bold text-sm ${t.type === 'debit' ? 'text-zinc-300' : 'text-green-400'}`}>
                   {t.type === 'debit' ? '-' : '+'}₹{t.amount.toLocaleString('en-IN')}
                 </span>
               </div>
@@ -376,7 +376,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
             {localTransactions.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-3xl mb-2">💳</p>
-                <p className="text-slate-500 text-sm mb-3">No transactions yet</p>
+                <p className="text-zinc-500 text-sm mb-3">No transactions yet</p>
                 <Link to="/upi" className="text-primary text-xs font-bold hover:text-primary/80 transition-colors">Add One →</Link>
               </div>
             )}

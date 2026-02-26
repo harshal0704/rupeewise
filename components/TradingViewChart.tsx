@@ -33,7 +33,7 @@ export const TradingViewChart = memo(({ symbol = "NASDAQ:AAPL" }: { symbol?: str
             <div className="tradingview-widget-container__widget" style={{ height: "calc(100% - 32px)", width: "100%" }}></div>
             <div className="tradingview-widget-copyright">
                 <a href="https://in.tradingview.com/" rel="noopener nofollow" target="_blank">
-                    <span className="blue-text">Track all markets on TradingView</span>
+                    <span className="amber-text">Track all markets on TradingView</span>
                 </a>
             </div>
         </div>

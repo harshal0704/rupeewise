@@ -44,8 +44,8 @@ const Academy: React.FC = () => {
             id: 'basics',
             title: 'Financial Basics',
             icon: 'BookOpen',
-            color: 'text-blue-400',
-            bg: 'bg-blue-500/10',
+            color: 'text-amber-400',
+            bg: 'bg-amber-500/10',
             lessons: [
                 { title: 'Understanding Inflation', duration: '5 min', url: 'https://www.investopedia.com/terms/i/inflation.asp' },
                 { title: 'Power of Compounding', duration: '8 min', url: 'https://www.investopedia.com/terms/c/compounding.asp' },
@@ -68,8 +68,8 @@ const Academy: React.FC = () => {
             id: 'tax',
             title: 'Tax Planning',
             icon: 'FileText',
-            color: 'text-purple-400',
-            bg: 'bg-purple-500/10',
+            color: 'text-yellow-400',
+            bg: 'bg-yellow-500/10',
             lessons: [
                 { title: 'Old vs New Regime', duration: '15 min', url: 'https://cleartax.in/s/old-tax-regime-vs-new-tax-regime' },
                 { title: 'Section 80C Explained', duration: '8 min', url: 'https://cleartax.in/s/80c-deductions' },
@@ -164,7 +164,7 @@ const Academy: React.FC = () => {
                 <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                     <GraduationCap className="text-primary" /> RupeeWise Academy
                 </h1>
-                <p className="text-slate-400">Master your money with bite-sized lessons and AI tutoring.</p>
+                <p className="text-zinc-400">Master your money with bite-sized lessons and AI tutoring.</p>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -181,7 +181,7 @@ const Academy: React.FC = () => {
                             <input
                                 type="text"
                                 placeholder="Generate a full course on any topic (e.g. 'Bitcoin', 'Forex', 'Options')"
-                                className="flex-1 bg-transparent border-none outline-none text-white placeholder-slate-400 text-sm"
+                                className="flex-1 bg-transparent border-none outline-none text-white placeholder-zinc-400 text-sm"
                                 value={courseTopic}
                                 onChange={e => setCourseTopic(e.target.value)}
                             />
@@ -203,13 +203,13 @@ const Academy: React.FC = () => {
                                     {renderIcon(module.icon, module.color)}
                                 </div>
                                 <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors">{module.title}</h3>
-                                {module.description && <p className="text-xs text-slate-400 mb-4 line-clamp-2">{module.description}</p>}
+                                {module.description && <p className="text-xs text-zinc-400 mb-4 line-clamp-2">{module.description}</p>}
                                 <div className="space-y-3">
                                     {module.lessons.map((lesson: any, i: number) => (
                                         <div
                                             key={i}
                                             onClick={() => handleLessonClick(lesson)}
-                                            className="flex justify-between items-center text-sm text-slate-400 hover:text-white transition-colors p-2 hover:bg-slate-800/50 rounded-lg cursor-pointer group/lesson"
+                                            className="flex justify-between items-center text-sm text-zinc-400 hover:text-white transition-colors p-2 hover:bg-zinc-800/50 rounded-lg cursor-pointer group/lesson"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <PlayCircle size={14} className="group-hover/lesson:text-primary transition-colors" />
@@ -221,7 +221,7 @@ const Academy: React.FC = () => {
                                 </div>
                                 <button
                                     onClick={() => handleLessonClick(module.lessons[0])}
-                                    className="block w-full text-center mt-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                                    className="block w-full text-center mt-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold rounded-lg transition-colors"
                                 >
                                     Start Learning
                                 </button>
@@ -233,14 +233,14 @@ const Academy: React.FC = () => {
                 {/* Side Panel: AI + Quiz */}
                 <div className="space-y-6">
                     {/* AI Tutor */}
-                    <div className="glass-panel p-6 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-900/50 border-primary/20">
+                    <div className="glass-panel p-6 rounded-3xl bg-gradient-to-b from-zinc-900 to-zinc-900/50 border-primary/20">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/30">
                                 <Brain size={20} />
                             </div>
                             <div>
                                 <h3 className="font-bold text-white">AI Tutor</h3>
-                                <p className="text-xs text-slate-400">Ask anything, get simple answers.</p>
+                                <p className="text-xs text-zinc-400">Ask anything, get simple answers.</p>
                             </div>
                         </div>
 
@@ -251,7 +251,7 @@ const Academy: React.FC = () => {
                                     value={aiQuery}
                                     onChange={(e) => setAiQuery(e.target.value)}
                                     placeholder="e.g. What is a PE ratio?"
-                                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-primary outline-none pr-10"
+                                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm focus:border-primary outline-none pr-10"
                                 />
                                 <button
                                     type="submit"
@@ -270,8 +270,8 @@ const Academy: React.FC = () => {
                         )}
 
                         {aiResponse && (
-                            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 animate-fade-in max-h-60 overflow-y-auto custom-scrollbar">
-                                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+                            <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700 animate-fade-in max-h-60 overflow-y-auto custom-scrollbar">
+                                <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
                                 <button
                                     onClick={() => { setAiQuery(''); setAiResponse(''); }}
                                     className="mt-3 text-xs text-primary hover:underline flex items-center gap-1"
@@ -282,7 +282,7 @@ const Academy: React.FC = () => {
                         )}
 
                         {!aiResponse && !loading && (
-                            <div className="text-center py-8 text-slate-500">
+                            <div className="text-center py-8 text-zinc-500">
                                 <HelpCircle size={32} className="mx-auto mb-2 opacity-20" />
                                 <p className="text-sm">Try asking: "How does SIP work?"</p>
                             </div>
@@ -299,7 +299,7 @@ const Academy: React.FC = () => {
                                     <Award className="text-accent" size={20} />
                                     <h3 className="font-bold text-white">Daily Quiz</h3>
                                 </div>
-                                <p className="text-sm text-slate-300 mb-6">Test your knowledge on Finance and earn XP!</p>
+                                <p className="text-sm text-zinc-300 mb-6">Test your knowledge on Finance and earn XP!</p>
                                 <button
                                     onClick={() => setQuizStarted(true)}
                                     className="w-full py-2 bg-accent hover:bg-accent/80 text-white font-bold rounded-xl transition-colors shadow-lg shadow-accent/20"
@@ -311,17 +311,17 @@ const Academy: React.FC = () => {
                             <div className="text-center animate-fade-in">
                                 <Award className="text-yellow-400 mx-auto mb-2" size={48} />
                                 <h3 className="text-xl font-bold text-white mb-2">Quiz Complete!</h3>
-                                <p className="text-slate-300 mb-4">You scored <span className="text-primary font-bold">{score}/{quizQuestions.length}</span></p>
+                                <p className="text-zinc-300 mb-4">You scored <span className="text-primary font-bold">{score}/{quizQuestions.length}</span></p>
                                 <button
                                     onClick={resetQuiz}
-                                    className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors"
+                                    className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-colors"
                                 >
                                     Done
                                 </button>
                             </div>
                         ) : (
                             <div className="animate-fade-in w-full">
-                                <div className="flex justify-between items-center mb-4 text-xs text-slate-400">
+                                <div className="flex justify-between items-center mb-4 text-xs text-zinc-400">
                                     <span>Question {currentQuestion + 1}/{quizQuestions.length}</span>
                                     <span>Score: {score}</span>
                                 </div>
@@ -336,7 +336,7 @@ const Academy: React.FC = () => {
                                                 ? idx === quizQuestions[currentQuestion].correct
                                                     ? 'bg-green-500/20 text-green-300 border border-green-500/50'
                                                     : 'bg-red-500/20 text-red-300 border border-red-500/50'
-                                                : 'bg-slate-800/50 hover:bg-slate-800 text-slate-300'
+                                                : 'bg-zinc-800/50 hover:bg-zinc-800 text-zinc-300'
                                                 }`}
                                         >
                                             <div className="flex justify-between items-center">
@@ -358,16 +358,16 @@ const Academy: React.FC = () => {
 
             {/* Lesson Reader Modal */}
             {selectedLesson && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
-                    <div className="bg-slate-900 w-full max-w-3xl rounded-2xl border border-slate-700 shadow-2xl flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 rounded-t-2xl z-10">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/90 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-zinc-900 w-full max-w-3xl rounded-2xl border border-zinc-700 shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-zinc-800 flex justify-between items-center sticky top-0 bg-zinc-900 rounded-t-2xl z-10">
                             <div>
                                 <h2 className="text-2xl font-bold text-white">{selectedLesson.title}</h2>
                                 <span className="text-sm text-primary font-medium">{selectedLesson.duration} Read</span>
                             </div>
                             <button
                                 onClick={() => setSelectedLesson(null)}
-                                className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-white"
+                                className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-white"
                             >
                                 <X size={24} />
                             </button>
@@ -379,7 +379,7 @@ const Academy: React.FC = () => {
                                 </div>
                             </article>
                         </div>
-                        <div className="p-6 border-t border-slate-800 bg-slate-900/50 rounded-b-2xl flex justify-end">
+                        <div className="p-6 border-t border-zinc-800 bg-zinc-900/50 rounded-b-2xl flex justify-end">
                             <button
                                 onClick={() => setSelectedLesson(null)}
                                 className="px-6 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-glow transition-all"

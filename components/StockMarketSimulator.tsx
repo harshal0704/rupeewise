@@ -89,7 +89,7 @@ const StockMarketSimulator: React.FC = () => {
     <div className="space-y-8 animate-fade-in">
       <header className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-          <LineChartIcon className="text-blue-600" /> Market Lab
+          <LineChartIcon className="text-amber-600" /> Market Lab
         </h1>
         <p className="text-gray-600">Advanced AI tools for backtesting strategies and finding opportunities.</p>
       </header>
@@ -98,19 +98,19 @@ const StockMarketSimulator: React.FC = () => {
       <div className="flex border-b border-gray-200 overflow-x-auto">
         <button
           onClick={() => setActiveTab('backtest')}
-          className={`pb-4 px-6 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'backtest' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          className={`pb-4 px-6 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'backtest' ? 'border-amber-600 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           Strategy Backtest
         </button>
         <button
           onClick={() => setActiveTab('screener')}
-          className={`pb-4 px-6 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'screener' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          className={`pb-4 px-6 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'screener' ? 'border-amber-600 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
-          AI Stock Screener <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded ml-2">NEW</span>
+          AI Stock Screener <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded ml-2">NEW</span>
         </button>
         <button
           onClick={() => setActiveTab('compare')}
-          className={`pb-4 px-6 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'compare' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          className={`pb-4 px-6 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'compare' ? 'border-amber-600 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           Stock Comparison
         </button>
@@ -130,7 +130,7 @@ const StockMarketSimulator: React.FC = () => {
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
                     placeholder="e.g., Reliance, TCS, Nifty 50"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow"
                     required
                   />
                 </div>
@@ -141,7 +141,7 @@ const StockMarketSimulator: React.FC = () => {
                     value={strategy}
                     onChange={(e) => setStrategy(e.target.value)}
                     placeholder="e.g., SIP of ₹5000/month, Buy ₹1L when it falls 5%..."
-                    className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none transition-shadow"
+                    className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none resize-none transition-shadow"
                     required
                   />
                 </div>
@@ -151,7 +151,7 @@ const StockMarketSimulator: React.FC = () => {
                   <select
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                   >
                     <option value="6 Months">6 Months</option>
                     <option value="1 Year">1 Year</option>
@@ -163,7 +163,7 @@ const StockMarketSimulator: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70 flex justify-center items-center"
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70 flex justify-center items-center"
                 >
                   {loading ? (
                     <>
@@ -219,7 +219,7 @@ const StockMarketSimulator: React.FC = () => {
 
             <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <Bot className="mr-2 text-indigo-600" /> AI Analysis
+                <Bot className="mr-2 text-amber-600" /> AI Analysis
               </h3>
               {!result && !loading && (
                 <p className="text-gray-400 italic">Analysis will appear here after simulation.</p>
@@ -249,7 +249,7 @@ const StockMarketSimulator: React.FC = () => {
 
       {activeTab === 'screener' && (
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 animate-fade-in-up">
-          <div className="bg-white p-8 rounded-xl shadow-lg border border-blue-50">
+          <div className="bg-white p-8 rounded-xl shadow-lg border border-amber-50">
             <div className="max-w-3xl mx-auto text-center mb-10">
               <h2 className="text-2xl font-bold text-gray-900 mb-3">Smart Stock Screener</h2>
               <p className="text-gray-600 mb-6">Ask complex queries like <span className="italic text-gray-800">"Undervalued IT stocks with high ROCE"</span>.</p>
@@ -259,12 +259,12 @@ const StockMarketSimulator: React.FC = () => {
                   value={screenerQuery}
                   onChange={(e) => setScreenerQuery(e.target.value)}
                   placeholder="Describe what you are looking for..."
-                  className="w-full pl-6 pr-14 py-4 rounded-full border border-gray-300 shadow-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-lg text-gray-900 transition-all"
+                  className="w-full pl-6 pr-14 py-4 rounded-full border border-gray-300 shadow-sm focus:ring-4 focus:ring-amber-100 focus:border-amber-500 outline-none text-lg text-gray-900 transition-all"
                 />
                 <button
                   type="submit"
                   disabled={!screenerQuery || screenerLoading}
-                  className="absolute right-2 top-2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  className="absolute right-2 top-2 p-2 bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors disabled:bg-gray-400"
                 >
                   {screenerLoading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Search size={24} />}
                 </button>
@@ -273,11 +273,11 @@ const StockMarketSimulator: React.FC = () => {
 
             {screenerResult && (
               <div className="space-y-8">
-                <div className="bg-blue-50 border border-blue-100 p-6 rounded-xl">
-                  <h3 className="text-blue-900 font-semibold mb-2 flex items-center">
+                <div className="bg-amber-50 border border-amber-100 p-6 rounded-xl">
+                  <h3 className="text-amber-900 font-semibold mb-2 flex items-center">
                     <TrendingUp size={18} className="mr-2" /> Market Outlook
                   </h3>
-                  <p className="text-blue-800 leading-relaxed">{screenerResult.summary}</p>
+                  <p className="text-amber-800 leading-relaxed">{screenerResult.summary}</p>
                 </div>
 
                 <div>
@@ -287,7 +287,7 @@ const StockMarketSimulator: React.FC = () => {
                       <div key={idx} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow group">
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h4 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{item.symbol}</h4>
+                            <h4 className="font-bold text-lg text-gray-900 group-hover:text-amber-600 transition-colors">{item.symbol}</h4>
                             <p className="text-xs text-gray-500 font-medium">{item.name}</p>
                           </div>
                           <span className="bg-gray-100 text-gray-800 text-xs font-bold px-2 py-1 rounded">
@@ -310,7 +310,7 @@ const StockMarketSimulator: React.FC = () => {
       {activeTab === 'compare' && (
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 animate-fade-in-up">
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center"><GitCompare className="mr-2 text-indigo-600" /> Compare Performance (Last 1 Year)</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center"><GitCompare className="mr-2 text-amber-600" /> Compare Performance (Last 1 Year)</h2>
 
             <div className="flex gap-2 mb-6 max-w-lg">
               <div className="relative flex-1">
@@ -320,9 +320,9 @@ const StockMarketSimulator: React.FC = () => {
                   onChange={(e) => setCompareInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addCompareStock()}
                   placeholder="Add stock symbol (e.g. RELIANCE)"
-                  className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
-                <button onClick={addCompareStock} className="absolute right-2 top-2 p-1 text-indigo-600 hover:bg-indigo-100 rounded-md">
+                <button onClick={addCompareStock} className="absolute right-2 top-2 p-1 text-amber-600 hover:bg-amber-100 rounded-md">
                   <Plus size={20} />
                 </button>
               </div>
@@ -330,13 +330,13 @@ const StockMarketSimulator: React.FC = () => {
 
             <div className="flex flex-wrap gap-2 mb-6">
               {compareStocks.map(s => (
-                <div key={s} className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
+                <div key={s} className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
                   {s}
-                  <button onClick={() => removeCompareStock(s)} className="ml-2 hover:text-indigo-900"><X size={14} /></button>
+                  <button onClick={() => removeCompareStock(s)} className="ml-2 hover:text-amber-900"><X size={14} /></button>
                 </div>
               ))}
               {compareStocks.length > 0 && (
-                <button onClick={runComparison} disabled={compareLoading || compareStocks.length < 2} className="px-4 py-1 bg-indigo-600 text-white rounded-full text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50">
+                <button onClick={runComparison} disabled={compareLoading || compareStocks.length < 2} className="px-4 py-1 bg-amber-600 text-white rounded-full text-sm font-semibold hover:bg-amber-700 disabled:opacity-50">
                   {compareLoading ? 'Loading...' : 'Run Comparison'}
                 </button>
               )}
