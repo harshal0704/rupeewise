@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TaxRegime, ITRDocument, Invoice } from '../types';
-import { explainTaxLiablity, parseITRDocument, parseInvoice, calculateTaxEstimate } from '../services/geminiService';
+import { explainTaxLiablity, parseITRDocument, parseInvoice, calculateTaxEstimate, getTaxOptimizationAdvice } from '../services/geminiService';
 import { api } from '../services/api';
 import { MarkdownRenderer } from '../services/markdownRenderer';
 import {
   FileText, Bot, HelpCircle, Calculator, ChevronRight, RefreshCw, CheckCircle, AlertTriangle,
   Upload, FileSearch, Receipt, TrendingUp, Archive, Trash2, Eye, ChevronDown,
   IndianRupee, BarChart3, Shield, Zap, Clock, Check, X, Building2,
-  Briefcase, Home, Coins, PiggyBank, Heart, GraduationCap, Gift, Landmark, Star
+  Briefcase, Home, Coins, PiggyBank, Heart, GraduationCap, Gift, Landmark, Star,
+  Download, PieChart, Info, Lightbulb, TrendingDown, Award
 } from 'lucide-react';
 
 // ─── Tab Type ───
-type CATab = 'calculator' | 'itr' | 'invoices' | 'meter';
+type CATab = 'calculator' | 'optimizer' | 'calendar' | 'itr' | 'invoices' | 'meter';
 
 // ─── Format Indian Currency ───
 const formatINR = (n: number) => n ? `₹${n.toLocaleString('en-IN')}` : '₹0';
@@ -20,11 +21,26 @@ const TaxSimplifier: React.FC = () => {
   const [activeTab, setActiveTab] = useState<CATab>('calculator');
 
   // ─── Calculator State ───
-  const [income, setIncome] = useState({ salary: 0, business: 0, capitalGains: 0, houseProperty: 0, other: 0 });
-  const [deductions, setDeductions] = useState({ section80C: 0, section80D: 0, section80E: 0, section80G: 0, hra: 0, lta: 0, nps80CCD: 0, standardDeduction: 50000 });
+  const [fy, setFy] = useState<'2024-25' | '2025-26'>('2024-25');
+
+  // Draft income/deductions — only committed to real state on Calculate click
+  const emptyIncome = { salary: 0, business: 0, capitalGains: { stcg: 0, ltcg: 0, stcgDebt: 0, ltcgDebt: 0 }, houseProperty: 0, other: 0 };
+  const emptyDeductions = { section80C: 0, section80D: 0, section80E: 0, section80G: 0, hra: 0, lta: 0, nps80CCD: 0, homeLoanInterest24B: 0, savingsInterest80TTA: 0, standardDeduction: 50000 };
+
+  const [draftIncome, setDraftIncome] = useState(emptyIncome);
+  const [draftDeductions, setDraftDeductions] = useState(emptyDeductions);
+  // Committed state — what was last used to calculate
+  const [income, setIncome] = useState(emptyIncome);
+  const [deductions, setDeductions] = useState(emptyDeductions);
+  const [isDirty, setIsDirty] = useState(false); // true when draft !== committed
+
   const [taxResult, setTaxResult] = useState<any>(null);
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [calcLoading, setCalcLoading] = useState(false);
+
+  // ─── Optimizer State ───
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [optimizerLoading, setOptimizerLoading] = useState(false);
 
   // ─── ITR State ───
   const [itrDocs, setItrDocs] = useState<ITRDocument[]>([]);
@@ -63,8 +79,53 @@ const TaxSimplifier: React.FC = () => {
 
   // ─── Tax Calculator ───
   const handleCalculate = () => {
-    const result = calculateTaxEstimate(income, deductions);
+    // Commit draft values to real state first
+    setIncome(draftIncome);
+    setDeductions(draftDeductions);
+    setIsDirty(false);
+    // Calculate using draft values directly (state update is async)
+    const result = calculateTaxEstimate(draftIncome, draftDeductions, fy);
     setTaxResult(result);
+    setAiExplanation(null);
+  };
+
+  const handleOptimize = async () => {
+    // Commit draft first if dirty
+    const currentIncome = isDirty ? draftIncome : income;
+    const currentDeductions = isDirty ? draftDeductions : deductions;
+    const currentResult = isDirty ? calculateTaxEstimate(draftIncome, draftDeductions, fy) : taxResult;
+    if (isDirty) {
+      setIncome(currentIncome);
+      setDeductions(currentDeductions);
+      setIsDirty(false);
+      setTaxResult(currentResult);
+    }
+    setOptimizerLoading(true);
+    try {
+      // Flatten capitalGains object to a single number as the service expects
+      const flatIncome = {
+        salary: currentIncome.salary,
+        business: currentIncome.business,
+        capitalGains: currentIncome.capitalGains.stcg + currentIncome.capitalGains.ltcg +
+                      currentIncome.capitalGains.stcgDebt + currentIncome.capitalGains.ltcgDebt,
+        houseProperty: currentIncome.houseProperty,
+        other: currentIncome.other,
+      };
+      const result = await getTaxOptimizationAdvice(flatIncome, currentDeductions, currentResult?.recommended || 'New');
+      // Normalize response — service may return array or object with suggestions key
+      if (Array.isArray(result)) {
+        setSuggestions(result);
+      } else if (result && Array.isArray((result as any).suggestions)) {
+        setSuggestions((result as any).suggestions);
+      } else {
+        setSuggestions([]);
+      }
+      setActiveTab('optimizer');
+    } catch (e) {
+      console.error('Optimizer error:', e);
+      setSuggestions([]);
+    }
+    setOptimizerLoading(false);
   };
 
   const handleAIExplain = async () => {
@@ -72,7 +133,9 @@ const TaxSimplifier: React.FC = () => {
     setCalcLoading(true);
     setAiExplanation(null);
     try {
-      const grossIncome = Object.values(income).reduce((a, b) => a + b, 0);
+      const grossIncome = income.salary + income.business + income.houseProperty + income.other + 
+                          income.capitalGains.stcg + income.capitalGains.ltcg + 
+                          income.capitalGains.stcgDebt + income.capitalGains.ltcgDebt;
       const totalDed = Object.values(deductions).reduce((a, b) => a + b, 0);
       const result = await explainTaxLiablity(grossIncome, totalDed, taxResult.recommended === 'New' ? TaxRegime.NEW : TaxRegime.OLD);
       setAiExplanation(result);
@@ -151,12 +214,14 @@ const TaxSimplifier: React.FC = () => {
     try { await api.invoices.updateStatus(id, 'Approved'); setInvoices(p => p.map(i => i.id === id ? { ...i, status: 'Approved' as const } : i)); } catch (e) { console.error(e); }
   };
 
-  // ─── Live Tax Meter ───
-  const meterResult = calculateTaxEstimate(income, deductions);
+  // ─── Live Tax Meter — derived from taxResult ───
+  const meterResult = taxResult || null;
 
   // ─── Tab Buttons ───
   const tabs: { id: CATab; label: string; icon: React.ReactNode; color: string }[] = [
     { id: 'calculator', label: 'Tax Calculator', icon: <Calculator size={18} />, color: 'from-amber-500 to-yellow-500' },
+    { id: 'optimizer', label: 'AI Optimizer', icon: <Bot size={18} />, color: 'from-fuchsia-500 to-purple-500' },
+    { id: 'calendar', label: 'Tax Calendar', icon: <Clock size={18} />, color: 'from-indigo-500 to-blue-500' },
     { id: 'itr', label: 'ITR Vault', icon: <Archive size={18} />, color: 'from-blue-500 to-cyan-500' },
     { id: 'invoices', label: 'Invoice Scanner', icon: <Receipt size={18} />, color: 'from-emerald-500 to-green-500' },
     { id: 'meter', label: 'Tax Meter', icon: <Zap size={18} />, color: 'from-purple-500 to-pink-500' },
@@ -202,6 +267,27 @@ const TaxSimplifier: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column: Inputs */}
             <div className="lg:col-span-5 space-y-6">
+              
+              {/* Financial Year Selector */}
+              <div className="bg-zinc-900/80 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-zinc-700">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-zinc-400 flex items-center">
+                    <Clock className="mr-2 text-zinc-500" size={16} /> Financial Year
+                  </h2>
+                  <div className="bg-zinc-950 p-1 rounded-xl border border-zinc-800 flex">
+                    {(['2024-25', '2025-26'] as const).map(year => (
+                      <button
+                        key={year}
+                        onClick={() => setFy(year)}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${fy === year ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      >
+                        FY {year}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               {/* Income Sources */}
               <div className="bg-zinc-900/80 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-zinc-700">
                 <h2 className="text-lg font-bold text-white flex items-center mb-5">
@@ -211,7 +297,6 @@ const TaxSimplifier: React.FC = () => {
                   {[
                     { key: 'salary', label: 'Salary Income', icon: <Briefcase size={14} /> },
                     { key: 'business', label: 'Business / Profession', icon: <Building2 size={14} /> },
-                    { key: 'capitalGains', label: 'Capital Gains', icon: <TrendingUp size={14} /> },
                     { key: 'houseProperty', label: 'House Property', icon: <Home size={14} /> },
                     { key: 'other', label: 'Other Sources', icon: <Coins size={14} /> },
                   ].map(field => (
@@ -223,8 +308,8 @@ const TaxSimplifier: React.FC = () => {
                           <span className="absolute left-3 top-2.5 text-zinc-500 text-sm font-bold">₹</span>
                           <input
                             type="number"
-                            value={(income as any)[field.key] || ''}
-                            onChange={(e) => setIncome(p => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))}
+                            value={(draftIncome as any)[field.key] || ''}
+                            onChange={(e) => { setDraftIncome(p => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 })); setIsDirty(true); }}
                             className="w-full pl-7 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-amber-500 outline-none transition-all placeholder:text-zinc-800"
                             placeholder="0"
                           />
@@ -232,10 +317,51 @@ const TaxSimplifier: React.FC = () => {
                       </div>
                     </div>
                   ))}
+
+                  {/* Capital Gains Sub-fields */}
+                  <div className="border border-zinc-800 rounded-2xl p-4 bg-zinc-950/50 space-y-3">
+                    <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                      <TrendingUp size={12} /> Capital Gains breakdown
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">STCG (Equity) - 15/20%</label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-2 text-zinc-500 text-xs font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={draftIncome.capitalGains.stcg || ''}
+                            onChange={(e) => { setDraftIncome(p => ({ ...p, capitalGains: { ...p.capitalGains, stcg: parseFloat(e.target.value) || 0 } })); setIsDirty(true); }}
+                            className="w-full pl-6 pr-2 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white font-bold text-xs focus:border-amber-500 outline-none transition-all placeholder:text-zinc-700"
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">LTCG (Equity) - 10/12.5%</label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-2 text-zinc-500 text-xs font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={draftIncome.capitalGains.ltcg || ''}
+                            onChange={(e) => { setDraftIncome(p => ({ ...p, capitalGains: { ...p.capitalGains, ltcg: parseFloat(e.target.value) || 0 } })); setIsDirty(true); }}
+                            className="w-full pl-6 pr-2 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white font-bold text-xs focus:border-amber-500 outline-none transition-all placeholder:text-zinc-700"
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="mt-4 p-3 bg-emerald-900/20 rounded-xl border border-emerald-800/30 flex justify-between items-center">
                   <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Gross Total Income</span>
-                  <span className="text-lg font-extrabold text-emerald-400">{formatINR(Object.values(income).reduce((a, b) => a + b, 0))}</span>
+                  <span className="text-lg font-extrabold text-emerald-400">
+                    {formatINR(
+                      draftIncome.salary + draftIncome.business + draftIncome.houseProperty + draftIncome.other +
+                      draftIncome.capitalGains.stcg + draftIncome.capitalGains.ltcg +
+                      draftIncome.capitalGains.stcgDebt + draftIncome.capitalGains.ltcgDebt
+                    )}
+                  </span>
                 </div>
               </div>
 
@@ -248,11 +374,13 @@ const TaxSimplifier: React.FC = () => {
                   {[
                     { key: 'section80C', label: 'Section 80C', sub: 'PPF, ELSS, LIC — Max ₹1.5L', icon: <PiggyBank size={14} /> },
                     { key: 'section80D', label: 'Section 80D', sub: 'Health Insurance — Max ₹75K', icon: <Heart size={14} /> },
+                    { key: 'homeLoanInterest24B', label: 'Section 24(B)', sub: 'Home Loan Interest — Max ₹2L', icon: <Home size={14} /> },
                     { key: 'section80E', label: 'Section 80E', sub: 'Education Loan Interest', icon: <GraduationCap size={14} /> },
-                    { key: 'section80G', label: 'Section 80G', sub: 'Donations', icon: <Gift size={14} /> },
-                    { key: 'hra', label: 'HRA Exemption', sub: 'House Rent Allowance', icon: <Home size={14} /> },
                     { key: 'nps80CCD', label: '80CCD(1B)', sub: 'NPS — Additional ₹50K', icon: <Landmark size={14} /> },
-                    { key: 'standardDeduction', label: 'Standard Deduction', sub: '₹50,000 (salaried)', icon: <Star size={14} /> },
+                    { key: 'savingsInterest80TTA', label: '80TTA/TTB', sub: 'Savings Interest — Max ₹10K/50K', icon: <Coins size={14} /> },
+                    { key: 'section80G', label: 'Section 80G', sub: 'Donations', icon: <Gift size={14} /> },
+                    { key: 'hra', label: 'HRA Exemption', sub: 'House Rent Allowance', icon: <Building2 size={14} /> },
+                    { key: 'standardDeduction', label: 'Standard Deduction', sub: `${fy === '2025-26' ? '₹75,000 (New Regime only)' : '₹50,000 (New & Old)'}`, icon: <Star size={14} /> },
                   ].map(field => (
                     <div key={field.key} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">{field.icon}</div>
@@ -263,8 +391,8 @@ const TaxSimplifier: React.FC = () => {
                           <span className="absolute left-3 top-2.5 text-zinc-500 text-sm font-bold">₹</span>
                           <input
                             type="number"
-                            value={(deductions as any)[field.key] || ''}
-                            onChange={(e) => setDeductions(p => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))}
+                            value={(draftDeductions as any)[field.key] || ''}
+                            onChange={(e) => { setDraftDeductions(p => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 })); setIsDirty(true); }}
                             className="w-full pl-7 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 outline-none transition-all placeholder:text-zinc-800"
                             placeholder="0"
                           />
@@ -275,24 +403,35 @@ const TaxSimplifier: React.FC = () => {
                 </div>
                 <div className="mt-4 p-3 bg-blue-900/20 rounded-xl border border-blue-800/30 flex justify-between items-center">
                   <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Total Deductions</span>
-                  <span className="text-lg font-extrabold text-blue-400">{formatINR(Object.values(deductions).reduce((a, b) => a + b, 0))}</span>
+                  <span className="text-lg font-extrabold text-blue-400">{formatINR(Object.values(draftDeductions).reduce((a, b) => a + b, 0))}</span>
                 </div>
               </div>
 
+              {/* Dirty Indicator */}
+              {isDirty && taxResult && (
+                <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-2 text-xs font-bold text-amber-400">
+                  <Info size={14} />
+                  Income or deductions changed — click <span className="underline">Calculate Tax</span> to update results.
+                </div>
+              )}
               {/* Calculate Buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={handleCalculate}
-                  className="flex-1 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all flex justify-center items-center gap-2"
+                  className={`flex-[2] font-bold py-4 rounded-2xl shadow-lg transition-all flex justify-center items-center gap-2 text-white ${
+                    isDirty
+                      ? 'bg-gradient-to-r from-amber-500 to-yellow-500 animate-pulse'
+                      : 'bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700'
+                  }`}
                 >
                   <Calculator size={18} /> Calculate Tax
                 </button>
                 <button
-                  onClick={handleAIExplain}
-                  disabled={!taxResult || calcLoading}
-                  className="px-6 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-4 rounded-2xl border border-zinc-700 transition-all disabled:opacity-40 flex items-center gap-2"
+                  onClick={handleOptimize}
+                  disabled={calcLoading || optimizerLoading}
+                  className="flex-[1] bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all flex justify-center items-center gap-2"
                 >
-                  {calcLoading ? <RefreshCw className="animate-spin" size={16} /> : <Bot size={16} />} AI Explain
+                  {optimizerLoading ? <RefreshCw className="animate-spin" size={18} /> : <Bot size={18} />} Optimize
                 </button>
               </div>
             </div>
@@ -325,7 +464,19 @@ const TaxSimplifier: React.FC = () => {
                       </div>
                       <p className="text-3xl font-extrabold text-white mb-1">{formatINR(taxResult.newRegime.totalTax)}</p>
                       <p className="text-xs text-zinc-500 mb-4">Effective Rate: {taxResult.newRegime.effectiveRate}% · Monthly TDS: {formatINR(taxResult.newRegime.monthlyTds)}</p>
-                      <div className="space-y-1.5">
+                      
+                      {taxResult.newRegime.surcharge > 0 && (
+                        <div className="text-xs text-rose-400 font-bold mb-1">
+                          + Surcharge: {formatINR(taxResult.newRegime.surcharge)}
+                        </div>
+                      )}
+                      {taxResult.newRegime.cess > 0 && (
+                        <div className="text-xs text-zinc-500 font-bold mb-3 border-b border-zinc-800 pb-2">
+                          + Health & Education Cess (4%): {formatINR(taxResult.newRegime.cess)}
+                        </div>
+                      )}
+
+                      <div className="space-y-1.5 pt-2">
                         {taxResult.newRegime.slabBreakdown.map((s: any, i: number) => (
                           <div key={i} className="flex justify-between text-xs text-zinc-400">
                             <span>{s.slab}</span>
@@ -347,7 +498,19 @@ const TaxSimplifier: React.FC = () => {
                       </div>
                       <p className="text-3xl font-extrabold text-white mb-1">{formatINR(taxResult.oldRegime.totalTax)}</p>
                       <p className="text-xs text-zinc-500 mb-4">Effective Rate: {taxResult.oldRegime.effectiveRate}% · Monthly TDS: {formatINR(taxResult.oldRegime.monthlyTds)}</p>
-                      <div className="space-y-1.5">
+                      
+                      {taxResult.oldRegime.surcharge > 0 && (
+                        <div className="text-xs text-rose-400 font-bold mb-1">
+                          + Surcharge: {formatINR(taxResult.oldRegime.surcharge)}
+                        </div>
+                      )}
+                      {taxResult.oldRegime.cess > 0 && (
+                        <div className="text-xs text-zinc-500 font-bold mb-3 border-b border-zinc-800 pb-2">
+                          + Health & Education Cess (4%): {formatINR(taxResult.oldRegime.cess)}
+                        </div>
+                      )}
+
+                      <div className="space-y-1.5 pt-2">
                         {taxResult.oldRegime.slabBreakdown.map((s: any, i: number) => (
                           <div key={i} className="flex justify-between text-xs text-zinc-400">
                             <span>{s.slab}</span>
@@ -367,6 +530,78 @@ const TaxSimplifier: React.FC = () => {
                     <div className="text-right">
                       <p className="text-xs text-zinc-500">Gross Income</p>
                       <p className="text-lg font-bold text-white">{formatINR(taxResult.grossIncome)}</p>
+                    </div>
+                  </div>
+
+                  {/* Visual Tax Breakdown Chart */}
+                  <div className="bg-zinc-900/90 rounded-3xl p-6 border border-zinc-800 shadow-xl overflow-hidden mt-6">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-6">
+                      <BarChart3 size={16} className="text-blue-400" /> Tax Breakdown Comparison
+                    </h3>
+                    
+                    <div className="space-y-6">
+                      {/* New Regime Bar */}
+                      <div>
+                        <div className="flex justify-between text-xs font-bold text-zinc-400 mb-2">
+                          <span>New Regime</span>
+                          <span className="text-white">{formatINR(taxResult.newRegime.totalTax)}</span>
+                        </div>
+                        <div className="h-6 w-full bg-zinc-800 rounded-full overflow-hidden flex">
+                          {taxResult.newRegime.totalTax > 0 ? (
+                            taxResult.newRegime.slabBreakdown.map((s: any, i: number) => {
+                              const width = `${(s.tax / taxResult.newRegime.totalTax) * 100}%`;
+                              // Distribute vibrant colors for the slabs
+                              const colors = ['bg-indigo-500', 'bg-blue-500', 'bg-cyan-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500'];
+                              return (
+                                <div 
+                                  key={i} 
+                                  className={`h-full ${colors[i % colors.length]} transition-all duration-1000 border-r border-zinc-900 last:border-0 relative group`}
+                                  style={{ width }}
+                                >
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 w-max bg-zinc-900 border border-zinc-700 text-white text-[10px] py-1 px-2 rounded-lg whitespace-nowrap">
+                                    {s.slab}: {formatINR(s.tax)}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="h-full w-full bg-emerald-500/20 text-emerald-400 text-[10px] flex items-center justify-center font-bold tracking-widest uppercase">
+                              Zero Tax
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Old Regime Bar */}
+                      <div>
+                        <div className="flex justify-between text-xs font-bold text-zinc-400 mb-2">
+                          <span>Old Regime</span>
+                          <span className="text-white">{formatINR(taxResult.oldRegime.totalTax)}</span>
+                        </div>
+                        <div className="h-6 w-full bg-zinc-800 rounded-full overflow-hidden flex">
+                          {taxResult.oldRegime.totalTax > 0 ? (
+                            taxResult.oldRegime.slabBreakdown.map((s: any, i: number) => {
+                              const width = `${(s.tax / taxResult.oldRegime.totalTax) * 100}%`;
+                              const colors = ['bg-violet-500', 'bg-purple-500', 'bg-fuchsia-500', 'bg-pink-500', 'bg-rose-500', 'bg-amber-500'];
+                              return (
+                                <div 
+                                  key={i} 
+                                  className={`h-full ${colors[i % colors.length]} transition-all duration-1000 border-r border-zinc-900 last:border-0 relative group`}
+                                  style={{ width }}
+                                >
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 w-max bg-zinc-900 border border-zinc-700 text-white text-[10px] py-1 px-2 rounded-lg whitespace-nowrap">
+                                    {s.slab}: {formatINR(s.tax)}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="h-full w-full bg-emerald-500/20 text-emerald-400 text-[10px] flex items-center justify-center font-bold tracking-widest uppercase">
+                              Zero Tax
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -410,7 +645,125 @@ const TaxSimplifier: React.FC = () => {
         )}
 
         {/* ═══════════════════════════════════════════════ */}
-        {/* TAB 2: ITR VAULT                             */}
+        {/* TAB 1.5: AI OPTIMIZER                        */}
+        {/* ═══════════════════════════════════════════════ */}
+        {activeTab === 'optimizer' && (
+          <div className="animate-fade-in-up">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                  <Bot className="text-fuchsia-400" size={28} /> AI Tax Optimizer
+                </h2>
+                <p className="text-zinc-400 text-sm mt-1">Smart recommendations to legally reduce your tax liability for {fy}.</p>
+              </div>
+              <button onClick={handleOptimize} disabled={optimizerLoading} className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all">
+                {optimizerLoading ? <RefreshCw className="animate-spin" size={16} /> : <Zap size={16} />} Re-analyze
+              </button>
+            </div>
+
+            {optimizerLoading ? (
+              <div className="bg-zinc-900/80 rounded-3xl p-16 flex flex-col items-center justify-center border border-zinc-700 shadow-xl">
+                <div className="relative w-20 h-20 mb-6">
+                  <div className="absolute inset-0 border-4 border-fuchsia-100 rounded-full" />
+                  <div className="absolute inset-0 border-4 border-fuchsia-600 rounded-full border-t-transparent animate-spin" />
+                  <Bot size={34} className="absolute inset-0 m-auto text-fuchsia-400 animate-pulse" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Analyzing your financial profile</h3>
+                <p className="text-zinc-500 max-w-md text-center">Our AI is scanning the {fy} tax code to find the most efficient deduction strategies for your specific income distribution...</p>
+              </div>
+            ) : suggestions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {suggestions.map((sug, idx) => (
+                  <div key={idx} className="bg-zinc-900/90 rounded-3xl p-6 border border-zinc-700 shadow-xl hover:border-fuchsia-500/50 transition-all flex flex-col">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-fuchsia-500/10 flex items-center justify-center text-fuchsia-400 border border-fuchsia-500/20">
+                        {sug.action === 'invest' ? <TrendingUp size={20} /> : sug.action === 'restructure' ? <RefreshCw size={20} /> : <Shield size={20} />}
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-widest text-zinc-500 bg-zinc-950 px-3 py-1 rounded-full border border-zinc-800">
+                        Section {sug.section}
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-lg font-bold text-white mb-2">{sug.title}</h3>
+                    <p className="text-sm text-zinc-400 mb-6 flex-1 line-clamp-3 leading-relaxed">{sug.description}</p>
+                    
+                    <div className="mt-auto bg-zinc-950 rounded-2xl p-4 border border-zinc-800/50">
+                      <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                        <PiggyBank size={12} /> Potential Tax Saving
+                      </p>
+                      <p className="text-2xl font-black text-white">{formatINR(sug.potentialTaxSaved)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-zinc-900/80 rounded-3xl p-16 flex flex-col items-center justify-center text-center border border-zinc-700">
+                <Shield size={64} className="text-zinc-800 mb-6" />
+                <h3 className="text-xl font-bold text-white mb-2">Ready to Optimize</h3>
+                <p className="text-zinc-500 max-w-md mb-8">Calculate your tax first on the Calculator tab, then click Optimize for personalized tax-saving strategies.</p>
+                <button onClick={() => setActiveTab('calculator')} className="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-xl font-bold transition-all">
+                  Go to Calculator
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* TAB 2: TAX CALENDAR                          */}
+        {/* ═══════════════════════════════════════════════ */}
+        {activeTab === 'calendar' && (
+          <div className="animate-fade-in-up space-y-6">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                  <Clock className="text-indigo-400" size={28} /> Tax Deadlines
+                </h2>
+                <p className="text-zinc-400 text-sm mt-1">Never miss a due date. Stay compliant and avoid penalties.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { title: 'Advance Tax (Q1)', date: '15 June', desc: 'Pay 15% of estimated total tax liability', status: 'upcoming', icon: <Clock size={20} /> },
+                { title: 'Advance Tax (Q2)', date: '15 September', desc: 'Pay 45% of estimated total tax liability', status: 'upcoming', icon: <Clock size={20} /> },
+                { title: 'Advance Tax (Q3)', date: '15 December', desc: 'Pay 75% of estimated total tax liability', status: 'upcoming', icon: <Clock size={20} /> },
+                { title: 'Advance Tax (Q4)', date: '15 March', desc: 'Pay 100% of estimated total tax liability', status: 'urgent', icon: <AlertTriangle size={20} /> },
+                { title: 'ITR Filing Deadline', date: '31 July', desc: 'Last date to file ITR for Individuals (Non-Audit)', status: 'upcoming', icon: <Archive size={20} /> },
+                { title: 'Belated ITR Filing', date: '31 December', desc: 'Last date for belated/revised return with penalty', status: 'upcoming', icon: <AlertTriangle size={20} /> },
+              ].map((deadline, idx) => (
+                <div key={idx} className={`bg-zinc-900/90 rounded-3xl p-6 border shadow-xl relative overflow-hidden transition-all ${deadline.status === 'urgent' ? 'border-amber-500/50 hover:border-amber-500' : 'border-zinc-800 hover:border-indigo-500/50'}`}>
+                  {deadline.status === 'urgent' && (
+                    <div className="absolute top-0 right-0 bg-amber-500 text-amber-950 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl border-l border-b border-amber-600/30">
+                      Upcoming Soon
+                    </div>
+                  )}
+                  
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${deadline.status === 'urgent' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'}`}>
+                    {deadline.icon}
+                  </div>
+                  
+                  <p className="text-2xl font-black text-white mb-1">{deadline.date}</p>
+                  <h3 className="text-base font-bold text-zinc-300 mb-2">{deadline.title}</h3>
+                  <p className="text-xs text-zinc-500">{deadline.desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            <div className="bg-indigo-900/20 rounded-2xl p-6 border border-indigo-500/30 flex items-start gap-4">
+              <div className="bg-indigo-500/20 p-3 rounded-full shrink-0">
+                <FileSearch className="text-indigo-400" size={24} />
+              </div>
+              <div>
+                <h4 className="text-white font-bold mb-1">Do you need to pay Advance Tax?</h4>
+                <p className="text-sm text-zinc-400">If your estimated tax liability for the financial year is ₹10,000 or more, you must pay advance tax. Calculate your liability in the Tax Calculator tab first.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* TAB 3: ITR VAULT                             */}
         {/* ═══════════════════════════════════════════════ */}
         {activeTab === 'itr' && (
           <div className="space-y-8">
@@ -539,9 +892,55 @@ const TaxSimplifier: React.FC = () => {
         )}
 
         {/* ═══════════════════════════════════════════════ */}
-        {/* TAB 3: INVOICE SCANNER                       */}
+        {/* TAB 4: INVOICE SCANNER                       */}
         {/* ═══════════════════════════════════════════════ */}
         {activeTab === 'invoices' && (
+          <div className="space-y-8 animate-fade-in-up">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+              <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                  <Receipt className="text-emerald-400" size={28} /> AI Invoice Scanner
+                </h2>
+                <p className="text-zinc-400 text-sm mt-1">Upload business expenses to automatically extract GST and categorize for tax filing.</p>
+              </div>
+              <div className="flex gap-3">
+                <button className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all">
+                  <Download size={16} /> Export CSV
+                </button>
+              </div>
+            </div>
+
+            {/* Dashboard Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-zinc-900/80 rounded-3xl p-6 border border-zinc-700 shadow-xl flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                  <Receipt size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Total Scanned</p>
+                  <p className="text-2xl font-extrabold text-white">{invoices.length}</p>
+                </div>
+              </div>
+              <div className="bg-zinc-900/80 rounded-3xl p-6 border border-zinc-700 shadow-xl flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+                  <IndianRupee size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Total Expenses</p>
+                  <p className="text-2xl font-extrabold text-white">{formatINR(invoices.reduce((acc, inv) => acc + (inv.totalAmount || 0), 0))}</p>
+                </div>
+              </div>
+              <div className="bg-zinc-900/80 rounded-3xl p-6 border border-zinc-700 shadow-xl flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
+                  <PieChart size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Total GST Paid</p>
+                  <p className="text-2xl font-extrabold text-white">{formatINR(invoices.reduce((acc, inv) => acc + (inv.taxAmount || 0), 0))}</p>
+                </div>
+              </div>
+            </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left: Upload */}
             <div className="lg:col-span-5 space-y-6">
@@ -670,6 +1069,7 @@ const TaxSimplifier: React.FC = () => {
               </div>
             </div>
           </div>
+          </div>
         )}
 
         {/* ═══════════════════════════════════════════════ */}
@@ -677,85 +1077,127 @@ const TaxSimplifier: React.FC = () => {
         {/* ═══════════════════════════════════════════════ */}
         {activeTab === 'meter' && (
           <div className="max-w-4xl mx-auto space-y-8">
-            {/* Tax Gauge */}
-            <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-8 border border-zinc-700 shadow-xl text-center">
-              <h2 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
-                <Zap className="text-purple-400" size={22} /> Real-Time Tax Estimator
-              </h2>
-              <p className="text-sm text-zinc-500 mb-8">Based on your income & deductions entered in the Calculator tab</p>
-
-              <div className="relative w-48 h-48 mx-auto mb-8">
-                {/* Background circle */}
-                <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgb(39,39,42)" strokeWidth="8" />
-                  <circle
-                    cx="60" cy="60" r="52" fill="none"
-                    stroke="url(#taxGauge)" strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 52}`}
-                    strokeDashoffset={`${2 * Math.PI * 52 * (1 - Math.min(1, (parseFloat(meterResult.newRegime.effectiveRate) || 0) / 35))}`}
-                    className="transition-all duration-1000"
-                  />
-                  <defs>
-                    <linearGradient id="taxGauge" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#a855f7" />
-                      <stop offset="100%" stopColor="#ec4899" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-4xl font-extrabold text-white">{meterResult.newRegime.effectiveRate}%</span>
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Effective Rate</span>
+            {!meterResult ? (
+              <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-16 border border-zinc-700 shadow-xl flex flex-col items-center justify-center text-center">
+                <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mb-6 border border-purple-500/20">
+                  <Zap size={40} className="text-purple-400" />
                 </div>
+                <h3 className="text-xl font-bold text-white mb-2">No Tax Data Yet</h3>
+                <p className="text-zinc-500 max-w-md mb-6">Enter your income & deductions in the Calculator tab and click <span className="font-bold text-amber-400">Calculate Tax</span> to see your live tax meter.</p>
+                <button
+                  onClick={() => setActiveTab('calculator')}
+                  className="bg-gradient-to-r from-amber-600 to-yellow-600 text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2 transition-all hover:from-amber-700 hover:to-yellow-700"
+                >
+                  <Calculator size={18} /> Go to Calculator
+                </button>
               </div>
+            ) : (
+              <>
+                {/* Tax Gauge */}
+                <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-8 border border-zinc-700 shadow-xl text-center">
+                  <h2 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
+                    <Zap className="text-purple-400" size={22} /> Real-Time Tax Estimator
+                  </h2>
+                  <p className="text-sm text-zinc-500 mb-8">Based on your income & deductions entered in the Calculator tab</p>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { label: 'Gross Income', value: formatINR(meterResult.grossIncome), color: 'text-white' },
-                  { label: 'Tax (New)', value: formatINR(meterResult.newRegime.totalTax), color: 'text-purple-400' },
-                  { label: 'Tax (Old)', value: formatINR(meterResult.oldRegime.totalTax), color: 'text-blue-400' },
-                  { label: 'You Save', value: formatINR(meterResult.savings), color: 'text-emerald-400' },
-                ].map((item, i) => (
-                  <div key={i} className="bg-zinc-950 rounded-2xl p-4 border border-zinc-800">
-                    <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1">{item.label}</p>
-                    <p className={`text-xl font-extrabold ${item.color}`}>{item.value}</p>
+                  <div className="relative w-48 h-48 mx-auto mb-8">
+                    <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 120 120">
+                      <circle cx="60" cy="60" r="52" fill="none" stroke="rgb(39,39,42)" strokeWidth="8" />
+                      <circle
+                        cx="60" cy="60" r="52" fill="none"
+                        stroke="url(#taxGauge)" strokeWidth="8"
+                        strokeLinecap="round"
+                        strokeDasharray={`${2 * Math.PI * 52}`}
+                        strokeDashoffset={`${2 * Math.PI * 52 * (1 - Math.min(1, (parseFloat(meterResult.newRegime.effectiveRate) || 0) / 35))}`}
+                        className="transition-all duration-1000"
+                      />
+                      <defs>
+                        <linearGradient id="taxGauge" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#a855f7" />
+                          <stop offset="100%" stopColor="#ec4899" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-4xl font-extrabold text-white">{meterResult.newRegime.effectiveRate}%</span>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Effective Rate</span>
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              {meterResult.grossIncome > 0 && (
-                <div className="mt-6 p-4 bg-purple-900/20 rounded-2xl border border-purple-800/30 text-sm text-purple-200">
-                  <p className="font-bold mb-1">💡 AI Recommendation</p>
-                  <p>Based on your inputs, the <span className="font-extrabold text-purple-300">{meterResult.recommended} Regime</span> saves you <span className="font-extrabold text-emerald-400">{formatINR(meterResult.savings)}</span> compared to the other regime. Monthly TDS should be approximately <span className="font-bold">{formatINR(meterResult.recommended === 'New' ? meterResult.newRegime.monthlyTds : meterResult.oldRegime.monthlyTds)}</span>.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Monthly TDS Breakdown */}
-            {meterResult.grossIncome > 0 && (
-              <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-6 border border-zinc-700 shadow-xl">
-                <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                  <BarChart3 size={18} className="text-purple-400" /> Monthly TDS Projection
-                </h3>
-                <div className="grid grid-cols-12 gap-1 h-32">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const monthlyTax = meterResult.recommended === 'New' ? meterResult.newRegime.monthlyTds : meterResult.oldRegime.monthlyTds;
-                    const maxHeight = monthlyTax;
-                    const variation = 0.8 + Math.random() * 0.4;
-                    const barHeight = Math.max(5, (monthlyTax * variation / Math.max(maxHeight * 1.3, 1)) * 100);
-                    return (
-                      <div key={i} className="flex flex-col items-center justify-end h-full">
-                        <div
-                          className="w-full rounded-t-md bg-gradient-to-t from-purple-600 to-pink-500 transition-all duration-500 hover:from-purple-500 hover:to-pink-400 cursor-pointer group relative"
-                          style={{ height: `${barHeight}%` }}
-                          title={`Month ${i + 1}: ~${formatINR(Math.round(monthlyTax * variation))}`}
-                        />
-                        <span className="text-[8px] text-zinc-600 font-bold mt-1">{['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}</span>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: 'Gross Income', value: formatINR(meterResult.grossIncome), color: 'text-white' },
+                      { label: 'Tax (New)', value: formatINR(meterResult.newRegime.totalTax), color: 'text-purple-400' },
+                      { label: 'Tax (Old)', value: formatINR(meterResult.oldRegime.totalTax), color: 'text-blue-400' },
+                      { label: 'You Save', value: formatINR(meterResult.savings), color: 'text-emerald-400' },
+                    ].map((item, i) => (
+                      <div key={i} className="bg-zinc-950 rounded-2xl p-4 border border-zinc-800">
+                        <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1">{item.label}</p>
+                        <p className={`text-xl font-extrabold ${item.color}`}>{item.value}</p>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+
+                  {meterResult.grossIncome > 0 && (
+                    <div className="mt-6 p-4 bg-purple-900/20 rounded-2xl border border-purple-800/30 text-sm text-purple-200">
+                      <p className="font-bold mb-1">💡 AI Recommendation</p>
+                      <p>Based on your inputs, the <span className="font-extrabold text-purple-300">{meterResult.recommended} Regime</span> saves you <span className="font-extrabold text-emerald-400">{formatINR(meterResult.savings)}</span> compared to the other regime. Monthly TDS should be approximately <span className="font-bold">{formatINR(meterResult.recommended === 'New' ? meterResult.newRegime.monthlyTds : meterResult.oldRegime.monthlyTds)}</span>.</p>
+                    </div>
+                  )}
                 </div>
-              </div>
+
+                {/* Monthly TDS Breakdown */}
+                {meterResult.grossIncome > 0 && (
+                  <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-6 border border-zinc-700 shadow-xl">
+                    <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                      <BarChart3 size={18} className="text-purple-400" /> Monthly TDS Projection
+                    </h3>
+                    <div className="grid grid-cols-12 gap-1 h-32">
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const monthlyTax = meterResult.recommended === 'New' ? meterResult.newRegime.monthlyTds : meterResult.oldRegime.monthlyTds;
+                        const maxHeight = monthlyTax;
+                        const variation = 0.8 + Math.random() * 0.4;
+                        const barHeight = Math.max(5, (monthlyTax * variation / Math.max(maxHeight * 1.3, 1)) * 100);
+                        return (
+                          <div key={i} className="flex flex-col items-center justify-end h-full">
+                            <div
+                              className="w-full rounded-t-md bg-gradient-to-t from-purple-600 to-pink-500 transition-all duration-500 hover:from-purple-500 hover:to-pink-400 cursor-pointer group relative"
+                              style={{ height: `${barHeight}%` }}
+                              title={`Month ${i + 1}: ~${formatINR(Math.round(monthlyTax * variation))}`}
+                            />
+                            <span className="text-[8px] text-zinc-600 font-bold mt-1">{['J','F','M','A','M','J','J','A','S','O','N','D'][i]}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Explain with AI */}
+                <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-6 border border-zinc-700 shadow-xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <Bot size={18} className="text-amber-400" /> AI Tax Explainer
+                    </h3>
+                    <button
+                      onClick={handleAIExplain}
+                      disabled={calcLoading}
+                      className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-all border border-amber-500/30"
+                    >
+                      {calcLoading ? <RefreshCw className="animate-spin" size={14} /> : <Lightbulb size={14} />}
+                      {calcLoading ? 'Analyzing...' : 'Explain my Tax'}
+                    </button>
+                  </div>
+                  {aiExplanation && (
+                    <div className="prose prose-invert prose-sm max-w-none text-zinc-300">
+                      <MarkdownRenderer content={aiExplanation} />
+                    </div>
+                  )}
+                  {!aiExplanation && !calcLoading && (
+                    <p className="text-zinc-600 text-sm">Click the button above to get a plain-English explanation of your tax calculation.</p>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}
