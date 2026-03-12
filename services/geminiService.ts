@@ -7,13 +7,13 @@ import { Transaction } from "../types";
 
 type AIProvider = 'groq' | 'gemini';
 
-const GROQ_SERVER_KEY = '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';
+// Removed hardcoded key for security
 
 const getAIProvider = (): AIProvider =>
   (localStorage.getItem('ai_provider') as AIProvider) || 'groq';
 
 const getGroqApiKey = (): string =>
-  localStorage.getItem('groq_api_key') || GROQ_SERVER_KEY;
+  localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY || '';
 
 const getGeminiApiKey = (): string =>
   localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
