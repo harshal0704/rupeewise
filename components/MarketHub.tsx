@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { runStockSimulation, screenStocks, getHistoricalComparison } from '../services/geminiService';
-import { eodhdService, EODHDNewsItem } from '../services/eodhdService';
+import { finnhub, NewsItem } from '../services/finnhub';
+import { MarkdownRenderer } from '../services/markdownRenderer';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { LineChart as LineChartIcon, Bot, Search, GitCompare, Plus, X, Newspaper, RefreshCw, CheckCircle } from 'lucide-react';
@@ -29,7 +30,7 @@ const MarketHub: React.FC = () => {
     const [compareLoading, setCompareLoading] = useState(false);
 
     // News State
-    const [news, setNews] = useState<EODHDNewsItem[]>([]);
+    const [news, setNews] = useState<NewsItem[]>([]);
     const [newsLoading, setNewsLoading] = useState(false);
 
     // Order State
@@ -42,9 +43,8 @@ const MarketHub: React.FC = () => {
         const fetchNews = async () => {
             setNewsLoading(true);
             try {
-                // Use EODHD Service
-                const data = await eodhdService.getMarketNews(5);
-                setNews(data);
+                const data = await finnhub.getMarketNews('general');
+                setNews(data.slice(0, 8));
             } catch (error) {
                 console.error("News fetch error:", error);
             } finally {
@@ -97,9 +97,9 @@ const MarketHub: React.FC = () => {
             // 1. Fetch current price if not set
             let price = parseFloat(orderPrice);
             if (!price || isNaN(price)) {
-                // Fetch real-time price
-                const quote = await eodhdService.getLivePrice(ticker);
-                price = quote.price;
+                // Fetch real-time price via Finnhub
+                const quote = await finnhub.getQuote(ticker);
+                price = quote?.c || 0;
             }
 
             if (price <= 0) {
@@ -211,9 +211,7 @@ const MarketHub: React.FC = () => {
                                         <Bot size={20} className="text-accent" /> AI Market Analysis
                                     </h3>
                                     <div className="prose prose-invert prose-sm max-w-none text-zinc-300">
-                                        <div className="whitespace-pre-line leading-relaxed">
-                                            {result.analysis}
-                                        </div>
+                                        <MarkdownRenderer content={result.analysis} />
                                     </div>
                                 </div>
                             )}
@@ -253,7 +251,11 @@ const MarketHub: React.FC = () => {
 
                                     <div className="pt-4 border-t border-zinc-700/50 flex justify-between items-center text-sm">
                                         <span className="text-zinc-400">Margin Required</span>
-                                        <span className="text-white font-bold">₹2,450.00</span>
+                                        <span className="text-white font-bold">
+                                            {orderPrice && orderQuantity > 0
+                                                ? `₹${(parseFloat(orderPrice) * orderQuantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                                : 'Enter price'}
+                                        </span>
                                     </div>
 
                                     <button
@@ -283,21 +285,28 @@ const MarketHub: React.FC = () => {
                                         news.map((item, idx) => (
                                             <a
                                                 key={idx}
-                                                href={item.link}
+                                                href={item.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="block group cursor-pointer border-b border-zinc-800 pb-4 last:border-0"
                                             >
                                                 <div className="flex gap-3">
-                                                    {/* Image removed as EODHD doesn't always provide it reliably in free tier or formatted nicely */}
+                                                    {item.image && (
+                                                        <img
+                                                            src={item.image}
+                                                            alt=""
+                                                            className="w-16 h-16 rounded-lg object-cover shrink-0"
+                                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                        />
+                                                    )}
                                                     <div>
                                                         <p className="text-sm text-zinc-300 group-hover:text-primary transition-colors line-clamp-3 font-medium">
-                                                            {item.title}
+                                                            {item.headline}
                                                         </p>
                                                         <div className="flex items-center justify-between mt-2">
-                                                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">EODHD</span>
+                                                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{item.source}</span>
                                                             <span className="text-[10px] text-zinc-600">
-                                                                {new Date(item.date).toLocaleDateString()}
+                                                                {new Date(item.datetime * 1000).toLocaleDateString()}
                                                             </span>
                                                         </div>
                                                     </div>

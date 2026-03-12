@@ -1,344 +1,425 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
 import {
-    TrendingUp, Bot, Smartphone, Target, FileText, GraduationCap,
-    Shield, Zap, BarChart3, ArrowRight, ChevronRight, Sparkles,
-    Lock, Globe, IndianRupee, LineChart
+    Bot, Smartphone, Target, FileText, GraduationCap,
+    Shield, ShieldAlert, BarChart3, ArrowRight, ChevronRight, Lock, Globe,
+    LineChart, CheckCircle2, PlayCircle, Fingerprint, Wallet, Monitor, Sparkles
 } from 'lucide-react';
 
-// ─── Intersection Observer Hook ───
-const useReveal = () => {
-    const ref = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        const el = ref.current;
-        if (!el) return;
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    el.classList.add('visible');
-                    observer.unobserve(el);
-                }
-            },
-            { threshold: 0.15 }
-        );
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, []);
-    return ref;
+// ─── Animation Variants ───
+const fadeInUp = {
+    initial: { opacity: 0, y: 40 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] } }
 };
 
-// ─── Section wrapper with reveal ───
-const RevealSection: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
-    const ref = useReveal();
-    return <div ref={ref} className={`reveal-section ${className}`}>{children}</div>;
+const staggerContainer = {
+    animate: {
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
 };
 
-// ─── Feature Card ───
-const FeatureCard: React.FC<{
-    icon: React.ReactNode;
-    title: string;
-    desc: string;
-    color: string;
-    large?: boolean;
-}> = ({ icon, title, desc, color, large }) => (
-    <div className={`glass-panel rounded-2xl p-6 card-hover-lift shimmer-overlay cursor-pointer group ${large ? 'bento-span-2 md:p-8' : ''}`}>
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${color}`}>
-            {icon}
-        </div>
-        <h3 className={`font-bold text-white mb-2 ${large ? 'text-xl' : 'text-lg'}`}>{title}</h3>
-        <p className="text-zinc-400 text-sm leading-relaxed">{desc}</p>
-        <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-            Learn more <ChevronRight size={14} />
-        </div>
-    </div>
-);
+const letterReveal = {
+    initial: { y: "100%" },
+    animate: { y: 0, transition: { duration: 1, ease: [0.22, 1, 0.36, 1] } }
+};
 
-// ─── Stat Counter ───
-const StatItem: React.FC<{ value: string; label: string }> = ({ value, label }) => (
-    <div className="text-center">
-        <p className="text-3xl md:text-4xl font-extrabold gradient-text stat-counter">{value}</p>
-        <p className="text-zinc-400 text-sm mt-1 font-medium">{label}</p>
-    </div>
-);
-
-// ─── Step Card ───
-const StepCard: React.FC<{ number: string; title: string; desc: string; icon: React.ReactNode; color: string }> = ({ number, title, desc, icon, color }) => (
-    <div className="flex-1 text-center glass-panel rounded-2xl p-8 card-hover-lift relative">
-        <div className="absolute -top-4 left-1/2 -tranzinc-x-1/2 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-primary/30">
-            {number}
+// ─── Floating Particle Background ───
+const BackgroundParticles = () => {
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            {[...Array(20)].map((_, i) => (
+                <motion.div
+                    key={i}
+                    className="absolute rounded-full"
+                    style={{
+                        width: Math.random() * 3 + 1 + 'px',
+                        height: Math.random() * 3 + 1 + 'px',
+                        backgroundColor: i % 2 === 0 ? 'var(--primary)' : 'var(--secondary)',
+                        left: Math.random() * 100 + '%',
+                        top: Math.random() * 100 + '%',
+                        opacity: 0.2,
+                    }}
+                    animate={{
+                        y: [0, -100, 0],
+                        opacity: [0.1, 0.3, 0.1],
+                        scale: [1, 1.5, 1],
+                    }}
+                    transition={{
+                        duration: Math.random() * 10 + 20,
+                        repeat: Infinity,
+                        ease: "linear"
+                    }}
+                />
+            ))}
         </div>
-        <div className={`w-14 h-14 rounded-xl mx-auto flex items-center justify-center mb-4 mt-2 ${color}`}>
-            {icon}
-        </div>
-        <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-        <p className="text-zinc-400 text-sm leading-relaxed">{desc}</p>
-    </div>
-);
+    );
+};
 
+// ─── Nav Component ───
+const Navbar = ({ onSignIn }: { onSignIn: () => void }) => {
+    return (
+        <motion.nav
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="fixed top-0 w-full z-50 flex items-center justify-between px-8 py-5 backdrop-blur-md border-b border-white/5 transition-all"
+        >
+            <div className="flex items-center gap-3 group cursor-pointer">
+                <div className="relative">
+                    <motion.img
+                        whileHover={{ rotate: 180 }}
+                        transition={{ duration: 1 }}
+                        src="/logo.png"
+                        alt="RupeeWise"
+                        className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(212,168,83,0.4)]"
+                    />
+                    <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                </div>
+                <h2 className="text-white text-2xl font-black tracking-tighter uppercase">Rupee<span className="text-primary">Wise</span></h2>
+            </div>
+
+            <motion.button
+                whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onSignIn}
+                className="px-6 py-2.5 text-xs font-black uppercase tracking-widest bg-white/5 border border-white/10 rounded-full text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.05)]"
+            >
+                Secure Access
+            </motion.button>
+        </motion.nav>
+    );
+};
+
+// ─── Main Landing Page ───
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
+    const { scrollYProgress } = useScroll();
+    const scaleX = useSpring(scrollYProgress, {
+        stiffness: 100,
+        damping: 30,
+        restDelta: 0.001
+    });
 
     return (
-        <div className="min-h-screen relative overflow-hidden">
-            {/* ═══ HERO SECTION ═══ */}
-            <section className="hero-mesh relative min-h-screen flex items-center justify-center px-4 py-20">
-                {/* Animated Background Orbs */}
-                <div className="absolute top-[10%] left-[5%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[150px] animate-float pointer-events-none" />
-                <div className="absolute bottom-[10%] right-[5%] w-[400px] h-[400px] bg-accent/20 rounded-full blur-[130px] animate-float-delayed pointer-events-none" />
-                <div className="absolute top-[50%] left-[50%] w-[300px] h-[300px] bg-secondary/15 rounded-full blur-[100px] animate-float-slow pointer-events-none" />
+        <div className="min-h-screen relative overflow-x-hidden bg-[#050607] font-sans selection:bg-primary/40 selection:text-white text-slate-100">
+            {/* Scroll Progress Bar */}
+            <motion.div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-secondary z-[60] origin-left" style={{ scaleX }} />
 
-                <div className="relative z-10 max-w-6xl mx-auto text-center">
-                    {/* Badge */}
-                    <div className="animate-fade-in-down inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
-                        <Sparkles size={14} className="animate-pulse-glow" />
-                        Financial Intelligence, Reimagined
-                    </div>
+            <BackgroundParticles />
+            <Navbar onSignIn={() => navigate('/login')} />
 
-                    {/* Headline — Staggered Words */}
-                    <div className="stagger-children mb-6">
-                        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.05]">
-                            <span className="block text-white">Master Your</span>
-                            <span className="block gradient-text-hero">Money.</span>
-                            <span className="block text-white">Like a Pro.</span>
-                        </h1>
-                    </div>
+            <main className="relative z-10">
+                {/* ═══ HERO SECTION ═══ */}
+                <section className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-20">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] max-w-[1000px] max-h-[1000px] bg-primary/5 rounded-full blur-[200px] pointer-events-none" />
 
-                    {/* Subheadline */}
-                    <p className="animate-fade-in-up text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed" style={{ animationDelay: '400ms' }}>
-                        AI-powered insights to track expenses, plan investments, analyze markets, and grow your wealth — built for the new India.
-                    </p>
-
-                    {/* CTAs */}
-                    <div className="animate-fade-in-up flex flex-col sm:flex-row gap-4 justify-center" style={{ animationDelay: '600ms' }}>
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="px-8 py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold text-lg rounded-2xl shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.03] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    <motion.div
+                        initial="initial"
+                        animate="animate"
+                        variants={staggerContainer}
+                        className="max-w-6xl mx-auto space-y-10 text-center relative z-10"
+                    >
+                        <motion.div
+                            variants={fadeInUp}
+                            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-surface-1 border border-primary/20 shadow-[0_0_40px_rgba(212,168,83,0.1)] backdrop-blur-xl"
                         >
-                            Start Free <ArrowRight size={20} />
-                        </button>
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="px-8 py-4 glass-button text-white font-semibold text-lg rounded-2xl flex items-center justify-center gap-2"
-                        >
-                            Sign In <ChevronRight size={20} />
-                        </button>
-                    </div>
+                            <Sparkles size={14} className="text-primary animate-pulse" />
+                            <span className="text-primary text-[11px] font-black uppercase tracking-[0.2em]">Future-Forward Finance</span>
+                        </motion.div>
 
-                    {/* Floating Dashboard Mockup */}
-                    <div className="animate-fade-in-up mt-16 relative mx-auto max-w-4xl" style={{ animationDelay: '800ms' }}>
-                        <div className="relative rounded-2xl overflow-hidden glass-panel p-1 shadow-2xl shadow-primary/10" style={{ perspective: '1200px' }}>
-                            <div className="rounded-xl overflow-hidden bg-surface-0 p-4 md:p-6" style={{ transform: 'rotateX(2deg)' }}>
-                                {/* Mock Dashboard Header */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary"><IndianRupee size={16} /></div>
+                        <div className="space-y-4">
+                            <h1 className="text-[12vw] md:text-[8rem] lg:text-[10rem] font-black leading-[0.9] tracking-tighter text-white">
+                                <motion.span variants={fadeInUp} className="block">REDEFINING</motion.span>
+                                <motion.span
+                                    variants={fadeInUp}
+                                    className="block text-transparent bg-clip-text bg-gradient-to-br from-[#D4AF37] via-[#F9E29C] to-[#B8860B] drop-shadow-[0_0_30px_rgba(212,175,55,0.2)] skew-x-[-5deg]"
+                                >
+                                    WEALTH
+                                </motion.span>
+                            </h1>
+                        </div>
+
+                        <motion.p
+                            variants={fadeInUp}
+                            className="max-w-2xl mx-auto text-slate-400 text-lg md:text-2xl font-medium leading-relaxed opacity-80"
+                        >
+                            The ultimate fusion of AI intelligence and luxury asset management.
+                            Crafted for India’s next generation of wealth builders.
+                        </motion.p>
+
+                        <motion.div
+                            variants={fadeInUp}
+                            className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-6"
+                        >
+                            <motion.button
+                                whileHover={{ scale: 1.05, boxShadow: "0 0 50px rgba(212, 175, 55, 0.4)" }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => navigate('/login')}
+                                className="h-20 px-12 bg-primary text-black font-black rounded-[2rem] text-xl shadow-[0_20px_40px_rgba(212,175,55,0.2)] transition-all flex items-center justify-center gap-3 group"
+                            >
+                                Get Started <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
+                            </motion.button>
+
+                            <motion.button
+                                whileHover={{ backgroundColor: "rgba(255,255,255,0.08)" }}
+                                onClick={() => navigate('/login')}
+                                className="h-20 px-10 border border-white/10 text-white font-black rounded-[2rem] flex items-center justify-center gap-4 group backdrop-blur-sm"
+                            >
+                                <div className="p-2.5 bg-white/10 rounded-full group-hover:scale-110 transition-transform">
+                                    <PlayCircle size={24} className="text-primary" />
+                                </div>
+                                <span className="uppercase tracking-widest text-sm">Vision</span>
+                            </motion.button>
+                        </motion.div>
+                    </motion.div>
+
+                    {/* Scroll Indicator */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 2, duration: 1 }}
+                        className="absolute bottom-10 flex flex-col items-center gap-4"
+                    >
+                        <div className="text-white/20 text-[10px] uppercase tracking-[0.3em] font-black">Scroll to Explore</div>
+                        <div className="w-[1px] h-20 bg-gradient-to-b from-primary/50 to-transparent" />
+                    </motion.div>
+                </section>
+
+                {/* ═══ BENTO SHOWCASE ═══ */}
+                <section className="px-6 py-32 max-w-7xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:auto-rows-[300px]">
+
+                        {/* Featured High-Res Card */}
+                        <motion.div
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            viewport={{ once: true }}
+                            className="md:col-span-8 md:row-span-2 relative rounded-[3rem] overflow-hidden group shadow-2xl border border-white/5"
+                        >
+                            <img
+                                src="https://images.unsplash.com/photo-1620714223084-8fcacc6ced00?q=80&w=2560&auto=format&fit=crop"
+                                alt="Modern Dashboard"
+                                className="w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-110 opacity-60 grayscale-[0.5] group-hover:grayscale-0"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+
+                            <div className="absolute bottom-0 left-0 p-10 md:p-16">
+                                <motion.div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 mb-6 font-bold text-[10px] uppercase tracking-widest text-white shadow-xl">
+                                    <Monitor size={14} className="text-primary" /> Institutional Grade
+                                </motion.div>
+                                <h3 className="text-4xl md:text-6xl font-black text-white leading-[1.1] tracking-tight max-w-2xl mb-6">
+                                    Your entire financial <span className="text-primary">nebula</span> in one view.
+                                </h3>
+                                <p className="text-slate-300 text-lg md:text-xl max-w-xl font-light leading-relaxed">
+                                    Professional visualization tools once reserved for elite traders, now beautifully reimagined for your personal success.
+                                </p>
+                            </div>
+                        </motion.div>
+
+                        {/* Interactive Stats Card */}
+                        <motion.div
+                            whileInView={{ opacity: 1, x: 0 }}
+                            initial={{ opacity: 0, x: 50 }}
+                            viewport={{ once: true }}
+                            className="md:col-span-4 bg-surface-1 border border-white/10 rounded-[3rem] p-10 flex flex-col justify-between group overflow-hidden relative"
+                        >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 blur-[50px] -mr-16 -mt-16 group-hover:bg-secondary/20 transition-all duration-1000" />
+                            <div className="relative z-10 w-16 h-16 bg-secondary/10 border border-secondary/20 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(52,211,153,0.1)] group-hover:scale-110 transition-transform">
+                                <LineChart className="text-secondary" size={32} />
+                            </div>
+                            <div className="relative z-10">
+                                <h4 className="text-white text-2xl font-black mb-3">Wealth Pulse</h4>
+                                <p className="text-slate-400 font-medium">Real-time market velocity tracking with predictive growth analytics.</p>
+                            </div>
+                            <div className="mt-8 relative z-10 flex gap-2 items-end h-16">
+                                {[30, 70, 45, 90, 60].map((h, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ height: 0 }}
+                                        whileInView={{ height: `${h}%` }}
+                                        transition={{ delay: i * 0.1, duration: 1 }}
+                                        className="flex-1 bg-gradient-to-t from-secondary/5 to-secondary/40 rounded-t-lg"
+                                    />
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        {/* AI Coach Snippet */}
+                        <motion.div
+                            whileInView={{ opacity: 1, x: 0 }}
+                            initial={{ opacity: 0, x: 50 }}
+                            viewport={{ once: true }}
+                            className="md:col-span-4 bg-primary text-black rounded-[3rem] p-10 flex flex-col justify-between group cursor-pointer relative overflow-hidden"
+                            onClick={() => navigate('/login')}
+                        >
+                            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative z-10 flex justify-between items-start w-full">
+                                <div className="w-14 h-14 bg-black/10 rounded-2xl flex items-center justify-center shadow-inner">
+                                    <Bot size={28} />
+                                </div>
+                                <ArrowRight size={24} />
+                            </div>
+                            <div className="relative z-10">
+                                <h4 className="text-2xl font-black mb-2 tracking-tight">AI Financial Brain</h4>
+                                <p className="text-black/70 font-bold leading-snug">Personalized coaching sessions with GPT-level financial reasoning.</p>
+                            </div>
+                        </motion.div>
+
+                    </div>
+                </section>
+
+                {/* ═══ INNOVATION HORIZON ═══ */}
+                <section className="py-32 px-6 relative bg-gradient-to-b from-transparent to-black/40">
+                    <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-20 items-center">
+                        <motion.div
+                            whileInView={{ opacity: 1, x: 0 }}
+                            initial={{ opacity: 0, x: -50 }}
+                            viewport={{ once: true }}
+                            className="space-y-8"
+                        >
+                            <span className="text-primary text-xs font-black uppercase tracking-[0.4em] block drop-shadow-[0_0_10px_var(--primary-glow)]">Advanced Ecosystem</span>
+                            <h3 className="text-5xl md:text-7xl font-black text-white leading-[1] tracking-tighter">
+                                Everything you need. <span className="text-slate-600">Perfectly synced.</span>
+                            </h3>
+
+                            <div className="space-y-6 pt-4">
+                                {[
+                                    { icon: Smartphone, title: "UPI Autonomous Tracker", desc: "No manual entries. We sync with your transaction SMS and statements securely." },
+                                    { icon: Shield, title: "Zero-Knowledge Privacy", desc: "Your data is encrypted end-to-end. Your financial life remains only yours." },
+                                    { icon: GraduationCap, title: "Capital Academy", desc: "Unlock exclusive insights from masterclasses tailored for high net-worth strategies." }
+                                ].map((item, idx) => (
+                                    <motion.div
+                                        key={idx}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        transition={{ delay: idx * 0.2 }}
+                                        viewport={{ once: true }}
+                                        className="flex gap-6 group"
+                                    >
+                                        <div className="mt-1 w-12 h-12 shrink-0 bg-surface-1 border border-white/5 rounded-2xl flex items-center justify-center group-hover:border-primary/50 transition-colors shadow-xl">
+                                            <item.icon size={20} className="text-white group-hover:text-primary transition-colors" />
+                                        </div>
                                         <div>
-                                            <div className="h-3 w-24 bg-zinc-800 rounded-full" />
-                                            <div className="h-2 w-16 bg-zinc-800/60 rounded-full mt-1.5" />
+                                            <h5 className="text-white font-black text-lg mb-1">{item.title}</h5>
+                                            <p className="text-slate-500 font-medium text-base">{item.desc}</p>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        <motion.div
+                            whileInView={{ opacity: 1, scale: 1, rotate: -2 }}
+                            initial={{ opacity: 0, scale: 0.8, rotate: 2 }}
+                            viewport={{ once: true }}
+                            className="relative"
+                        >
+                            <div className="absolute inset-0 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
+                            <div className="relative glass-panel rounded-[3rem] p-12 border-primary/20 backdrop-blur-3xl shadow-[0_0_80px_rgba(212,175,55,0.1)]">
+                                <div className="space-y-8">
+                                    <div className="flex justify-between items-center bg-white/5 p-6 rounded-3xl border border-white/5 shadow-inner">
+                                        <div className="flex gap-4 items-center">
+                                            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-black font-black"><CheckCircle2 /></div>
+                                            <span className="font-black text-white">Smart Parsing</span>
+                                        </div>
+                                        <div className="text-primary font-bold">100% Success</div>
+                                    </div>
+                                    <div className="p-8 bg-black/40 rounded-3xl border border-white/5 space-y-4 shadow-2xl">
+                                        <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Recent Insights</p>
+                                        <p className="text-xl font-medium text-slate-300 italic">"Your savings velocity increased by 14% this month following the capital reallocation suggested by AI."</p>
+                                        <div className="flex gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center"><Sparkles size={14} className="text-primary" /></div>
+                                            <span className="text-primary font-black text-sm self-center">Coach Recommendation</span>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <div className="w-8 h-8 rounded-lg bg-zinc-800/80" />
-                                        <div className="w-8 h-8 rounded-lg bg-zinc-800/80" />
-                                    </div>
-                                </div>
-                                {/* Mock Stats Row */}
-                                <div className="grid grid-cols-3 gap-3 mb-4">
-                                    {[['bg-green-500/10', 'text-green-500'], ['bg-red-500/10', 'text-red-500'], ['bg-amber-500/10', 'text-amber-500']].map(([bg, text], i) => (
-                                        <div key={i} className="rounded-xl bg-surface-1 p-3 flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center`}>
-                                                <div className={`w-4 h-4 rounded-sm ${text === 'text-green-500' ? 'bg-green-500/40' : text === 'text-red-500' ? 'bg-red-500/40' : 'bg-amber-500/40'}`} />
-                                            </div>
-                                            <div>
-                                                <div className="h-2 w-12 bg-zinc-700 rounded-full" />
-                                                <div className="h-3 w-16 bg-zinc-600 rounded-full mt-1.5" />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                {/* Mock Chart Area */}
-                                <div className="rounded-xl bg-surface-1 p-4 h-32 md:h-40 flex items-end gap-1.5">
-                                    {[35, 50, 40, 65, 55, 70, 60, 80, 75, 90, 85, 95].map((h, i) => (
-                                        <div key={i} className="flex-1 rounded-t-md bg-gradient-to-t from-primary/30 to-primary/60 transition-all" style={{
-                                            height: `${h}%`,
-                                            animationDelay: `${i * 100}ms`
-                                        }} />
-                                    ))}
+                                    <button className="w-full py-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-black uppercase tracking-[0.2em] text-xs transition-all">
+                                        Exploration Analytics
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-                        {/* Glow Effect Under Mockup */}
-                        <div className="absolute -bottom-8 left-1/2 -tranzinc-x-1/2 w-3/4 h-16 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+                        </motion.div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            {/* ═══ SOCIAL PROOF TICKER ═══ */}
-            <RevealSection>
-                <div className="py-8 border-y border-zinc-800/50 bg-surface-0/50">
-                    <div className="marquee-container">
-                        <div className="marquee-track">
-                            {[...Array(2)].map((_, setIdx) => (
-                                <div key={setIdx} className="flex items-center gap-12 px-6">
-                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><Shield size={16} className="text-primary" /> Trusted by 10,000+ Indian Investors</span>
-                                    <span className="text-zinc-700">•</span>
-                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><IndianRupee size={16} className="text-green-500" /> ₹50Cr+ Transactions Tracked</span>
-                                    <span className="text-zinc-700">•</span>
-                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><Zap size={16} className="text-yellow-500" /> 98% User Satisfaction</span>
-                                    <span className="text-zinc-700">•</span>
-                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><Lock size={16} className="text-emerald-500" /> 256-bit SSL Encrypted</span>
-                                    <span className="text-zinc-700">•</span>
-                                    <span className="text-zinc-500 font-medium whitespace-nowrap flex items-center gap-2"><Globe size={16} className="text-yellow-500" /> RBI Compliant</span>
-                                    <span className="text-zinc-700 mr-12">•</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </RevealSection>
+                {/* ═══ CTA SECTION ═══ */}
+                <section className="px-6 py-40 relative flex flex-col items-center justify-center text-center overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-radial from-primary/10 to-transparent blur-3xl opacity-30 pointer-events-none" />
 
-            {/* ═══ FEATURES BENTO GRID ═══ */}
-            <RevealSection className="py-20 md:py-28 px-4">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-14">
-                        <span className="text-primary text-sm font-semibold uppercase tracking-wider">Everything You Need</span>
-                        <h2 className="text-3xl md:text-5xl font-extrabold text-white mt-3 mb-4">One Platform. Total Control.</h2>
-                        <p className="text-zinc-400 max-w-xl mx-auto">From daily UPI tracking to AI-driven investment insights — RupeeWise puts your entire financial life at your fingertips.</p>
-                    </div>
-
-                    <div className="bento-grid stagger-children">
-                        <FeatureCard
-                            icon={<Bot size={24} className="text-white" />}
-                            title="AI Financial Coach"
-                            desc="Get personalized advice powered by Gemini AI. Ask anything — from budgeting tips to retirement planning. It's like having a CFO in your pocket."
-                            color="bg-gradient-to-br from-primary to-secondary"
-                            large
-                        />
-                        <FeatureCard
-                            icon={<LineChart size={24} className="text-emerald-400" />}
-                            title="Market Hub"
-                            desc="Real-time stock data, charts, and screener. Track every move in the Indian market."
-                            color="bg-emerald-500/10"
-                        />
-                        <FeatureCard
-                            icon={<Smartphone size={24} className="text-emerald-400" />}
-                            title="UPI Tracker"
-                            desc="Parse bank statements with AI. Categorize every ₹ automatically."
-                            color="bg-emerald-500/10"
-                        />
-                        <FeatureCard
-                            icon={<Target size={24} className="text-orange-400" />}
-                            title="Goal Planner"
-                            desc="Set financial goals — dream home, retirement, travel — and track your progress with smart milestones."
-                            color="bg-orange-500/10"
-                        />
-                        <FeatureCard
-                            icon={<FileText size={24} className="text-amber-400" />}
-                            title="Tax Simplifier"
-                            desc="Old vs New regime comparison. Maximize savings with automated deduction analysis."
-                            color="bg-amber-500/10"
-                            large
-                        />
-                        <FeatureCard
-                            icon={<GraduationCap size={24} className="text-violet-400" />}
-                            title="Academy"
-                            desc="Learn investing from scratch with curated courses and quizzes."
-                            color="bg-violet-500/10"
-                        />
-                    </div>
-                </div>
-            </RevealSection>
-
-            {/* ═══ STATS ═══ */}
-            <RevealSection className="py-16 md:py-20 px-4">
-                <div className="max-w-4xl mx-auto glass-panel rounded-3xl p-10 md:p-14">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        <StatItem value="10K+" label="Active Users" />
-                        <StatItem value="₹50Cr+" label="Tracked" />
-                        <StatItem value="98%" label="Satisfaction" />
-                        <StatItem value="24/7" label="AI Support" />
-                    </div>
-                </div>
-            </RevealSection>
-
-            {/* ═══ HOW IT WORKS ═══ */}
-            <RevealSection className="py-20 md:py-28 px-4">
-                <div className="max-w-5xl mx-auto">
-                    <div className="text-center mb-16">
-                        <span className="text-secondary text-sm font-semibold uppercase tracking-wider">How It Works</span>
-                        <h2 className="text-3xl md:text-5xl font-extrabold text-white mt-3">Three Steps to Financial Freedom</h2>
-                    </div>
-
-                    <div className="flex flex-col md:flex-row gap-8 md:gap-6 relative stagger-children">
-                        {/* Connecting Line (Desktop) */}
-                        <div className="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-px border-t-2 border-dashed border-zinc-700 -tranzinc-y-1/2 pointer-events-none" />
-
-                        <StepCard
-                            number="1"
-                            title="Connect"
-                            desc="Sign up for free in 30 seconds. Secure authentication powered by Supabase."
-                            icon={<Shield size={28} className="text-primary" />}
-                            color="bg-primary/10"
-                        />
-                        <StepCard
-                            number="2"
-                            title="Track"
-                            desc="Add transactions manually or let AI parse your bank statements automatically."
-                            icon={<BarChart3 size={28} className="text-secondary" />}
-                            color="bg-secondary/10"
-                        />
-                        <StepCard
-                            number="3"
-                            title="Grow"
-                            desc="Get AI insights, set goals, track markets, and watch your wealth compound."
-                            icon={<TrendingUp size={28} className="text-emerald-400" />}
-                            color="bg-emerald-500/10"
-                        />
-                    </div>
-                </div>
-            </RevealSection>
-
-            {/* ═══ FINAL CTA ═══ */}
-            <RevealSection className="py-20 px-4">
-                <div className="max-w-4xl mx-auto text-center relative overflow-hidden rounded-3xl p-12 md:p-16" style={{
-                    background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.1), rgba(217,70,239,0.1))'
-                }}>
-                    {/* Glow */}
-                    <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
-                    <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-accent/15 rounded-full blur-[80px] pointer-events-none" />
-
-                    <div className="relative z-10">
-                        <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4">
-                            Your Financial Future <br className="hidden md:block" />Starts with <span className="gradient-text">₹0</span>
+                    <motion.div
+                        whileInView={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, y: 50 }}
+                        viewport={{ once: true }}
+                        className="max-w-4xl space-y-12 relative z-10"
+                    >
+                        <h2 className="text-6xl md:text-9xl font-black text-white leading-none tracking-tighter">
+                            THE LAST <br /> <span className="text-primary">WALLE</span> YOU'LL <br /> EVER NEED.
                         </h2>
-                        <p className="text-zinc-400 text-lg mb-8 max-w-md mx-auto">
-                            No credit card required. No hidden fees. Just smarter money management.
-                        </p>
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="px-10 py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold text-lg rounded-2xl shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.03] active:scale-[0.98] transition-all inline-flex items-center gap-2"
-                        >
-                            Get Started — It's Free <ArrowRight size={20} />
-                        </button>
 
-                        {/* Trust Badges */}
-                        <div className="mt-10 flex flex-wrap justify-center gap-6 text-zinc-500 text-xs font-medium">
-                            <span className="flex items-center gap-1.5"><Lock size={12} /> 256-bit SSL</span>
-                            <span className="flex items-center gap-1.5"><Shield size={12} /> RBI Compliant</span>
-                            <span className="flex items-center gap-1.5"><Globe size={12} /> No Hidden Fees</span>
+                        <p className="text-slate-400 text-xl font-medium max-w-xl mx-auto">
+                            Join the private network of India's most vision-oriented investors. Premium waits for no one.
+                        </p>
+
+                        <div className="flex flex-col md:flex-row gap-6 justify-center pt-4">
+                            <motion.button
+                                whileHover={{ scale: 1.05, boxShadow: "0 0 60px rgba(212, 175, 55, 0.5)" }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => navigate('/login')}
+                                className="h-24 px-16 bg-gradient-to-r from-primary via-[#F9E29C] to-primary bg-[length:200%_auto] text-black font-black rounded-full text-2xl shadow-3xl transition-all duration-700 hover:bg-[position:right_center]"
+                            >
+                                Secure My Access
+                            </motion.button>
                         </div>
-                    </div>
-                </div>
-            </RevealSection>
+
+                        <div className="flex items-center justify-center gap-6 pt-4 text-slate-600 font-bold uppercase tracking-[0.2em] text-[10px]">
+                            <span className="flex items-center gap-2"><Lock size={12} /> Military Grade</span>
+                            <span className="flex items-center gap-2"><Globe size={12} /> Global Support</span>
+                            <span className="flex items-center gap-2"><Shield size={12} /> SOC2 Ready</span>
+                        </div>
+                    </motion.div>
+                </section>
+            </main>
 
             {/* ═══ FOOTER ═══ */}
-            <footer className="py-10 px-4 border-t border-zinc-800/50">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-sm">₹</div>
-                        <span className="text-white font-bold text-lg">RupeeWise</span>
+            <footer className="py-20 px-8 border-t border-white/5 bg-black relative z-10">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+                    <div className="md:col-span-2 space-y-6">
+                        <div className="flex items-center gap-3">
+                            <img src="/logo.png" alt="Logo" className="w-8 h-8 opacity-50 grayscale" />
+                            <span className="text-white text-xl font-black uppercase tracking-tighter">RupeeWise</span>
+                        </div>
+                        <p className="text-slate-500 max-w-sm font-medium">Building the definitive financial os for the future billionaires of Bharat. Intelligence, luxury, and performance combined.</p>
                     </div>
-                    <p className="text-zinc-500 text-sm">© 2026 RupeeWise. Built with ❤️ for India.</p>
+
+                    <div className="space-y-6">
+                        <h6 className="text-white font-black uppercase tracking-widest text-xs">Navigation</h6>
+                        <ul className="space-y-4 text-slate-500 font-bold text-sm tracking-wide">
+                            <li><a href="#" className="hover:text-primary transition-colors uppercase">Vision</a></li>
+                            <li><a href="#" className="hover:text-primary transition-colors uppercase">Ecosystem</a></li>
+                            <li><a href="#" className="hover:text-primary transition-colors uppercase">Academy</a></li>
+                            <li><a href="#" className="hover:text-primary transition-colors uppercase">Markets</a></li>
+                        </ul>
+                    </div>
+
+                    <div className="space-y-6">
+                        <h6 className="text-white font-black uppercase tracking-widest text-xs">Legal</h6>
+                        <ul className="space-y-4 text-slate-500 font-bold text-sm tracking-wide">
+                            <li><a href="#" className="hover:text-white transition-colors uppercase">Privacy Strategy</a></li>
+                            <li><a href="#" className="hover:text-white transition-colors uppercase">Terms of Use</a></li>
+                            <li><a href="#" className="hover:text-white transition-colors uppercase">Risk Disclosure</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="max-w-7xl mx-auto pt-20 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/5 mt-20">
+                    <p className="text-slate-600 text-[10px] font-black uppercase tracking-[0.3em]">© {new Date().getFullYear()} RupeeWise Infrastructure. All Rights Reserved.</p>
+                    <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"><Fingerprint size={16} className="text-slate-400" /></div>
+                        <div className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"><Lock size={16} className="text-slate-400" /></div>
+                    </div>
                 </div>
             </footer>
         </div>

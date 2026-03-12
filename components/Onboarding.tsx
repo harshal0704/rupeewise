@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { cloudinaryService } from '../services/cloudinaryService';
-import { Check, ChevronRight, ChevronLeft, Target, Briefcase, GraduationCap, Upload, User, Camera, Plus, X, Sparkles, Trophy, Rocket } from 'lucide-react';
+import { Check, ChevronRight, ChevronLeft, Target, Briefcase, GraduationCap, Upload, User, Camera, Plus, X, Sparkles, Trophy, Rocket, TrendingUp, Shield } from 'lucide-react';
 
 const STEPS = [
-    { label: 'Photo', emoji: '📸' },
-    { label: 'About', emoji: '✍️' },
-    { label: 'Goals', emoji: '🎯' },
-    { label: 'Focus', emoji: '🧭' },
-    { label: 'Level', emoji: '🚀' },
+    { label: 'Photo', icon: <Camera size={16} /> },
+    { label: 'About', icon: <User size={16} /> },
+    { label: 'Goals', icon: <Target size={16} /> },
+    { label: 'Focus', icon: <Briefcase size={16} /> },
+    { label: 'Level', icon: <Rocket size={16} /> },
+    { label: 'AI Setup', icon: <Sparkles size={16} /> },
 ];
 
 const Onboarding: React.FC = () => {
@@ -60,24 +61,24 @@ const Onboarding: React.FC = () => {
     };
 
     const goals = [
-        { id: 'wealth', label: 'Wealth Creation', icon: <Target className="text-emerald-400" size={22} />, desc: 'Build long-term wealth through compounding.', emoji: '💰' },
-        { id: 'retirement', label: 'Retirement Planning', icon: <Briefcase className="text-amber-400" size={22} />, desc: 'Secure a financially independent retirement.', emoji: '🏖️' },
-        { id: 'tax', label: 'Tax Saving', icon: <Check className="text-yellow-400" size={22} />, desc: 'Optimize tax liabilities efficiently.', emoji: '📊' },
+        { id: 'wealth', label: 'Wealth Creation', icon: <Target className="text-emerald-400" size={22} />, desc: 'Build long-term wealth through compounding.', iconObj: <TrendingUp size={24} className="text-emerald-400" /> },
+        { id: 'retirement', label: 'Retirement Planning', icon: <Briefcase className="text-amber-400" size={22} />, desc: 'Secure a financially independent retirement.', iconObj: <Briefcase size={24} className="text-amber-400" /> },
+        { id: 'tax', label: 'Tax Saving', icon: <Check className="text-yellow-400" size={22} />, desc: 'Optimize tax liabilities efficiently.', iconObj: <Shield size={24} className="text-yellow-400" /> },
     ];
 
     const experience = [
-        { id: 'beginner', label: 'Beginner', desc: 'I am new to investing.', emoji: '🌱', accent: 'border-amber-500/30 bg-amber-500/5' },
-        { id: 'intermediate', label: 'Intermediate', desc: 'I have some experience with stocks/MFs.', emoji: '⚡', accent: 'border-zinc-400/30 bg-zinc-400/5' },
-        { id: 'pro', label: 'Pro', desc: 'I actively trade and understand markets.', emoji: '🏆', accent: 'border-yellow-500/30 bg-yellow-500/5' },
+        { id: 'beginner', label: 'Beginner', desc: 'I am new to investing.', iconObj: <GraduationCap size={24} className="text-amber-500" />, accent: 'border-amber-500/30 bg-amber-500/5' },
+        { id: 'intermediate', label: 'Intermediate', desc: 'I have some experience with stocks/MFs.', iconObj: <TrendingUp size={24} className="text-zinc-400" />, accent: 'border-zinc-400/30 bg-zinc-400/5' },
+        { id: 'pro', label: 'Pro', desc: 'I actively trade and understand markets.', iconObj: <Trophy size={24} className="text-yellow-500" />, accent: 'border-yellow-500/30 bg-yellow-500/5' },
     ];
 
     const presetGoals = [
-        { label: '🏠 Buy a Home', value: 'Buy a Home' },
-        { label: '🚗 Buy a Car', value: 'Buy a Car' },
-        { label: '✈️ Travel Fund', value: 'Travel Fund' },
-        { label: '💰 Emergency Fund', value: 'Emergency Fund' },
-        { label: '👨‍🎓 Education', value: 'Education' },
-        { label: '💍 Wedding', value: 'Wedding' },
+        { label: 'Buy a Home', value: 'Buy a Home' },
+        { label: 'Buy a Car', value: 'Buy a Car' },
+        { label: 'Travel Fund', value: 'Travel Fund' },
+        { label: 'Emergency Fund', value: 'Emergency Fund' },
+        { label: 'Education', value: 'Education' },
+        { label: 'Wedding', value: 'Wedding' },
     ];
 
     const handleSubmit = async () => {
@@ -89,13 +90,9 @@ const Onboarding: React.FC = () => {
                     id: user.id,
                     investment_goal: formData.investmentGoal,
                     experience_level: formData.experienceLevel,
-                    job_title: formData.jobTitle,
-                    dream: formData.dream,
-                    goals: formData.goals,
-                    avatar_url: formData.avatarUrl,
                     onboarding_completed: true,
                     updated_at: new Date().toISOString()
-                })
+                }, { onConflict: 'id' })
                 .select();
 
             if (error) throw error;
@@ -112,6 +109,11 @@ const Onboarding: React.FC = () => {
     const canProceed = () => {
         if (step === 3) return !!formData.investmentGoal;
         if (step === 4) return !!formData.experienceLevel;
+        if (step === 5) {
+            const provider = localStorage.getItem('ai_provider');
+            if (provider === 'gemini') return !!localStorage.getItem('gemini_api_key');
+            return true; // Groq doesn't strictly need a key here
+        }
         return true;
     };
 
@@ -137,12 +139,12 @@ const Onboarding: React.FC = () => {
                         <React.Fragment key={i}>
                             <div className="flex flex-col items-center gap-1.5">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${step > i
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                                        : step === i
-                                            ? 'bg-primary/20 text-primary border-2 border-primary shadow-lg shadow-primary/20'
-                                            : 'bg-zinc-800 text-zinc-500'
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                                    : step === i
+                                        ? 'bg-primary/20 text-primary border-2 border-primary shadow-lg shadow-primary/20'
+                                        : 'bg-zinc-800 text-zinc-500'
                                     }`}>
-                                    {step > i ? <Check size={14} /> : s.emoji}
+                                    {step > i ? <Check size={14} /> : s.icon}
                                 </div>
                                 <span className={`text-[10px] font-semibold transition-colors ${step >= i ? 'text-white' : 'text-zinc-600'}`}>
                                     {s.label}
@@ -161,10 +163,18 @@ const Onboarding: React.FC = () => {
                     {/* ─── SUCCESS STATE ─── */}
                     {submitted && (
                         <div className="text-center py-12 animate-scale-in">
-                            <div className="text-6xl mb-4">🎉</div>
+                            <div className="flex justify-center mb-6">
+                                <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+                                    <Check size={40} />
+                                </div>
+                            </div>
                             <h2 className="text-2xl font-extrabold text-white mb-2">You're All Set!</h2>
                             <p className="text-zinc-400">Redirecting to your dashboard...</p>
-                            <div className="mt-6 w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                            <div className="mt-8 flex justify-center space-x-2">
+                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
                         </div>
                     )}
 
@@ -172,7 +182,7 @@ const Onboarding: React.FC = () => {
                     {!submitted && step === 0 && (
                         <div className="space-y-8 text-center animate-fade-in-up">
                             <div>
-                                <h2 className="text-2xl font-extrabold text-white mb-2">Let's see that smile! 📸</h2>
+                                <h2 className="text-2xl font-extrabold text-white mb-2">Let's see that smile</h2>
                                 <p className="text-zinc-400 text-sm">Upload a profile photo to personalize your experience.</p>
                             </div>
 
@@ -207,7 +217,7 @@ const Onboarding: React.FC = () => {
                     {!submitted && step === 1 && (
                         <div className="space-y-6 animate-fade-in-up">
                             <div className="text-center">
-                                <h2 className="text-2xl font-extrabold text-white mb-2">Tell us about yourself ✍️</h2>
+                                <h2 className="text-2xl font-extrabold text-white mb-2">Tell us about yourself</h2>
                                 <p className="text-zinc-400 text-sm">This helps us personalize your experience.</p>
                             </div>
                             <div className="space-y-5">
@@ -218,7 +228,7 @@ const Onboarding: React.FC = () => {
                                         value={formData.jobTitle}
                                         onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
                                         className="neumorph-input !pl-4"
-                                        placeholder="CEO of my future empire 👑"
+                                        placeholder="e.g. Software Engineer, Designer, Founder"
                                     />
                                 </div>
                                 <div>
@@ -229,8 +239,8 @@ const Onboarding: React.FC = () => {
                                     <textarea
                                         value={formData.dream}
                                         onChange={(e) => setFormData({ ...formData, dream: e.target.value.slice(0, 200) })}
-                                        className="neumorph-input !pl-4 h-24 resize-none"
-                                        placeholder="Buy a beach house in Goa, retire by 45... 🏖️"
+                                        className="neumorph-input !pl-4 h-24 resize-none pt-4"
+                                        placeholder="Buy a beach house in Goa, retire by 45, travel the world..."
                                     />
                                 </div>
                             </div>
@@ -241,7 +251,7 @@ const Onboarding: React.FC = () => {
                     {!submitted && step === 2 && (
                         <div className="space-y-6 animate-fade-in-up">
                             <div className="text-center">
-                                <h2 className="text-2xl font-extrabold text-white mb-2">What are your goals? 🎯</h2>
+                                <h2 className="text-2xl font-extrabold text-white mb-2">What are your goals?</h2>
                                 <p className="text-zinc-400 text-sm">Pick presets or add custom goals.</p>
                             </div>
 
@@ -252,8 +262,8 @@ const Onboarding: React.FC = () => {
                                         key={pg.value}
                                         onClick={() => togglePresetGoal(pg.value)}
                                         className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${formData.goals.includes(pg.value)
-                                                ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm shadow-primary/10'
-                                                : 'bg-surface-2 text-zinc-400 border border-transparent hover:border-zinc-600 hover:text-white'
+                                            ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm shadow-primary/10'
+                                            : 'bg-surface-2 text-zinc-400 border border-transparent hover:border-zinc-600 hover:text-white'
                                             }`}
                                     >
                                         {pg.label}
@@ -294,7 +304,7 @@ const Onboarding: React.FC = () => {
                     {!submitted && step === 3 && (
                         <div className="space-y-6 animate-fade-in-up">
                             <div className="text-center">
-                                <h2 className="text-2xl font-extrabold text-white mb-2">What's your primary focus? 🧭</h2>
+                                <h2 className="text-2xl font-extrabold text-white mb-2">What's your primary focus?</h2>
                             </div>
                             <div className="grid gap-4">
                                 {goals.map((goal) => (
@@ -306,14 +316,14 @@ const Onboarding: React.FC = () => {
                                             : 'border-zinc-800 bg-surface-1 hover:border-zinc-600'
                                             }`}
                                     >
-                                        <div className="text-2xl">{goal.emoji}</div>
+                                        <div className="shrink-0">{goal.iconObj}</div>
                                         <div className="flex-1">
                                             <h3 className="font-bold text-white">{goal.label}</h3>
                                             <p className="text-sm text-zinc-400 mt-0.5">{goal.desc}</p>
                                         </div>
                                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${formData.investmentGoal === goal.id
-                                                ? 'border-primary bg-primary'
-                                                : 'border-zinc-600'
+                                            ? 'border-primary bg-primary'
+                                            : 'border-zinc-600'
                                             }`}>
                                             {formData.investmentGoal === goal.id && <Check size={14} className="text-white animate-scale-in" />}
                                         </div>
@@ -327,7 +337,7 @@ const Onboarding: React.FC = () => {
                     {!submitted && step === 4 && (
                         <div className="space-y-6 animate-fade-in-up">
                             <div className="text-center">
-                                <h2 className="text-2xl font-extrabold text-white mb-2">What's your experience level? 🚀</h2>
+                                <h2 className="text-2xl font-extrabold text-white mb-2">What's your experience level?</h2>
                             </div>
                             <div className="grid gap-4">
                                 {experience.map((exp) => (
@@ -339,21 +349,86 @@ const Onboarding: React.FC = () => {
                                             : `${exp.accent} hover:border-zinc-500`
                                             }`}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-2xl">{exp.emoji}</span>
+                                        <div className="flex items-center gap-4">
+                                            <div className="shrink-0">{exp.iconObj}</div>
                                             <div className="flex-1">
                                                 <h3 className="font-bold text-white text-lg">{exp.label}</h3>
                                                 <p className="text-sm text-zinc-400 mt-0.5">{exp.desc}</p>
                                             </div>
                                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${formData.experienceLevel === exp.id
-                                                    ? 'border-primary bg-primary'
-                                                    : 'border-zinc-600'
+                                                ? 'border-primary bg-primary'
+                                                : 'border-zinc-600'
                                                 }`}>
                                                 {formData.experienceLevel === exp.id && <Check size={14} className="text-white animate-scale-in" />}
                                             </div>
                                         </div>
                                     </button>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ─── STEP 5: AI Setup ─── */}
+                    {!submitted && step === 5 && (
+                        <div className="space-y-6 animate-fade-in-up">
+                            <div className="text-center">
+                                <h2 className="text-2xl font-extrabold text-white mb-2">Choose Your AI Brain</h2>
+                                <p className="text-zinc-400 text-sm">Select the AI provider that powers RupeeWise for you.</p>
+                            </div>
+                            <div className="grid gap-4">
+                                {/* Groq Option */}
+                                <button
+                                    onClick={() => {
+                                        localStorage.setItem('ai_provider', 'groq');
+                                        window.dispatchEvent(new Event('storage'));
+                                    }}
+                                    className={`p-5 rounded-2xl border text-left transition-all relative overflow-hidden ${(localStorage.getItem('ai_provider') || 'groq') === 'groq'
+                                            ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
+                                            : 'border-zinc-800 bg-surface-1 hover:border-zinc-500'
+                                        }`}
+                                >
+                                    {(localStorage.getItem('ai_provider') || 'groq') === 'groq' && (
+                                        <div className="absolute top-0 right-0 w-16 h-16 bg-primary/20 blur-xl rounded-full" />
+                                    )}
+                                    <div className="flex items-center justify-between mb-2 relative z-10">
+                                        <h3 className="font-bold text-white text-lg">Groq (Recommended)</h3>
+                                        <div className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-md">Free & Fast</div>
+                                    </div>
+                                    <p className="text-sm text-zinc-400 relative z-10">Use our blazing fast AI models. No API key required to start.</p>
+                                </button>
+
+                                {/* Gemini Option */}
+                                <button
+                                    onClick={() => {
+                                        localStorage.setItem('ai_provider', 'gemini');
+                                        window.dispatchEvent(new Event('storage'));
+                                    }}
+                                    className={`p-5 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col gap-3 ${localStorage.getItem('ai_provider') === 'gemini'
+                                            ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10'
+                                            : 'border-zinc-800 bg-surface-1 hover:border-zinc-500'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-between relative z-10 w-full">
+                                        <h3 className="font-bold text-white text-lg">Google Gemini</h3>
+                                        <div className="px-2 py-0.5 bg-zinc-800 text-zinc-300 text-xs font-bold rounded-md">Bring Your Key</div>
+                                    </div>
+                                    <p className="text-sm text-zinc-400 relative z-10">Use Google's powerful Gemini models if you have your own API key.</p>
+
+                                    {localStorage.getItem('ai_provider') === 'gemini' && (
+                                        <div className="w-full relative z-10 mt-2 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter Gemini API Key"
+                                                defaultValue={localStorage.getItem('gemini_api_key') || ''}
+                                                onChange={(e) => localStorage.setItem('gemini_api_key', e.target.value)}
+                                                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none placeholder-zinc-500"
+                                            />
+                                            <p className="text-xs text-zinc-500 mt-2">
+                                                Get a free key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google AI Studio</a>.
+                                            </p>
+                                        </div>
+                                    )}
+                                </button>
                             </div>
                         </div>
                     )}
@@ -369,7 +444,7 @@ const Onboarding: React.FC = () => {
                                     <ChevronLeft size={18} /> Back
                                 </button>
                             )}
-                            {step < 4 ? (
+                            {step < 5 ? (
                                 <button
                                     onClick={() => setStep(step + 1)}
                                     disabled={!canProceed()}

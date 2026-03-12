@@ -208,6 +208,47 @@ create policy "Users can insert into their chat history"
 
 
 -- ==========================================
+-- 6. COURSES TABLE (for Academy.tsx)
+-- ==========================================
+create table if not exists public.courses (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) not null,
+  title text not null,
+  description text,
+  icon text,
+  color text,
+  bg text,
+  lessons jsonb not null default '[]',
+  created_at timestamptz default now()
+);
+
+-- Enable RLS
+alter table public.courses enable row level security;
+
+-- Policies
+create policy "Users can view their own courses"
+  on public.courses for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert their own courses"
+  on public.courses for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete their own courses"
+  on public.courses for delete
+  using (auth.uid() = user_id);
+
+
+-- ==========================================
+-- 7. AI PREFERENCES (added to profiles)
+-- ==========================================
+-- Run these as ALTER statements (profiles table already exists)
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ai_provider text DEFAULT 'groq';
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ai_api_key text;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ai_model text;
+
+
+-- ==========================================
 -- HELPER: Indexes for Performance
 -- ==========================================
 create index if not exists idx_transactions_user_id on public.transactions(user_id);
@@ -215,3 +256,4 @@ create index if not exists idx_goals_user_id on public.goals(user_id);
 create index if not exists idx_watchlist_user_id on public.watchlist(user_id);
 create index if not exists idx_portfolio_user_id on public.portfolio_holdings(user_id);
 create index if not exists idx_chat_messages_user_id on public.chat_messages(user_id);
+create index if not exists idx_courses_user_id on public.courses(user_id);

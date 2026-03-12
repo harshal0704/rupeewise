@@ -31,12 +31,12 @@ const ProtectedRoute = () => {
   const location = useLocation();
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--surface-0)' }}>
+    <div className="min-h-screen flex items-center justify-center bg-surface-0">
       <div className="relative w-24 h-24">
-        <div className="absolute inset-0 border-4 border-zinc-800 rounded-full"></div>
+        <div className="absolute inset-0 border-4 border-surface-3 rounded-full"></div>
         <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-bold text-white">₹</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-surface-1 rounded-full p-2 m-2">
+          <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain animate-pulse" />
         </div>
       </div>
     </div>

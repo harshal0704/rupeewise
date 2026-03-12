@@ -1,81 +1,116 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'cosmic' | 'emerald' | 'sunset' | 'ocean' | 'midnight';
+type Theme = 'obsidian' | 'midnight' | 'aurora' | 'porcelain';
+
+export interface ThemeConfig {
+    id: Theme;
+    name: string;
+    isLight?: boolean;
+    colors: Record<string, string>;
+}
 
 interface ThemeContextType {
     theme: Theme;
     setTheme: (theme: Theme) => void;
-    themes: { id: Theme; name: string; colors: any }[];
+    themes: ThemeConfig[];
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const themes: { id: Theme; name: string; colors: any }[] = [
+const themes: ThemeConfig[] = [
     {
-        id: 'cosmic',
-        name: 'Cosmic (Default)',
+        id: 'obsidian',
+        name: 'Obsidian',
         colors: {
-            '--primary': '#6366f1', // Indigo 500
-            '--primary-glow': 'rgba(99, 102, 241, 0.5)',
-            '--secondary': '#06b6d4', // Cyan 500
-            '--accent': '#d946ef', // Fuchsia 500
-            '--bg-gradient-start': 'rgba(99, 102, 241, 0.15)',
-            '--bg-gradient-end': 'rgba(217, 70, 239, 0.15)'
-        }
-    },
-    {
-        id: 'emerald',
-        name: 'Emerald City',
-        colors: {
-            '--primary': '#10b981', // Emerald 500
-            '--primary-glow': 'rgba(16, 185, 129, 0.5)',
-            '--secondary': '#0ea5e9', // Sky 500
-            '--accent': '#f59e0b', // Amber 500
-            '--bg-gradient-start': 'rgba(16, 185, 129, 0.15)',
-            '--bg-gradient-end': 'rgba(14, 165, 233, 0.15)'
-        }
-    },
-    {
-        id: 'sunset',
-        name: 'Sunset Blvd',
-        colors: {
-            '--primary': '#f43f5e', // Rose 500
-            '--primary-glow': 'rgba(244, 63, 94, 0.5)',
-            '--secondary': '#f97316', // Orange 500
-            '--accent': '#8b5cf6', // Violet 500
-            '--bg-gradient-start': 'rgba(244, 63, 94, 0.15)',
-            '--bg-gradient-end': 'rgba(249, 115, 22, 0.15)'
-        }
-    },
-    {
-        id: 'ocean',
-        name: 'Deep Ocean',
-        colors: {
-            '--primary': '#3b82f6', // Blue 500
-            '--primary-glow': 'rgba(59, 130, 246, 0.5)',
-            '--secondary': '#06b6d4', // Cyan 500
-            '--accent': '#14b8a6', // Teal 500
-            '--bg-gradient-start': 'rgba(59, 130, 246, 0.15)',
-            '--bg-gradient-end': 'rgba(6, 182, 212, 0.15)'
+            '--surface-0': '#08090a',
+            '--surface-1': '#0f1012',
+            '--surface-2': '#161719',
+            '--surface-3': '#1e1f22',
+            '--surface-4': '#26272b',
+            '--primary': '#d4a853',
+            '--primary-glow': 'rgba(212, 168, 83, 0.25)',
+            '--primary-soft': 'rgba(212, 168, 83, 0.08)',
+            '--secondary': '#34d399',
+            '--accent': '#f0dca0',
+            '--text-main': '#f5f5f5',
+            '--text-secondary': '#a1a1aa',
+            '--text-muted': '#71717a',
+            '--text-dim': '#3f3f46',
+            '--glass-bg': 'rgba(14, 15, 17, 0.85)'
         }
     },
     {
         id: 'midnight',
-        name: 'Midnight Pro',
+        name: 'Midnight',
         colors: {
-            '--primary': '#94a3b8', // Slate 400
-            '--primary-glow': 'rgba(148, 163, 184, 0.3)',
-            '--secondary': '#cbd5e1', // Slate 300
-            '--accent': '#ffffff', // White
-            '--bg-gradient-start': 'rgba(0,0,0,0)',
-            '--bg-gradient-end': 'rgba(255,255,255,0.05)'
+            '--surface-0': '#030712',
+            '--surface-1': '#080d1e',
+            '--surface-2': '#121a2f',
+            '--surface-3': '#1e293b',
+            '--surface-4': '#334155',
+            '--primary': '#38bdf8',
+            '--primary-glow': 'rgba(56, 189, 248, 0.25)',
+            '--primary-soft': 'rgba(56, 189, 248, 0.08)',
+            '--secondary': '#a78bfa',
+            '--accent': '#e0f2fe',
+            '--text-main': '#f8fafc',
+            '--text-secondary': '#94a3b8',
+            '--text-muted': '#64748b',
+            '--text-dim': '#475569',
+            '--glass-bg': 'rgba(3, 7, 18, 0.85)'
+        }
+    },
+    {
+        id: 'aurora',
+        name: 'Aurora',
+        colors: {
+            '--surface-0': '#020617',
+            '--surface-1': '#021008',
+            '--surface-2': '#052e16',
+            '--surface-3': '#064e3b',
+            '--surface-4': '#065f46',
+            '--primary': '#10b981',
+            '--primary-glow': 'rgba(16, 185, 129, 0.25)',
+            '--primary-soft': 'rgba(16, 185, 129, 0.08)',
+            '--secondary': '#0ea5e9',
+            '--accent': '#a7f3d0',
+            '--text-main': '#f8fafc',
+            '--text-secondary': '#6ee7b7',
+            '--text-muted': '#34d399',
+            '--text-dim': '#059669',
+            '--glass-bg': 'rgba(2, 16, 8, 0.85)'
+        }
+    },
+    {
+        id: 'porcelain',
+        name: 'Porcelain',
+        isLight: true,
+        colors: {
+            '--surface-0': '#f8fafc',
+            '--surface-1': '#ffffff',
+            '--surface-2': '#f1f5f9',
+            '--surface-3': '#e2e8f0',
+            '--surface-4': '#cbd5e1',
+            '--primary': '#2563eb',
+            '--primary-glow': 'rgba(37, 99, 235, 0.15)',
+            '--primary-soft': 'rgba(37, 99, 235, 0.08)',
+            '--secondary': '#8b5cf6',
+            '--accent': '#1e40af',
+            '--text-main': '#0f172a',
+            '--text-secondary': '#475569',
+            '--text-muted': '#64748b',
+            '--text-dim': '#94a3b8',
+            '--glass-bg': 'rgba(255, 255, 255, 0.85)'
         }
     }
 ];
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [theme, setThemeState] = useState<Theme>(() => {
-        return (localStorage.getItem('rupeewise_theme') as Theme) || 'cosmic';
+        const stored = localStorage.getItem('rupeewise_theme');
+        // Migrate old themes to 'obsidian'
+        if (!themes.find(t => t.id === stored)) return 'obsidian';
+        return stored as Theme;
     });
 
     const setTheme = (newTheme: Theme) => {
@@ -91,20 +126,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             document.documentElement.style.setProperty(key, value as string);
         });
 
-        // Special handling for background gradient if implemented in CSS with vars
-        // In local index.css, we might need to update the radial-gradient if it's hardcoded.
-        // But we can override it by setting a new background-image on body if needed,
-        // or better, ensuring index.css uses these variables.
+        // Add a class to body for global light/dark overrides if needed
+        if (selectedTheme.isLight) {
+            document.body.classList.add('light-theme');
+        } else {
+            document.body.classList.remove('light-theme');
+        }
 
-        // Let's assume index.css uses these vars or we inject styles.
-        // Since index.css has hardcoded: 
-        // background-image: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%), ...
-        // We will override it directly here:
-
-        document.body.style.backgroundImage = `
-            radial-gradient(circle at 15% 50%, ${selectedTheme.colors['--bg-gradient-start']}, transparent 25%),
-            radial-gradient(circle at 85% 30%, ${selectedTheme.colors['--bg-gradient-end']}, transparent 25%)
-        `;
+        // Update glass border to match theme
+        const primaryColor = selectedTheme.colors['--primary'];
+        document.documentElement.style.setProperty('--glass-border', `rgba(${hexToRgb(primaryColor)}, 0.15)`);
+        document.documentElement.style.setProperty('--glass-border-hover', `rgba(${hexToRgb(primaryColor)}, 0.3)`);
+        document.documentElement.style.setProperty('--glass-highlight', `rgba(${hexToRgb(primaryColor)}, 0.05)`);
 
     }, [theme]);
 
@@ -113,6 +146,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             {children}
         </ThemeContext.Provider>
     );
+};
+
+// Helper to convert hex to rgb string
+const hexToRgb = (hex: string): string => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) return '212, 168, 83';
+    return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
 };
 
 export const useTheme = () => {
