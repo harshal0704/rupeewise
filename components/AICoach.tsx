@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import { getFinancialAdvice } from '../services/geminiService';
+import { MarkdownRenderer } from '../services/markdownRenderer';
 import { Send, User, Bot, Sparkles } from 'lucide-react';
 
 const AICoach: React.FC = () => {
@@ -14,114 +15,136 @@ const AICoach: React.FC = () => {
     }
   ]);
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  useEffect(scrollToBottom, [messages]);
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    const userMsg: ChatMessage = {
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
       text: input,
       timestamp: new Date()
     };
-
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setLoading(true);
 
-    // Format history for API
-    const history = messages.map(m => ({
-      role: m.role,
-      parts: [{ text: m.text }]
-    }));
-    history.push({ role: 'user', parts: [{ text: userMsg.text }] });
+    try {
+      const history = [...messages, userMessage].map(m => ({
+        role: m.role,
+        parts: [{ text: m.text }]
+      }));
 
-    const aiResponseText = await getFinancialAdvice(history);
+      const response = await getFinancialAdvice(history);
 
-    const aiMsg: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'model',
-      text: aiResponseText,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, aiMsg]);
-    setLoading(false);
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: response,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("AI Coach Error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] bg-zinc-900/50 backdrop-blur-md rounded-xl shadow-lg border border-zinc-700/50 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-120px)] animate-fade-in">
       {/* Header */}
-      <div className="bg-gradient-to-r from-amber-600 to-violet-600 p-4 text-white flex items-center shadow-md">
-        <div className="bg-white/20 p-2 rounded-full mr-3">
-          <Sparkles size={20} />
+      <div className="glass-panel rounded-2xl p-4 mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Sparkles size={20} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white">RupeeWise AI Coach</h1>
+            <p className="text-xs text-zinc-400">Your personal finance assistant</p>
+          </div>
         </div>
-        <div>
-          <h2 className="font-bold text-lg">RupeeWise Coach</h2>
-          <p className="text-amber-100 text-xs">Powered by Gemini 2.0 Flash</p>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs text-zinc-400">Online</span>
         </div>
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-950/30">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-4 custom-scrollbar">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex gap-3 animate-fade-in-up ${msg.role === 'user' ? 'justify-end' : ''}`}
           >
-            <div className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${msg.role === 'user'
-              ? 'bg-amber-600 text-white rounded-br-none'
-              : 'bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-bl-none'
-              }`}>
-              <div className="flex items-center gap-2 mb-1 opacity-70 text-xs">
-                {msg.role === 'user' ? <User size={12} /> : <Bot size={12} />}
-                <span>{msg.role === 'user' ? 'You' : 'Coach'}</span>
+            {msg.role === 'model' && (
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                <Bot size={16} className="text-primary" />
               </div>
-              <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</div>
+            )}
+            <div
+              className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user'
+                  ? 'bg-primary/15 border border-primary/20 text-white'
+                  : 'glass-panel'
+                }`}
+            >
+              {msg.role === 'model' ? (
+                <MarkdownRenderer content={msg.text} />
+              ) : (
+                <p className="text-sm leading-relaxed">{msg.text}</p>
+              )}
+              <p className="text-[10px] text-zinc-500 mt-2">
+                {msg.timestamp.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
+            {msg.role === 'user' && (
+              <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0 mt-1">
+                <User size={16} className="text-zinc-400" />
+              </div>
+            )}
           </div>
         ))}
+
         {loading && (
-          <div className="flex justify-start">
-            <div className="bg-zinc-800 border border-zinc-700 rounded-2xl rounded-bl-none p-4 shadow-sm">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div className="flex gap-3 animate-fade-in">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Bot size={16} className="text-primary" />
+            </div>
+            <div className="glass-panel rounded-2xl px-4 py-3">
+              <div className="flex gap-1.5">
+                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
+        <div ref={chatEndRef} />
       </div>
 
       {/* Input */}
-      <div className="p-4 bg-zinc-900/80 border-t border-zinc-700/50 backdrop-blur-sm">
-        <form onSubmit={handleSend} className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about SIPs, Gold, Loans, or Budgeting..."
-            className="flex-1 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all text-zinc-200 placeholder-zinc-500"
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || loading}
-            className="bg-amber-600 hover:bg-amber-700 text-white p-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Send size={20} />
-          </button>
-        </form>
+      <div className="glass-panel rounded-2xl p-3 flex gap-3 items-center mt-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          placeholder="Ask about investments, tax saving, budgeting..."
+          className="flex-1 bg-transparent text-white text-sm px-3 py-2 outline-none placeholder-zinc-500"
+          disabled={loading}
+        />
+        <button
+          onClick={handleSend}
+          disabled={!input.trim() || loading}
+          className="w-10 h-10 bg-primary text-zinc-900 rounded-xl flex items-center justify-center hover:bg-primary/80 transition-all disabled:opacity-30 disabled:cursor-not-allowed font-bold"
+        >
+          <Send size={18} />
+        </button>
       </div>
     </div>
   );

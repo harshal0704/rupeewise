@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpen, GraduationCap, Brain, ChevronRight, PlayCircle, Award, HelpCircle, TrendingUp, FileText, CheckCircle, XCircle, RefreshCw, Plus, Loader2, X, Globe, BarChart2, DollarSign, Zap } from 'lucide-react';
 import { getFinancialAdvice, generateFullCourse } from '../services/geminiService';
+import { MarkdownRenderer } from '../services/markdownRenderer';
 
 const Academy: React.FC = () => {
     const [aiQuery, setAiQuery] = useState('');
@@ -271,7 +272,9 @@ const Academy: React.FC = () => {
 
                         {aiResponse && (
                             <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700 animate-fade-in max-h-60 overflow-y-auto custom-scrollbar">
-                                <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+                                <div className="text-sm text-zinc-300 leading-relaxed">
+                                    <MarkdownRenderer content={aiResponse} />
+                                </div>
                                 <button
                                     onClick={() => { setAiQuery(''); setAiResponse(''); }}
                                     className="mt-3 text-xs text-primary hover:underline flex items-center gap-1"
@@ -373,10 +376,8 @@ const Academy: React.FC = () => {
                             </button>
                         </div>
                         <div className="p-8 overflow-y-auto custom-scrollbar">
-                            <article className="prose prose-invert prose-lg max-w-none">
-                                <div className="whitespace-pre-line">
-                                    {selectedLesson.content}
-                                </div>
+                            <article className="text-zinc-300">
+                                <MarkdownRenderer content={selectedLesson.content} />
                             </article>
                         </div>
                         <div className="p-6 border-t border-zinc-800 bg-zinc-900/50 rounded-b-2xl flex justify-end">

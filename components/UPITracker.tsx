@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Transaction } from '../types';
 import { Plus, Search, Smartphone, CreditCard, Banknote, Upload, FileText, X, Check } from 'lucide-react';
-import { categorizeTransaction, parseBankStatement } from '../services/geminiService';
+import { parseBankStatement } from '../services/geminiService';
 
 interface UPITrackerProps {
   transactions: Transaction[];
@@ -23,17 +23,30 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
   const [previewTransactions, setPreviewTransactions] = useState<Transaction[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Local categorizer — instant, no AI call
+  const localCategorize = (m: string): string => {
+    const lower = m.toLowerCase();
+    if (/swiggy|zomato|restaurant|food|cafe|biryani|pizza|burger|kitchen|dine|dominos|mcdonalds/i.test(lower)) return 'Food';
+    if (/uber|ola|metro|fuel|petrol|diesel|rapido|bus|train|irctc|flight|makemytrip/i.test(lower)) return 'Travel';
+    if (/electric|water|gas|wifi|broadband|jio|airtel|vi|tata|bescom|bill/i.test(lower)) return 'Utility';
+    if (/amazon|flipkart|myntra|shop|ajio|meesho|nykaa|store|mall|market/i.test(lower)) return 'Shopping';
+    if (/hospital|pharma|medicine|doctor|apollo|medplus|health|clinic/i.test(lower)) return 'Health';
+    if (/netflix|spotify|movie|game|hotstar|prime|disney|inox|pvr|youtube/i.test(lower)) return 'Entertainment';
+    if (/rent|lease|maintenance|society|housing/i.test(lower)) return 'Rent';
+    if (/salary|income|freelance|payment received|credit/i.test(lower)) return 'Income';
+    if (/transfer|upi|neft|rtgs|imps|sent|received/i.test(lower)) return 'Transfer';
+    return 'Other';
+  };
+
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !merchant) return;
 
-    setLoadingCategory(true);
-    const category = await categorizeTransaction(merchant);
-    setLoadingCategory(false);
+    const category = localCategorize(merchant);
 
     const newTransaction: Transaction = {
       id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+      date: new Date().toISOString().split('T')[0],
       merchant,
       amount: parseFloat(amount),
       category: category,
@@ -71,11 +84,11 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Input Section */}
       <div className="lg:col-span-1">
-        <div className="bg-zinc-900/50 p-6 rounded-xl shadow-lg border border-zinc-700 sticky top-6">
+        <div className="glass-panel p-6 rounded-2xl sticky top-6">
           <div className="flex space-x-2 mb-6 bg-zinc-800 p-1 rounded-lg">
             <button
               onClick={() => setActiveTab('manual')}
-              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'manual' ? 'bg-amber-600 shadow text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'manual' ? 'bg-primary shadow text-zinc-900' : 'text-zinc-400 hover:text-zinc-200'}`}
             >
               Manual Entry
             </button>
@@ -97,7 +110,7 @@ const UPITracker: React.FC<UPITrackerProps> = ({ transactions, addTransaction })
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow placeholder-zinc-500"
+                    className="w-full pl-8 pr-4 py-3 bg-surface-2 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-shadow placeholder-zinc-500"
                     placeholder="0.00"
                     required
                   />

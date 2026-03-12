@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { Logo } from './Logo';
 import {
     LayoutDashboard, Smartphone, TrendingUp, FileText,
     MessageSquareText, Menu, X, LineChart, LogOut,
@@ -14,27 +15,27 @@ const SidebarLink = ({ to, icon: Icon, label, active, collapsed, onClick }: any)
     <Link
         to={to}
         onClick={onClick}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mx-2 transition-all duration-200 group relative ${active
-            ? 'bg-primary/15 text-white'
-            : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+        className={`flex items-center gap-3 px-3 py-3 rounded-xl mx-2 transition-all duration-300 group relative ${active
+            ? 'bg-primary/10 text-primary font-bold shadow-[inset_0_0_20px_rgba(var(--primary),0.05)] border border-primary/20'
+            : 'text-text-secondary hover:bg-surface-2 hover:text-text-main border border-transparent hover:border-surface-3'
             }`}
         title={collapsed ? label : undefined}
     >
         {/* Glow Accent Bar */}
         {active && (
-            <div className="absolute left-0 top-1/2 -tranzinc-y-1/2 w-[3px] h-5 rounded-full bg-primary shadow-[0_0_8px_var(--primary-glow)]" />
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[4px] h-6 rounded-r-full bg-primary shadow-[0_0_12px_var(--primary-glow)]" />
         )}
-        <Icon size={20} className={`shrink-0 transition-transform duration-300 ${active ? 'text-primary scale-110' : 'group-hover:scale-110'}`} />
-        {!collapsed && <span className="font-medium text-sm truncate">{label}</span>}
+        <Icon size={20} className={`shrink-0 transition-transform duration-300 ${active ? 'text-primary scale-110' : 'group-hover:scale-110 text-text-muted group-hover:text-text-main'}`} />
+        {!collapsed && <span className="text-sm truncate">{label}</span>}
     </Link>
 );
 
 // ─── Section Label ───
 const SectionLabel: React.FC<{ label: string; collapsed?: boolean }> = ({ label, collapsed }) => {
-    if (collapsed) return <div className="mx-2 my-2 border-t border-zinc-800/80" />;
+    if (collapsed) return <div className="mx-3 my-3 border-t border-surface-3" />;
     return (
-        <div className="px-5 pt-4 pb-1.5">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.1em]">{label}</span>
+        <div className="px-5 pt-5 pb-2">
+            <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-[0.15em]">{label}</span>
         </div>
     );
 };
@@ -111,32 +112,24 @@ const Layout: React.FC = () => {
     };
 
     return (
-        <div className="flex min-h-screen font-sans text-zinc-100 overflow-hidden relative">
+        <div className="flex min-h-screen font-sans text-text-main overflow-hidden relative bg-surface-0 transition-colors duration-500">
             {/* Background Blobs */}
-            <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[150px] pointer-events-none" />
-            <div className="fixed bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[150px] pointer-events-none transition-colors duration-500" />
+            <div className="fixed bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[120px] pointer-events-none transition-colors duration-500" />
 
             {/* ═══ SIDEBAR — Desktop ═══ */}
-            <aside className={`hidden md:flex flex-col glass-panel m-3 rounded-2xl border-zinc-700/30 fixed h-[calc(100vh-1.5rem)] z-20 transition-all duration-300 ${collapsed ? 'w-[72px]' : 'w-[260px]'}`}>
+            <aside className={`hidden md:flex flex-col glass-panel m-4 rounded-[1.5rem] border-surface-3 fixed h-[calc(100vh-2rem)] z-20 transition-all duration-300 shadow-2xl ${collapsed ? 'w-[80px]' : 'w-[280px]'}`}>
                 {/* Logo */}
-                <div className={`p-4 flex items-center border-b border-zinc-800/50 ${collapsed ? 'justify-center' : 'gap-3'}`}>
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md overflow-hidden shrink-0">
-                        <img src="/logo.png" alt="RupeeWise" className="w-full h-full object-cover" />
-                    </div>
-                    {!collapsed && (
-                        <div className="flex-1 min-w-0">
-                            <h1 className="text-base font-bold text-white leading-tight">RupeeWise</h1>
-                            <span className="text-[9px] text-primary font-bold uppercase tracking-wider bg-primary/10 px-1.5 py-0.5 rounded-full border border-primary/20">Pro</span>
-                        </div>
-                    )}
+                <div className={`p-6 flex items-center border-b border-surface-2 ${collapsed ? 'justify-center' : 'gap-3'} shrink-0`}>
+                    <Logo size={32} hideText={collapsed} />
                 </div>
 
                 {/* Nav */}
-                <nav className="flex-1 py-2 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                <nav className="flex-1 py-3 overflow-y-auto w-full" style={{ scrollbarWidth: 'none' }}>
                     {navSections.map((section) => (
-                        <div key={section.label}>
+                        <div key={section.label} className="mb-2">
                             <SectionLabel label={section.label} collapsed={collapsed} />
-                            <div className="space-y-0.5">
+                            <div className="space-y-1">
                                 {section.items.map(item => (
                                     <SidebarLink
                                         key={item.path}
@@ -155,29 +148,29 @@ const Layout: React.FC = () => {
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="mx-2 mb-2 p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800/50 transition-all flex items-center justify-center"
+                    className="mx-4 mb-4 p-2 rounded-xl text-text-muted hover:text-text-main hover:bg-surface-2 transition-all flex items-center justify-center border border-transparent hover:border-surface-3 shadow-sm bg-surface-1 shrink-0"
                 >
-                    {collapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
+                    {collapsed ? <ChevronsRight size={20} /> : <ChevronsLeft size={20} />}
                 </button>
 
                 {/* User Profile */}
-                <div className="p-3 border-t border-zinc-800/50">
-                    <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} p-2 rounded-xl hover:bg-zinc-800/40 transition-colors`}>
+                <div className="p-4 border-t border-surface-2 bg-surface-1/50 rounded-b-[1.5rem] shrink-0">
+                    <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} p-2 rounded-xl hover:bg-surface-2 transition-all group cursor-pointer border border-transparent hover:border-surface-3 shadow-sm`}>
                         <div className="relative shrink-0">
                             <img
-                                src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=6366f1&color=fff&size=36`}
+                                src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=1e1f22&color=d4a853&size=40`}
                                 alt="User"
-                                className="w-9 h-9 rounded-full border border-zinc-700"
+                                className="w-10 h-10 rounded-full border-2 border-surface-3 group-hover:border-primary/50 transition-colors shadow-md"
                             />
-                            <div className="absolute -bottom-0.5 -right-0.5 glow-dot" style={{ width: '8px', height: '8px' }} />
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-surface-1 shadow-[0_0_8px_var(--success)]" />
                         </div>
                         {!collapsed && (
                             <>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-white truncate">{user?.name || user?.user_metadata?.full_name || 'User'}</p>
-                                    <p className="text-[10px] text-zinc-500">Premium</p>
+                                    <p className="text-sm font-bold text-text-main truncate group-hover:text-primary transition-colors">{user?.name || user?.user_metadata?.full_name || 'User'}</p>
+                                    <p className="text-[11px] text-text-secondary truncate font-medium">{user?.email?.split('@')[0]}</p>
                                 </div>
-                                <button onClick={logout} className="text-zinc-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-500/10 rounded-lg" title="Sign Out">
+                                <button onClick={(e) => { e.stopPropagation(); logout(); }} className="text-text-muted hover:text-error transition-colors p-2 hover:bg-error/10 rounded-lg" title="Sign Out">
                                     <LogOut size={16} />
                                 </button>
                             </>
@@ -187,22 +180,19 @@ const Layout: React.FC = () => {
             </aside>
 
             {/* ═══ MOBILE HEADER ═══ */}
-            <div className="md:hidden fixed w-full glass-panel z-30 border-b border-zinc-800/50 px-4 py-3 flex justify-between items-center">
+            <div className="md:hidden fixed w-full glass-panel z-30 border-b border-surface-3 px-4 py-3 flex justify-between items-center shadow-lg pt-[max(env(safe-area-inset-top),12px)]">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg overflow-hidden">
-                        <img src="/logo.png" alt="RupeeWise" className="w-full h-full object-cover" />
-                    </div>
-                    <h1 className="text-lg font-bold text-white">RupeeWise</h1>
+                    <Logo size={28} />
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowNotifications(!showNotifications)}
-                        className="p-2 text-zinc-400 hover:text-white rounded-lg transition-colors relative"
+                        className="p-2.5 text-text-secondary hover:text-text-main hover:bg-surface-2 rounded-xl transition-all relative"
                     >
                         <Bell size={20} />
-                        {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
+                        {unreadCount > 0 && <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-error border-2 border-surface-0 rounded-full animate-pulse" />}
                     </button>
-                    <Link to="/settings" className="p-2 text-zinc-400 hover:text-white rounded-lg transition-colors">
+                    <Link to="/settings" className="p-2.5 text-text-secondary hover:text-text-main hover:bg-surface-2 rounded-xl transition-all">
                         <Settings size={20} />
                     </Link>
                 </div>
@@ -210,8 +200,8 @@ const Layout: React.FC = () => {
 
             {/* Mobile Menu Overlay */}
             {mobileMenuOpen && (
-                <div className="md:hidden fixed inset-0 bg-surface-0/95 backdrop-blur-xl z-40 pt-20 animate-fade-in">
-                    <nav className="flex flex-col p-4 space-y-1">
+                <div className="md:hidden fixed inset-0 bg-surface-0/95 backdrop-blur-2xl z-40 pt-24 animate-fade-in overflow-y-auto pb-32">
+                    <nav className="flex flex-col p-4 space-y-2">
                         {allNavItems.map(item => (
                             <SidebarLink
                                 key={item.path}
@@ -222,72 +212,77 @@ const Layout: React.FC = () => {
                                 onClick={() => setMobileMenuOpen(false)}
                             />
                         ))}
-                        <button onClick={logout} className="flex items-center gap-3 px-4 py-3 text-red-400 mt-4 border border-red-500/20 rounded-xl hover:bg-red-500/10 mx-2">
+                        <button onClick={logout} className="flex items-center justify-center gap-3 px-4 py-4 text-error mt-8 border border-error/30 rounded-xl hover:bg-error/10 mx-2 font-bold shadow-lg shadow-error/10 transition-all bg-surface-1">
                             <LogOut size={20} />
-                            <span className="font-medium">Sign Out</span>
+                            <span>Sign Out</span>
                         </button>
                     </nav>
                 </div>
             )}
 
             {/* ═══ MAIN CONTENT ═══ */}
-            <main className={`flex-1 transition-all duration-300 min-h-screen ${collapsed ? 'md:ml-[84px]' : 'md:ml-[272px]'} p-4 md:p-5 pt-20 md:pt-5 pb-24 md:pb-5`}>
+            <main className={`flex-1 transition-all duration-300 min-h-screen ${collapsed ? 'md:ml-[100px]' : 'md:ml-[300px]'} p-4 md:p-6 pt-24 md:pt-6 pb-28 md:pb-6`}>
+
                 {/* Top Header (Desktop) */}
-                <header className="hidden md:flex items-center justify-between mb-6 glass-panel px-5 py-3 rounded-2xl sticky top-5 z-10 border-zinc-800/30">
-                    <div className="flex items-center text-zinc-400 w-80 bg-surface-0/50 rounded-xl px-4 py-2.5 border border-zinc-800/50 focus-within:border-primary/50 focus-within:text-primary transition-colors">
-                        <Search size={16} className="mr-2.5 shrink-0" />
+                <header className="hidden md:flex items-center justify-between mb-8 glass-panel px-6 py-4 rounded-[1.5rem] sticky top-6 z-10 border-surface-3 shadow-xl backdrop-blur-2xl">
+                    <div className="flex items-center text-text-secondary w-96 bg-surface-1/80 rounded-xl px-4 py-3 border border-surface-3 focus-within:border-primary/50 focus-within:text-primsary focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-inner relative group">
+                        <Search size={18} className="mr-3 shrink-0 group-focus-within:text-primary transition-colors" />
                         <input
                             type="text"
                             placeholder="Search features, stocks..."
-                            className="bg-transparent border-none outline-none text-sm w-full text-zinc-200 placeholder-zinc-500"
+                            className="bg-transparent border-none outline-none text-sm w-full text-text-main placeholder-text-muted"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={handleSearch}
                         />
-                        <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-semibold text-zinc-500 bg-surface-2 rounded-md border border-zinc-700/50 ml-2 shrink-0">
+                        <kbd className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-text-muted bg-surface-2 rounded-md border border-surface-3 ml-2 shrink-0 group-focus-within:border-primary/30 transition-colors tracking-widest shadow-sm">
                             ⌘K
                         </kbd>
                     </div>
 
-                    <div className="flex items-center gap-2 relative">
+                    <div className="flex items-center gap-3 relative">
                         <div className="relative">
                             <button
                                 onClick={() => setShowNotifications(!showNotifications)}
-                                className="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-colors relative"
+                                className="p-3 text-text-secondary hover:text-text-main hover:bg-surface-2 rounded-xl transition-all relative border border-transparent hover:border-surface-3 shadow-sm bg-surface-1"
                             >
-                                <Bell size={18} />
-                                {unreadCount > 0 && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
+                                <Bell size={20} className={unreadCount > 0 ? 'text-text-main' : ''} />
+                                {unreadCount > 0 && <span className="absolute top-2.5 right-2.5 w-3 h-3 bg-error border-2 border-surface-1 rounded-full shadow-[0_0_8px_var(--error)] animate-pulse" />}
                             </button>
 
                             {/* Notification Dropdown */}
                             {showNotifications && (
-                                <div className="absolute right-0 top-12 w-80 glass-panel rounded-2xl border border-zinc-700/50 shadow-2xl z-50 animate-scale-in origin-top-right overflow-hidden">
-                                    <div className="p-4 border-b border-zinc-800/50 flex justify-between items-center bg-surface-1/50">
-                                        <h3 className="font-bold text-white text-sm">Notifications</h3>
-                                        <div className="flex gap-2">
-                                            <button onClick={markAllAsRead} className="text-xs text-primary hover:text-primary/80 transition-colors font-semibold">Mark all read</button>
-                                            <button onClick={clearAll} className="text-xs text-zinc-500 hover:text-red-400 transition-colors">Clear</button>
+                                <div className="absolute right-0 top-16 w-80 glass-panel rounded-3xl border border-surface-3 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] z-50 animate-scale-in origin-top-right overflow-hidden bg-surface-1">
+                                    <div className="p-5 border-b border-surface-3 flex justify-between items-center bg-surface-2/50 backdrop-blur-md">
+                                        <h3 className="font-bold text-text-main text-sm flex items-center gap-2">
+                                            <Bell size={16} className="text-primary" /> Notifications
+                                        </h3>
+                                        <div className="flex gap-3">
+                                            <button onClick={markAllAsRead} className="text-[11px] text-primary hover:text-primary-glow transition-colors font-bold uppercase tracking-wider">Mark Read</button>
+                                            <button onClick={clearAll} className="text-[11px] text-text-muted hover:text-error transition-colors uppercase tracking-wider font-bold">Clear</button>
                                         </div>
                                     </div>
-                                    <div className="max-h-72 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                                    <div className="max-h-[350px] overflow-y-auto overscroll-contain" style={{ scrollbarWidth: 'none' }}>
                                         {notifications.length === 0 ? (
-                                            <div className="p-10 text-center text-zinc-600">
-                                                <Bell size={24} className="mx-auto mb-3 opacity-30" />
-                                                <p className="text-sm font-medium">All caught up!</p>
-                                                <p className="text-xs text-zinc-700 mt-1">No new notifications</p>
+                                            <div className="p-10 text-center text-text-muted flex flex-col items-center">
+                                                <div className="w-16 h-16 rounded-2xl bg-surface-2 flex items-center justify-center mb-4 border border-surface-3 shadow-inner">
+                                                    <Bell size={24} className="opacity-40" />
+                                                </div>
+                                                <p className="text-sm font-bold text-text-secondary">All caught up!</p>
+                                                <p className="text-xs mt-1">No new notifications</p>
                                             </div>
                                         ) : (
                                             notifications.map(notification => (
                                                 <div
                                                     key={notification.id}
-                                                    className={`p-4 border-b border-zinc-800/30 hover:bg-zinc-800/30 transition-colors cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`}
+                                                    className={`p-5 border-b border-surface-3/50 hover:bg-surface-2 transition-colors cursor-pointer group ${!notification.read ? 'bg-primary/5' : ''}`}
                                                     onClick={() => markAsRead(notification.id)}
                                                 >
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <h4 className={`text-sm font-semibold ${!notification.read ? 'text-white' : 'text-zinc-400'}`}>{notification.title}</h4>
-                                                        <span className="text-[10px] text-zinc-600 ml-2 shrink-0">{new Date(notification.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    <div className="flex justify-between items-start mb-1.5">
+                                                        <h4 className={`text-sm font-bold transition-colors ${!notification.read ? 'text-text-main' : 'text-text-secondary group-hover:text-text-main'}`}>{notification.title}</h4>
+                                                        <span className="text-[10px] font-medium text-text-muted ml-2 shrink-0 bg-surface-2 px-1.5 py-0.5 rounded-md border border-surface-3">{new Date(notification.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                     </div>
-                                                    <p className="text-xs text-zinc-500 leading-relaxed">{notification.message}</p>
+                                                    <p className="text-xs text-text-muted leading-relaxed group-hover:text-text-secondary transition-colors line-clamp-2">{notification.message}</p>
                                                 </div>
                                             ))
                                         )}
@@ -296,8 +291,8 @@ const Layout: React.FC = () => {
                             )}
                         </div>
 
-                        <Link to="/settings" className="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-colors group">
-                            <Settings size={18} className="group-hover:rotate-90 transition-transform duration-500" />
+                        <Link to="/settings" className="p-3 text-text-secondary hover:text-text-main hover:bg-surface-2 rounded-xl transition-all group border border-transparent hover:border-surface-3 shadow-sm bg-surface-1">
+                            <Settings size={20} className="group-hover:rotate-90 transition-transform duration-500" />
                         </Link>
                     </div>
                 </header>
@@ -308,31 +303,33 @@ const Layout: React.FC = () => {
             </main>
 
             {/* ═══ MOBILE BOTTOM DOCK ═══ */}
-            <div className="md:hidden bottom-dock">
-                <div className="flex justify-around items-center max-w-lg mx-auto">
+            <div className="md:hidden bottom-dock bg-surface-1/90 backdrop-blur-3xl border-t border-surface-3 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+                <div className="flex justify-around items-center max-w-lg mx-auto py-1">
                     {dockItems.map(item => {
                         const isActive = location.pathname === item.path;
                         return (
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${isActive
-                                        ? 'text-primary'
-                                        : 'text-zinc-500 hover:text-white'
+                                className={`flex flex-col items-center gap-1.5 py-2 px-4 rounded-2xl transition-all duration-300 relative ${isActive
+                                    ? 'text-primary'
+                                    : 'text-text-secondary hover:text-text-main hover:bg-surface-2'
                                     }`}
                             >
-                                <item.icon size={20} className={isActive ? 'scale-110' : ''} />
-                                <span className="text-[10px] font-semibold">{item.label}</span>
-                                {isActive && <div className="w-1 h-1 rounded-full bg-primary shadow-[0_0_6px_var(--primary)]" />}
+                                <item.icon size={22} className={isActive ? 'scale-110' : ''} />
+                                <span className="text-[10px] font-bold tracking-wide">{item.label}</span>
+                                {isActive && (
+                                    <div className="absolute top-0 w-8 h-1 rounded-full bg-primary shadow-[0_0_8px_var(--primary-glow)] animate-scale-in" />
+                                )}
                             </Link>
                         );
                     })}
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${mobileMenuOpen ? 'text-primary' : 'text-zinc-500 hover:text-white'}`}
+                        className={`flex flex-col items-center gap-1.5 py-2 px-4 rounded-2xl transition-all duration-300 ${mobileMenuOpen ? 'text-primary' : 'text-text-secondary hover:text-text-main hover:bg-surface-2'}`}
                     >
-                        {mobileMenuOpen ? <X size={20} /> : <MoreHorizontal size={20} />}
-                        <span className="text-[10px] font-semibold">More</span>
+                        {mobileMenuOpen ? <X size={22} className="scale-110" /> : <MoreHorizontal size={22} />}
+                        <span className="text-[10px] font-bold tracking-wide">Menu</span>
                     </button>
                 </div>
             </div>
