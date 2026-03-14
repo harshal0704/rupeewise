@@ -381,44 +381,75 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
         </div>
 
         {/* Spending Breakdown */}
-        <div className="glass-panel p-6 rounded-3xl scroll-reveal border-surface-3 flex flex-col" style={{ animationDelay: '100ms' }}>
-          <h3 className="text-lg font-extrabold text-text-main mb-6">Spending Analysis</h3>
-          <div className="flex-1 w-full flex items-center justify-center relative min-h-[180px]">
-            {categoryData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData} cx="50%" cy="50%"
-                    innerRadius={60} outerRadius={85}
-                    paddingAngle={5} dataKey="value" stroke="none"
-                    cornerRadius={8}
-                  >
-                    {categoryData.map((_entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}
-                    contentStyle={{ backgroundColor: 'var(--surface-1)', borderColor: 'var(--surface-3)', borderRadius: '12px', color: 'var(--text-main)', fontSize: '14px', fontWeight: 'bold' }}
-                    itemStyle={{ color: 'var(--primary)' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="text-center text-text-muted">
-                <div className="w-16 h-16 rounded-2xl bg-surface-2 text-text-secondary flex items-center justify-center mx-auto mb-4 border border-surface-3"><PieChartIcon size={28} /></div>
-                <p className="text-sm font-medium">No spending data yet</p>
-              </div>
+        <div className="glass-panel p-6 rounded-3xl scroll-reveal border-surface-3" style={{ animationDelay: '100ms' }}>
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="text-lg font-extrabold text-text-main">Spending Analysis</h3>
+            {categoryData.length > 0 && (
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest bg-surface-2 px-2 py-1 rounded-lg border border-surface-3">
+                {categoryData.length} categories
+              </span>
             )}
           </div>
-          {categoryData.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 mt-6 bg-surface-1/50 p-4 rounded-2xl border border-surface-2">
-              {categoryData.slice(0, 4).map((entry, index) => (
-                <div key={index} className="flex items-center gap-2.5 text-xs font-semibold text-text-secondary hover:text-text-main transition-colors">
-                  <div className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <span className="truncate">{entry.name}</span>
-                </div>
-              ))}
+
+          {categoryData.length > 0 ? (
+            <>
+              {/* Pie Chart — fixed height so ResponsiveContainer can render */}
+              <div style={{ width: '100%', height: 200 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData} cx="50%" cy="50%"
+                      innerRadius={55} outerRadius={80}
+                      paddingAngle={4} dataKey="value" stroke="none"
+                      cornerRadius={6}
+                    >
+                      {categoryData.map((_entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Spent']}
+                      contentStyle={{ backgroundColor: 'var(--surface-1)', borderColor: 'var(--surface-3)', borderRadius: '12px', color: 'var(--text-main)', fontSize: '13px', fontWeight: 'bold' }}
+                      itemStyle={{ color: 'var(--primary)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Category Breakdown Bars */}
+              <div className="mt-4 space-y-2.5">
+                {categoryData.slice(0, 5).map((entry, index) => {
+                  const pct = Math.round((entry.value / totalSpent) * 100);
+                  return (
+                    <div key={index}>
+                      <div className="flex justify-between items-center mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                          <span className="text-xs font-semibold text-text-secondary truncate max-w-[120px]">{entry.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-text-main">₹{entry.value.toLocaleString('en-IN')}</span>
+                          <span className="text-[10px] text-text-muted w-8 text-right">{pct}%</span>
+                        </div>
+                      </div>
+                      <div className="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%`, backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-surface-2 text-text-secondary flex items-center justify-center mx-auto mb-4 border border-surface-3">
+                <PieChartIcon size={28} />
+              </div>
+              <p className="text-sm font-medium text-text-secondary">No spending data yet</p>
+              <Link to="/expenses" className="text-primary text-xs font-bold mt-2 hover:underline">Add transactions →</Link>
             </div>
           )}
         </div>
