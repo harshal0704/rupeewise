@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
 import {
     Bot, Smartphone, Target, FileText, GraduationCap,
-    Shield, ShieldAlert, BarChart3, ArrowRight, ChevronRight, Lock, Globe,
-    LineChart, CheckCircle2, PlayCircle, Fingerprint, Wallet, Monitor, Sparkles
+    Shield, ShieldAlert, BarChart3, ChevronRight, Lock, Globe,
+    LineChart, CheckCircle2, PlayCircle, Fingerprint, Wallet, Monitor, Sparkles, Youtube, Instagram
 } from 'lucide-react';
 
 // ─── Animation Variants ───
 const fadeInUp = {
     initial: { opacity: 0, y: 40 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] } }
+    animate: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as any } }
 };
 
 const staggerContainer = {
@@ -23,7 +23,7 @@ const staggerContainer = {
 
 const letterReveal = {
     initial: { y: "100%" },
-    animate: { y: 0, transition: { duration: 1, ease: [0.22, 1, 0.36, 1] } }
+    animate: { y: 0, transition: { duration: 1, ease: [0.22, 1, 0.36, 1] as any } }
 };
 
 // ─── Floating Particle Background ───
@@ -60,35 +60,59 @@ const BackgroundParticles = () => {
 
 // ─── Nav Component ───
 const Navbar = ({ onSignIn }: { onSignIn: () => void }) => {
+    const navigate = useNavigate();
+    const [scrolled, setScrolled] = React.useState(false);
+
+    React.useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 50);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
         <motion.nav
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="fixed top-0 w-full z-50 flex items-center justify-between px-8 py-5 backdrop-blur-md border-b border-white/5 transition-all"
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrolled
+                ? 'py-3 bg-black/80 backdrop-blur-2xl border-b border-white/5 shadow-2xl'
+                : 'py-5 bg-transparent'
+                }`}
         >
-            <div className="flex items-center gap-3 group cursor-pointer">
-                <div className="relative">
-                    <motion.img
-                        whileHover={{ rotate: 180 }}
-                        transition={{ duration: 1 }}
-                        src="/logo.png"
-                        alt="RupeeWise"
-                        className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(212,168,83,0.4)]"
-                    />
-                    <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+                {/* Logo */}
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                    <img src="/logo.png" alt="RupeeWise" className="w-12 h-12 object-contain" />
+                    <span className="text-white text-2xl font-black tracking-tight hidden sm:block">Rupee<span className="text-primary">Wise</span></span>
                 </div>
-                <h2 className="text-white text-2xl font-black tracking-tighter uppercase">Rupee<span className="text-primary">Wise</span></h2>
-            </div>
 
-            <motion.button
-                whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onSignIn}
-                className="px-6 py-2.5 text-xs font-black uppercase tracking-widest bg-white/5 border border-white/10 rounded-full text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.05)]"
-            >
-                Secure Access
-            </motion.button>
+                {/* Center Nav */}
+                <div className="hidden md:flex items-center gap-1 bg-white/[0.04] border border-white/[0.08] rounded-full px-2 py-1.5 backdrop-blur-sm">
+                    {[
+                        { label: 'Features', href: '#terminal' },
+                        { label: 'Ecosystem', href: '#ecosystem' },
+                        { label: 'Academy', href: '#academy' },
+                    ].map(link => (
+                        <a
+                            key={link.label}
+                            href={link.href}
+                            className="px-5 py-2 text-[13px] font-semibold text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-full transition-all duration-200"
+                        >
+                            {link.label}
+                        </a>
+                    ))}
+                </div>
+
+                {/* CTA */}
+                <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={onSignIn}
+                    className="px-6 py-2.5 text-sm font-bold bg-white text-black rounded-full hover:shadow-[0_4px_20px_rgba(255,255,255,0.15)] transition-all"
+                >
+                    Get Started
+                </motion.button>
+            </div>
         </motion.nav>
     );
 };
@@ -127,27 +151,26 @@ const LandingPage: React.FC = () => {
                             className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-surface-1 border border-primary/20 shadow-[0_0_40px_rgba(212,168,83,0.1)] backdrop-blur-xl"
                         >
                             <Sparkles size={14} className="text-primary animate-pulse" />
-                            <span className="text-primary text-[11px] font-black uppercase tracking-[0.2em]">Future-Forward Finance</span>
+                            <span className="text-primary text-[11px] font-black uppercase tracking-[0.2em]">Personal Finance & Wealth Management</span>
                         </motion.div>
 
                         <div className="space-y-4">
-                            <h1 className="text-[12vw] md:text-[8rem] lg:text-[10rem] font-black leading-[0.9] tracking-tighter text-white">
-                                <motion.span variants={fadeInUp} className="block">REDEFINING</motion.span>
+                            <h1 className="text-[10vw] md:text-[6.5rem] lg:text-[8.5rem] font-black leading-[0.9] tracking-tighter text-white">
+                                <motion.span variants={fadeInUp} className="block">COMMAND YOUR</motion.span>
                                 <motion.span
                                     variants={fadeInUp}
-                                    className="block text-transparent bg-clip-text bg-gradient-to-br from-[#D4AF37] via-[#F9E29C] to-[#B8860B] drop-shadow-[0_0_30px_rgba(212,175,55,0.2)] skew-x-[-5deg]"
+                                    className="block text-transparent bg-clip-text bg-gradient-to-br from-[#D4AF37] via-[#F9E29C] to-[#B8860B] drop-shadow-[0_0_30px_rgba(212,175,55,0.2)] skew-x-[-5deg] pb-2"
                                 >
-                                    WEALTH
+                                    FINANCIAL DESTINY
                                 </motion.span>
                             </h1>
                         </div>
 
                         <motion.p
                             variants={fadeInUp}
-                            className="max-w-2xl mx-auto text-slate-400 text-lg md:text-2xl font-medium leading-relaxed opacity-80"
+                            className="max-w-3xl mx-auto text-slate-400 text-lg md:text-2xl font-medium leading-relaxed opacity-80"
                         >
-                            The ultimate fusion of AI intelligence and luxury asset management.
-                            Crafted for India’s next generation of wealth builders.
+                            Command your net worth. AI-driven UPI syncing, pro-tier investment simulations, and personalized tax optimization—engineered for India's smartest investors.
                         </motion.p>
 
                         <motion.div
@@ -160,7 +183,7 @@ const LandingPage: React.FC = () => {
                                 onClick={() => navigate('/login')}
                                 className="h-20 px-12 bg-primary text-black font-black rounded-[2rem] text-xl shadow-[0_20px_40px_rgba(212,175,55,0.2)] transition-all flex items-center justify-center gap-3 group"
                             >
-                                Get Started <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
+                                Get Started <ChevronRight size={24} className="group-hover:translate-x-2 transition-transform" />
                             </motion.button>
 
                             <motion.button
@@ -189,7 +212,7 @@ const LandingPage: React.FC = () => {
                 </section>
 
                 {/* ═══ BENTO SHOWCASE ═══ */}
-                <section className="px-6 py-32 max-w-7xl mx-auto">
+                <section id="terminal" className="px-6 py-32 max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:auto-rows-[300px]">
 
                         {/* Featured High-Res Card */}
@@ -197,21 +220,21 @@ const LandingPage: React.FC = () => {
                             whileInView={{ opacity: 1, scale: 1 }}
                             initial={{ opacity: 0, scale: 0.9 }}
                             viewport={{ once: true }}
-                            className="md:col-span-8 md:row-span-2 relative rounded-[3rem] overflow-hidden group shadow-2xl border border-white/5"
+                            className="md:col-span-8 md:row-span-2 relative rounded-[3rem] overflow-hidden group shadow-[0_0_50px_rgba(212,175,55,0.08)] border border-white/10 hover:border-primary/40 transition-all duration-700 hover:shadow-[0_0_80px_rgba(212,175,55,0.15)]"
                         >
                             <img
-                                src="https://images.unsplash.com/photo-1620714223084-8fcacc6ced00?q=80&w=2560&auto=format&fit=crop"
+                                src="/dashboard.png"
                                 alt="Modern Dashboard"
-                                className="w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-110 opacity-60 grayscale-[0.5] group-hover:grayscale-0"
+                                className="w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-110 opacity-70 grayscale-[0.6] group-hover:grayscale-[0.2]"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                            <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
 
                             <div className="absolute bottom-0 left-0 p-10 md:p-16">
                                 <motion.div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 mb-6 font-bold text-[10px] uppercase tracking-widest text-white shadow-xl">
                                     <Monitor size={14} className="text-primary" /> Institutional Grade
                                 </motion.div>
-                                <h3 className="text-4xl md:text-6xl font-black text-white leading-[1.1] tracking-tight max-w-2xl mb-6">
+                                <h3 className="text-4xl md:text-6xl font-black text-white leading-[1.1] tracking-tight max-w-3xl mb-6">
                                     Your entire financial <span className="text-primary">nebula</span> in one view.
                                 </h3>
                                 <p className="text-slate-300 text-lg md:text-xl max-w-xl font-light leading-relaxed">
@@ -233,7 +256,7 @@ const LandingPage: React.FC = () => {
                             </div>
                             <div className="relative z-10">
                                 <h4 className="text-white text-2xl font-black mb-3">Wealth Pulse</h4>
-                                <p className="text-slate-400 font-medium">Real-time market velocity tracking with predictive growth analytics.</p>
+                                <p className="text-slate-400 font-medium">Real-time market velocity tracking and dynamic net-worth analytics.</p>
                             </div>
                             <div className="mt-8 relative z-10 flex gap-2 items-end h-16">
                                 {[30, 70, 45, 90, 60].map((h, i) => (
@@ -261,11 +284,11 @@ const LandingPage: React.FC = () => {
                                 <div className="w-14 h-14 bg-black/10 rounded-2xl flex items-center justify-center shadow-inner">
                                     <Bot size={28} />
                                 </div>
-                                <ArrowRight size={24} />
+                                <ChevronRight size={24} />
                             </div>
                             <div className="relative z-10">
-                                <h4 className="text-2xl font-black mb-2 tracking-tight">AI Financial Brain</h4>
-                                <p className="text-black/70 font-bold leading-snug">Personalized coaching sessions with GPT-level financial reasoning.</p>
+                                <h4 className="text-2xl font-black mb-2 tracking-tight">AI Wealth Coach</h4>
+                                <p className="text-black/70 font-bold leading-snug">Autonomous text parsing, tax strategy generation, and deep financial advisory.</p>
                             </div>
                         </motion.div>
 
@@ -273,7 +296,7 @@ const LandingPage: React.FC = () => {
                 </section>
 
                 {/* ═══ INNOVATION HORIZON ═══ */}
-                <section className="py-32 px-6 relative bg-gradient-to-b from-transparent to-black/40">
+                <section id="ecosystem" className="py-32 px-6 relative bg-gradient-to-b from-transparent to-black/40">
                     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-20 items-center">
                         <motion.div
                             whileInView={{ opacity: 1, x: 0 }}
@@ -288,9 +311,9 @@ const LandingPage: React.FC = () => {
 
                             <div className="space-y-6 pt-4">
                                 {[
-                                    { icon: Smartphone, title: "UPI Autonomous Tracker", desc: "No manual entries. We sync with your transaction SMS and statements securely." },
-                                    { icon: Shield, title: "Zero-Knowledge Privacy", desc: "Your data is encrypted end-to-end. Your financial life remains only yours." },
-                                    { icon: GraduationCap, title: "Capital Academy", desc: "Unlock exclusive insights from masterclasses tailored for high net-worth strategies." }
+                                    { icon: Smartphone, title: "UPI Auto-Tracker", desc: "Instantly sync SMS receipts via AI deduplication to track every rupee seamlessly." },
+                                    { icon: Target, title: "Pro-Tier Sandbox", desc: "Strategy backtesting, Time Machines, and Monte Carlo wealth projections." },
+                                    { icon: GraduationCap, title: "Capital Academy", desc: "Dynamically generated, AI-curated coursework focused strictly on asset scaling." }
                                 ].map((item, idx) => (
                                     <motion.div
                                         key={idx}
@@ -336,8 +359,8 @@ const LandingPage: React.FC = () => {
                                             <span className="text-primary font-black text-sm self-center">Coach Recommendation</span>
                                         </div>
                                     </div>
-                                    <button className="w-full py-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-black uppercase tracking-[0.2em] text-xs transition-all">
-                                        Exploration Analytics
+                                    <button className="w-full py-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-black uppercase tracking-[0.2em] text-xs transition-all text-center">
+                                        View Dashboard
                                     </button>
                                 </div>
                             </div>
@@ -355,12 +378,12 @@ const LandingPage: React.FC = () => {
                         viewport={{ once: true }}
                         className="max-w-4xl space-y-12 relative z-10"
                     >
-                        <h2 className="text-6xl md:text-9xl font-black text-white leading-none tracking-tighter">
-                            THE LAST <br /> <span className="text-primary">WALLE</span> YOU'LL <br /> EVER NEED.
+                        <h2 className="text-6xl md:text-9xl font-black text-white leading-[0.9] tracking-tighter">
+                            THE LAST <br /> <span className="text-primary">FINANCE APP</span> YOU'LL <br /> EVER NEED.
                         </h2>
 
-                        <p className="text-slate-400 text-xl font-medium max-w-xl mx-auto">
-                            Join the private network of India's most vision-oriented investors. Premium waits for no one.
+                        <p className="text-slate-400 text-xl font-medium max-w-2xl mx-auto pt-4 leading-relaxed">
+                            Stop guessing. Start command-line level execution. Join the private network of India's most vision-oriented investors today.
                         </p>
 
                         <div className="flex flex-col md:flex-row gap-6 justify-center pt-4">
@@ -384,41 +407,68 @@ const LandingPage: React.FC = () => {
             </main>
 
             {/* ═══ FOOTER ═══ */}
-            <footer className="py-20 px-8 border-t border-white/5 bg-black relative z-10">
-                <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-                    <div className="md:col-span-2 space-y-6">
-                        <div className="flex items-center gap-3">
-                            <img src="/logo.png" alt="Logo" className="w-8 h-8 opacity-50 grayscale" />
-                            <span className="text-white text-xl font-black uppercase tracking-tighter">RupeeWise</span>
+            <footer className="relative z-10 bg-[#050505] pt-20 pb-10 px-6">
+                {/* Gradient line */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
+                        {/* Brand */}
+                        <div className="col-span-2 md:col-span-1 space-y-5">
+                            <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                                <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+                                <span className="text-white text-lg font-black tracking-tight">RupeeWise</span>
+                            </div>
+                            <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">
+                                The personal finance operating system for India's next generation of wealth builders.
+                            </p>
                         </div>
-                        <p className="text-slate-500 max-w-sm font-medium">Building the definitive financial os for the future billionaires of Bharat. Intelligence, luxury, and performance combined.</p>
+
+                        {/* Product */}
+                        <div className="space-y-4">
+                            <h6 className="text-zinc-300 font-semibold text-sm">Product</h6>
+                            <ul className="space-y-3 text-zinc-500 text-sm">
+                                <li><a href="#terminal" className="hover:text-white transition-colors">Simulator</a></li>
+                                <li><a href="#ecosystem" className="hover:text-white transition-colors">Ecosystem</a></li>
+                                <li><a href="#academy" className="hover:text-white transition-colors">Academy</a></li>
+                                <li><a onClick={() => navigate('/login')} className="hover:text-white transition-colors cursor-pointer">Dashboard</a></li>
+                            </ul>
+                        </div>
+
+                        {/* Social */}
+                        <div className="space-y-4">
+                            <h6 className="text-zinc-300 font-semibold text-sm">Socials</h6>
+                            <div className="flex gap-4">
+                                <a href="https://www.instagram.com/rupeewise.money/" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer">
+                                    <Instagram size={18} />
+                                </a>
+                                <a href="https://www.youtube.com/@rupeewisesp" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer">
+                                    <Youtube size={18} />
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Legal */}
+                        <div className="space-y-4">
+                            <h6 className="text-zinc-300 font-semibold text-sm">Legal</h6>
+                            <ul className="space-y-3 text-zinc-500 text-sm">
+                                <li><a onClick={() => navigate('/privacy')} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</a></li>
+                                <li><a onClick={() => navigate('/terms')} className="hover:text-white transition-colors cursor-pointer">Terms of Service</a></li>
+                                <li><a onClick={() => navigate('/risk')} className="hover:text-white transition-colors cursor-pointer">Risk Disclosure</a></li>
+                            </ul>
+                        </div>
                     </div>
 
-                    <div className="space-y-6">
-                        <h6 className="text-white font-black uppercase tracking-widest text-xs">Navigation</h6>
-                        <ul className="space-y-4 text-slate-500 font-bold text-sm tracking-wide">
-                            <li><a href="#" className="hover:text-primary transition-colors uppercase">Vision</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors uppercase">Ecosystem</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors uppercase">Academy</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors uppercase">Markets</a></li>
-                        </ul>
-                    </div>
-
-                    <div className="space-y-6">
-                        <h6 className="text-white font-black uppercase tracking-widest text-xs">Legal</h6>
-                        <ul className="space-y-4 text-slate-500 font-bold text-sm tracking-wide">
-                            <li><a href="#" className="hover:text-white transition-colors uppercase">Privacy Strategy</a></li>
-                            <li><a href="#" className="hover:text-white transition-colors uppercase">Terms of Use</a></li>
-                            <li><a href="#" className="hover:text-white transition-colors uppercase">Risk Disclosure</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div className="max-w-7xl mx-auto pt-20 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/5 mt-20">
-                    <p className="text-slate-600 text-[10px] font-black uppercase tracking-[0.3em]">© {new Date().getFullYear()} RupeeWise Infrastructure. All Rights Reserved.</p>
-                    <div className="flex gap-4">
-                        <div className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"><Fingerprint size={16} className="text-slate-400" /></div>
-                        <div className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"><Lock size={16} className="text-slate-400" /></div>
+                    {/* Bottom Bar */}
+                    <div className="border-t border-zinc-800/80 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <p className="text-zinc-600 text-xs">
+                            © {new Date().getFullYear()} RupeeWise Technologies. All rights reserved.
+                        </p>
+                        <div className="flex items-center gap-6 text-zinc-600 text-xs">
+                            <span className="flex items-center gap-1.5"><Lock size={12} /> Encrypted</span>
+                            <span className="flex items-center gap-1.5"><Shield size={12} /> SOC2 Ready</span>
+                            <span className="flex items-center gap-1.5"><Fingerprint size={12} /> GDPR</span>
+                        </div>
                     </div>
                 </div>
             </footer>

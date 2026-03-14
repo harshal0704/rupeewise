@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { runStockSimulation, screenStocks, getHistoricalComparison } from '../services/geminiService';
 import { finnhub, NewsItem } from '../services/finnhub';
+import { newsService, UnifiedNewsItem } from '../services/newsService';
 import { MarkdownRenderer } from '../services/markdownRenderer';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { LineChart as LineChartIcon, Bot, Search, GitCompare, Plus, X, Newspaper, RefreshCw, CheckCircle } from 'lucide-react';
+import { LineChart as LineChartIcon, Bot, Search, GitCompare, Plus, X, Newspaper, RefreshCw, CheckCircle, Activity, ChevronRight, ExternalLink } from 'lucide-react';
 import { TradingViewChart } from './TradingViewChart';
 import { TickerTape } from './TickerTape';
+import { eodhdService } from '../services/eodhdService';
+import { api } from '../services/api';
 
 const MarketHub: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'stocks' | 'crypto' | 'screener' | 'compare'>('stocks');
+    const [activeTab, setActiveTab] = useState<'stocks' | 'crypto' | 'screener' | 'compare' | 'news'>('stocks');
 
     // Analysis State
-    const [ticker, setTicker] = useState('RELIANCE');
+    const [ticker, setTicker] = useState('AAPL');
     const [strategy, setStrategy] = useState('SIP');
     const [duration, setDuration] = useState('1 Year');
     const [loading, setLoading] = useState(false);
@@ -30,12 +33,14 @@ const MarketHub: React.FC = () => {
     const [compareLoading, setCompareLoading] = useState(false);
 
     // News State
-    const [news, setNews] = useState<NewsItem[]>([]);
+    const [news, setNews] = useState<UnifiedNewsItem[]>([]);
     const [newsLoading, setNewsLoading] = useState(false);
+    const [newsCategory, setNewsCategory] = useState('general');
 
     // Order State
     const [orderQuantity, setOrderQuantity] = useState(1);
     const [orderPrice, setOrderPrice] = useState<string>('');
+    const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
     const [orderLoading, setOrderLoading] = useState(false);
     const { user } = useAuth();
 
@@ -43,8 +48,9 @@ const MarketHub: React.FC = () => {
         const fetchNews = async () => {
             setNewsLoading(true);
             try {
-                const data = await finnhub.getMarketNews('general');
-                setNews(data.slice(0, 8));
+                const cat = activeTab === 'news' ? newsCategory : 'general';
+                const data = await newsService.getAggregatedNews(cat);
+                setNews(data.slice(0, 30));
             } catch (error) {
                 console.error("News fetch error:", error);
             } finally {
@@ -53,7 +59,7 @@ const MarketHub: React.FC = () => {
         };
 
         fetchNews();
-    }, [ticker, activeTab]);
+    }, [ticker, activeTab, newsCategory]);
 
     const handleAnalyze = async () => {
         if (!ticker) return;
@@ -90,16 +96,16 @@ const MarketHub: React.FC = () => {
         }
     };
 
-    const handleBuy = async () => {
+    const handleTrade = async () => {
         if (!user || !ticker) return;
         setOrderLoading(true);
         try {
             // 1. Fetch current price if not set
             let price = parseFloat(orderPrice);
             if (!price || isNaN(price)) {
-                // Fetch real-time price via Finnhub
-                const quote = await finnhub.getQuote(ticker);
-                price = quote?.c || 0;
+                // Fetch real-time price via EODHD
+                const quote = await eodhdService.getLivePrice(ticker);
+                price = quote?.price || 0;
             }
 
             if (price <= 0) {
@@ -108,24 +114,77 @@ const MarketHub: React.FC = () => {
                 return;
             }
 
-            // 2. Insert into Portfolio
-            const { error } = await supabase.from('portfolio_holdings').insert([{
-                user_id: user.id,
-                symbol: ticker,
-                name: ticker, //Ideally fetch name
-                quantity: orderQuantity,
-                avg_price: price,
-                type: activeTab === 'crypto' ? 'Crypto' : 'Stock'
-            }]);
+            if (orderType === 'buy') {
+                // Insert into Portfolio
+                const { error } = await supabase.from('portfolio_holdings').insert([{
+                    user_id: user.id,
+                    symbol: ticker,
+                    name: ticker,
+                    quantity: orderQuantity,
+                    avg_price: price,
+                    type: activeTab === 'crypto' ? 'Crypto' : 'Stock'
+                }]);
 
-            if (error) throw error;
+                if (error) throw error;
+                alert(`Successfully bought ${orderQuantity} shares of ${ticker} at ₹${price}`);
+            } else {
+                // Sell logic - verify holdings and book profit
+                const { data: holdings, error: fetchError } = await supabase
+                    .from('portfolio_holdings')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('symbol', ticker);
 
-            alert(`Successfully bought ${orderQuantity} shares of ${ticker} at ₹${price}`);
+                if (fetchError) throw fetchError;
+
+                if (!holdings || holdings.length === 0) {
+                    alert("You do not own this asset in your portfolio.");
+                    setOrderLoading(false);
+                    return;
+                }
+
+                const totalQty = holdings.reduce((sum: number, h: any) => sum + h.quantity, 0);
+                if (totalQty < orderQuantity) {
+                    alert(`Insufficient quantity. You only own ${totalQty} shares.`);
+                    setOrderLoading(false);
+                    return;
+                }
+
+                let totalInvested = holdings.reduce((sum: number, h: any) => sum + (h.quantity * h.avg_price), 0);
+                let avgCostBasis = totalInvested / totalQty;
+                let profit = (price - avgCostBasis) * orderQuantity;
+
+                let remainingToSell = orderQuantity;
+                for (const h of holdings) {
+                    if (remainingToSell <= 0) break;
+
+                    if (h.quantity <= remainingToSell) {
+                        await supabase.from('portfolio_holdings').delete().eq('id', h.id);
+                        remainingToSell -= h.quantity;
+                    } else {
+                        await supabase.from('portfolio_holdings').update({ quantity: h.quantity - remainingToSell }).eq('id', h.id);
+                        remainingToSell = 0;
+                    }
+                }
+
+                await api.transactions.add({
+                    id: '',
+                    merchant: `Sold ${orderQuantity} ${ticker} (${profit >= 0 ? 'Profit' : 'Loss'})`,
+                    amount: Math.abs(profit),
+                    type: profit >= 0 ? 'credit' : 'debit',
+                    category: 'Investment',
+                    date: new Date().toISOString().split('T')[0],
+                    paymentMethod: 'Cash'
+                });
+
+                alert(`Successfully sold ${orderQuantity} shares. Booked a ${profit >= 0 ? 'profit' : 'loss'} of ₹${Math.abs(profit).toFixed(2)} in transaction history!`);
+            }
+
             setOrderQuantity(1);
             setOrderPrice('');
 
         } catch (error: any) {
-            console.error("Buy Error:", error);
+            console.error("Trade Error:", error);
             alert("Failed to place order: " + error.message);
         } finally {
             setOrderLoading(false);
@@ -149,7 +208,7 @@ const MarketHub: React.FC = () => {
 
             {/* Navigation Tabs */}
             <div className="flex border-b border-zinc-700/50 overflow-x-auto gap-6 mt-6">
-                {['stocks', 'crypto', 'screener'].map((tab) => (
+                {['stocks', 'crypto', 'screener', 'news'].map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab as any)}
@@ -171,7 +230,7 @@ const MarketHub: React.FC = () => {
                             {/* Chart Card */}
                             <div className="glass-panel p-1 rounded-3xl h-[calc(100vh-220px)] min-h-[500px] flex flex-col overflow-hidden bg-[#131722]">
                                 <div className="h-full w-full">
-                                    <TradingViewChart symbol={activeTab === 'crypto' ? "BITSTAMP:BTCUSD" : `NSE:${ticker}`} />
+                                    <TradingViewChart symbol={activeTab === 'crypto' ? "BITSTAMP:BTCUSD" : ticker.endsWith('.NS') ? `NSE:${ticker.replace('.NS', '')}` : ticker.endsWith('.BO') ? `BSE:${ticker.replace('.BO', '')}` : ticker.includes(':') ? ticker : `NSE:${ticker}`} />
                                 </div>
                             </div>
 
@@ -223,8 +282,12 @@ const MarketHub: React.FC = () => {
                             <div className="glass-panel p-6 rounded-3xl">
                                 <h3 className="text-lg font-bold text-white mb-4">Place Order</h3>
                                 <div className="flex gap-2 mb-4 p-1 bg-zinc-800 rounded-xl">
-                                    <button className="flex-1 py-2 rounded-lg bg-green-500/20 text-green-400 font-bold hover:bg-green-500/30 transition-colors">Buy</button>
-                                    <button className="flex-1 py-2 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">Sell</button>
+                                    <button
+                                        onClick={() => setOrderType('buy')}
+                                        className={`flex-1 py-2 rounded-lg font-bold transition-colors ${orderType === 'buy' ? 'bg-green-500/20 text-green-400' : 'text-zinc-400 hover:bg-zinc-700'}`}>Buy</button>
+                                    <button
+                                        onClick={() => setOrderType('sell')}
+                                        className={`flex-1 py-2 rounded-lg font-bold transition-colors ${orderType === 'sell' ? 'bg-red-500/20 text-red-400' : 'text-zinc-400 hover:bg-zinc-700'}`}>Sell</button>
                                 </div>
 
                                 <div className="space-y-4">
@@ -259,61 +322,12 @@ const MarketHub: React.FC = () => {
                                     </div>
 
                                     <button
-                                        onClick={handleBuy}
+                                        onClick={handleTrade}
                                         disabled={orderLoading || !ticker}
-                                        className="w-full py-4 bg-primary hover:bg-primary-glow text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                                        className={`w-full py-4 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${orderType === 'buy' ? 'bg-green-600 hover:bg-green-500 shadow-green-600/20' : 'bg-red-600 hover:bg-red-500 shadow-red-600/20'}`}
                                     >
-                                        {orderLoading ? <RefreshCw className="animate-spin" /> : "Execute Trade"}
+                                        {orderLoading ? <RefreshCw className="animate-spin" /> : orderType === 'buy' ? "Execute Buy Trade" : "Execute Sell Trade"}
                                     </button>
-                                </div>
-                            </div>
-
-                            {/* News Feed */}
-                            <div className="glass-panel p-6 rounded-3xl max-h-[600px] overflow-y-auto custom-scrollbar">
-                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 sticky top-0 bg-[#131722]/95 backdrop-blur-sm py-2 z-10">
-                                    <Newspaper size={18} className="text-secondary" />
-                                    Market News
-                                </h3>
-                                <div className="space-y-4">
-                                    {newsLoading ? (
-                                        <div className="flex justify-center py-8">
-                                            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                                        </div>
-                                    ) : news.length === 0 ? (
-                                        <p className="text-zinc-500 text-center py-4">No recent news found.</p>
-                                    ) : (
-                                        news.map((item, idx) => (
-                                            <a
-                                                key={idx}
-                                                href={item.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="block group cursor-pointer border-b border-zinc-800 pb-4 last:border-0"
-                                            >
-                                                <div className="flex gap-3">
-                                                    {item.image && (
-                                                        <img
-                                                            src={item.image}
-                                                            alt=""
-                                                            className="w-16 h-16 rounded-lg object-cover shrink-0"
-                                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                                        />
-                                                    )}
-                                                    <div>
-                                                        <p className="text-sm text-zinc-300 group-hover:text-primary transition-colors line-clamp-3 font-medium">
-                                                            {item.headline}
-                                                        </p>
-                                                        <div className="flex items-center justify-between mt-2">
-                                                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{item.source}</span>
-                                                            <span className="text-[10px] text-zinc-600">
-                                                                {new Date(item.datetime * 1000).toLocaleDateString()}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        ))
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -365,6 +379,126 @@ const MarketHub: React.FC = () => {
                                 ))}
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* News Tab */}
+                {activeTab === 'news' && (
+                    <div className="lg:col-span-3">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+                            <div>
+                                <h2 className="text-3xl font-black text-white flex items-center gap-3 tracking-tight">
+                                    <Newspaper size={32} className="text-primary" />
+                                    {newsCategory === 'general' ? 'Market Wide Pulse' :
+                                        newsCategory === 'crypto' ? 'Digital Asset Intelligence' :
+                                            newsCategory === 'forex' ? 'Global Currency Desk' :
+                                                newsCategory === 'merger' ? 'M&A & Deal Flow' :
+                                                    newsCategory.charAt(0).toUpperCase() + newsCategory.slice(1) + ' Briefing'}
+                                </h2>
+                                <p className="text-zinc-500 font-medium mt-1">Aggregated insights from 12+ premium financial providers</p>
+                            </div>
+                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                {[
+                                    { id: 'general', label: 'Market Wide' },
+                                    { id: 'crypto', label: 'Crypto' },
+                                    { id: 'forex', label: 'Forex' },
+                                    { id: 'merger', label: 'M&A' },
+                                    { id: 'technology', label: 'Tech' },
+                                    { id: 'business', label: 'Business' },
+                                    { id: 'economy', label: 'Economy' }
+                                ].map(cat => (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => setNewsCategory(cat.id)}
+                                        className={`px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border ${newsCategory === cat.id
+                                                ? 'bg-primary text-white border-primary shadow-[0_0_20px_rgba(var(--primary),0.3)]'
+                                                : 'bg-surface-2 text-zinc-500 border-surface-3 hover:border-zinc-500 hover:text-white'
+                                            }`}
+                                    >
+                                        {cat.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {newsLoading ? (
+                                Array.from({ length: 8 }).map((_, i) => (
+                                    <div key={i} className="glass-panel p-0 overflow-hidden rounded-3xl border border-surface-3 h-[420px] animate-pulse">
+                                        <div className="w-full h-48 bg-surface-3" />
+                                        <div className="p-6 space-y-4">
+                                            <div className="h-4 bg-surface-3 rounded w-1/4" />
+                                            <div className="h-6 bg-surface-3 rounded w-full" />
+                                            <div className="h-6 bg-surface-3 rounded w-3/4" />
+                                            <div className="h-20 bg-surface-3 rounded w-full" />
+                                        </div>
+                                    </div>
+                                ))
+                            ) : news.length === 0 ? (
+                                <div className="col-span-full flex flex-col items-center justify-center py-20 text-center glass-panel rounded-[3rem] border-surface-3">
+                                    <div className="w-20 h-20 rounded-full bg-surface-2 flex items-center justify-center mb-6">
+                                        <RefreshCw size={32} className="text-zinc-600" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2">No Headlines Found</h3>
+                                    <p className="text-zinc-500 max-w-sm">We couldn't aggregate news for this category. Try switching to Market Wide for the latest updates.</p>
+                                </div>
+                            ) : (
+                                news.map((item, idx) => (
+                                    <a
+                                        key={idx}
+                                        href={item.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group cursor-pointer glass-panel !bg-surface-1/40 hover:!bg-surface-2/60 p-0 overflow-hidden rounded-[2rem] border border-surface-3 transition-all hover:scale-[1.03] hover:-translate-y-2 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] flex flex-col h-[480px] relative"
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                        {item.image ? (
+                                            <div className="w-full h-48 overflow-hidden relative shrink-0">
+                                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-transparent z-10" />
+                                                <img
+                                                    src={item.image}
+                                                    alt=""
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-48 bg-surface-2 flex flex-col gap-2 items-center justify-center text-zinc-700 border-b border-surface-3 shrink-0">
+                                                <Activity size={48} className="opacity-20" />
+                                                <span className="text-[10px] uppercase font-black tracking-[0.2em]">{item.source}</span>
+                                            </div>
+                                        )}
+
+                                        <div className="p-6 flex flex-col flex-1 relative z-10">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="text-[9px] font-black text-white bg-primary/90 px-2.5 py-1 rounded-lg shadow-sm tracking-[0.1em] uppercase border border-white/10 group-hover:bg-primary transition-colors">
+                                                    {item.source}
+                                                </span>
+                                                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                                                    {new Date(item.datetime * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                                                </span>
+                                            </div>
+
+                                            <h3 className="font-black text-white text-lg leading-[1.3] group-hover:text-primary transition-colors mb-3 line-clamp-3 tracking-tight">
+                                                {item.headline}
+                                            </h3>
+
+                                            <p className="text-sm text-zinc-400 font-medium line-clamp-4 leading-relaxed group-hover:text-zinc-300 transition-colors">
+                                                {item.summary}
+                                            </p>
+
+                                            <div className="mt-auto pt-4 flex items-center justify-between">
+                                                <span className="text-[10px] font-bold text-zinc-600 group-hover:text-primary transition-colors flex items-center gap-1">
+                                                    READ FULL ARTICLE <ChevronRight size={12} />
+                                                </span>
+                                                <ExternalLink size={14} className="text-zinc-800 group-hover:text-primary transition-colors" />
+                                            </div>
+                                        </div>
+                                    </a>
+                                ))
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

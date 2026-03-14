@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'obsidian' | 'midnight' | 'aurora' | 'porcelain';
+type Theme = 'obsidian' | 'midnight' | 'aurora' | 'porcelain' | 'alabaster';
 
 export interface ThemeConfig {
     id: Theme;
@@ -100,6 +100,28 @@ const themes: ThemeConfig[] = [
             '--text-secondary': '#475569',
             '--text-muted': '#64748b',
             '--text-dim': '#94a3b8',
+            '--glass-bg': 'rgba(255, 255, 255, 0.85)'
+        }
+    },
+    {
+        id: 'alabaster',
+        name: 'Alabaster',
+        isLight: true,
+        colors: {
+            '--surface-0': '#fdfcfb',
+            '--surface-1': '#ffffff',
+            '--surface-2': '#f5f3f0',
+            '--surface-3': '#ebe7e0',
+            '--surface-4': '#dbd5cb',
+            '--primary': '#d97706',
+            '--primary-glow': 'rgba(217, 119, 6, 0.15)',
+            '--primary-soft': 'rgba(217, 119, 6, 0.08)',
+            '--secondary': '#059669',
+            '--accent': '#b45309',
+            '--text-main': '#1c1917',
+            '--text-secondary': '#57534e',
+            '--text-muted': '#78716c',
+            '--text-dim': '#a8a29e',
             '--glass-bg': 'rgba(255, 255, 255, 0.85)'
         }
     }

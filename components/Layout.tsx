@@ -4,38 +4,47 @@ import { Logo } from './Logo';
 import {
     LayoutDashboard, Smartphone, TrendingUp, FileText,
     MessageSquareText, Menu, X, LineChart, LogOut,
-    Search, Bell, Settings, Star, Briefcase, GraduationCap, Target,
-    ChevronsLeft, ChevronsRight, Home, Bot, MoreHorizontal
+    Search, Bell, Settings, Activity, Briefcase, GraduationCap, Target,
+    ChevronsLeft, ChevronsRight, Home, Bot, MoreHorizontal, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import { useTheme } from '../context/ThemeContext';
 
 // ─── Sidebar Link ───
 const SidebarLink = ({ to, icon: Icon, label, active, collapsed, onClick }: any) => (
     <Link
         to={to}
         onClick={onClick}
-        className={`flex items-center gap-3 px-3 py-3 rounded-xl mx-2 transition-all duration-300 group relative ${active
-            ? 'bg-primary/10 text-primary font-bold shadow-[inset_0_0_20px_rgba(var(--primary),0.05)] border border-primary/20'
+        className={`flex items-center gap-3 px-4 py-3 rounded-2xl mx-3 transition-all duration-500 group relative ${active
+            ? 'bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-bold shadow-[0_4px_15px_rgba(var(--primary),0.1)] border border-primary/20'
             : 'text-text-secondary hover:bg-surface-2 hover:text-text-main border border-transparent hover:border-surface-3'
             }`}
         title={collapsed ? label : undefined}
     >
         {/* Glow Accent Bar */}
         {active && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[4px] h-6 rounded-r-full bg-primary shadow-[0_0_12px_var(--primary-glow)]" />
+            <div className="absolute left-[-12px] top-1/2 -translate-y-1/2 w-[6px] h-8 rounded-r-full bg-primary shadow-[0_0_15px_var(--primary-glow)] animate-pulse" />
         )}
-        <Icon size={20} className={`shrink-0 transition-transform duration-300 ${active ? 'text-primary scale-110' : 'group-hover:scale-110 text-text-muted group-hover:text-text-main'}`} />
-        {!collapsed && <span className="text-sm truncate">{label}</span>}
+        <Icon size={20} className={`shrink-0 transition-all duration-500 ${active ? 'text-primary scale-110 drop-shadow-[0_0_8px_var(--primary-glow)]' : 'group-hover:scale-110 text-text-muted group-hover:text-text-main group-hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]'}`} />
+        {!collapsed && <span className="text-sm tracking-tight">{label}</span>}
+        
+        {/* Hover Sparkle Effect */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <div className="absolute top-1 right-2 w-1 h-1 bg-primary/40 rounded-full blur-[2px]"></div>
+        </div>
     </Link>
 );
 
 // ─── Section Label ───
 const SectionLabel: React.FC<{ label: string; collapsed?: boolean }> = ({ label, collapsed }) => {
-    if (collapsed) return <div className="mx-3 my-3 border-t border-surface-3" />;
+    if (collapsed) return <div className="mx-4 my-4 border-t border-surface-3/50" />;
     return (
-        <div className="px-5 pt-5 pb-2">
-            <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-[0.15em]">{label}</span>
+        <div className="px-7 pt-6 pb-2">
+            <span className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] opacity-60 flex items-center gap-2">
+                {label}
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-surface-3 to-transparent" />
+            </span>
         </div>
     );
 };
@@ -49,6 +58,16 @@ const Layout: React.FC = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
+    const { theme, setTheme, themes } = useTheme();
+
+    const isLight = themes.find(t => t.id === theme)?.isLight;
+    const toggleTheme = () => {
+        if (isLight) {
+            setTheme('obsidian');
+        } else {
+            setTheme('alabaster');
+        }
+    };
 
     const navSections = [
         {
@@ -60,16 +79,16 @@ const Layout: React.FC = () => {
         {
             label: 'Money',
             items: [
-                { path: '/upi', icon: Smartphone, label: 'UPI Tracker' },
-                { path: '/invest', icon: TrendingUp, label: 'Investments' },
-                { path: '/tax', icon: FileText, label: 'Tax Simplifier' },
+                { path: '/expenses', icon: Smartphone, label: 'Expense Book' },
+                { path: '/invest', icon: TrendingUp, label: 'Invest Simulator' },
+                { path: '/tax', icon: FileText, label: 'Tax Advisor' },
             ]
         },
         {
             label: 'Markets',
             items: [
                 { path: '/stocks', icon: LineChart, label: 'Market Hub' },
-                { path: '/watchlist', icon: Star, label: 'Watchlist' },
+                { path: '/watchlist', icon: Activity, label: 'Market Pulse' },
                 { path: '/portfolio', icon: Briefcase, label: 'Portfolio' },
             ]
         },
@@ -97,8 +116,8 @@ const Layout: React.FC = () => {
         if (e.key === 'Enter' && searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             const pageMap: { [key: string]: string } = {
-                'dashboard': '/', 'upi': '/upi', 'invest': '/invest',
-                'stocks': '/stocks', 'market': '/stocks', 'watchlist': '/watchlist',
+                'dashboard': '/', 'upi': '/expenses', 'expenses': '/expenses', 'book': '/expenses', 'invest': '/invest',
+                'stocks': '/stocks', 'market': '/stocks', 'watchlist': '/watchlist', 'pulse': '/watchlist',
                 'portfolio': '/portfolio', 'academy': '/learn', 'learn': '/learn',
                 'goals': '/goals', 'tax': '/tax', 'coach': '/coach', 'ai': '/coach'
             };
@@ -118,10 +137,17 @@ const Layout: React.FC = () => {
             <div className="fixed bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[120px] pointer-events-none transition-colors duration-500" />
 
             {/* ═══ SIDEBAR — Desktop ═══ */}
-            <aside className={`hidden md:flex flex-col glass-panel m-4 rounded-[1.5rem] border-surface-3 fixed h-[calc(100vh-2rem)] z-20 transition-all duration-300 shadow-2xl ${collapsed ? 'w-[80px]' : 'w-[280px]'}`}>
+            <aside className={`hidden md:flex flex-col glass-panel m-4 rounded-[2.5rem] border-surface-3 fixed h-[calc(100vh-2rem)] z-20 transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] ${collapsed ? 'w-[100px]' : 'w-[280px]'}`}>
                 {/* Logo */}
-                <div className={`p-6 flex items-center border-b border-surface-2 ${collapsed ? 'justify-center' : 'gap-3'} shrink-0`}>
-                    <Logo size={32} hideText={collapsed} />
+                <div className={`p-8 flex items-center ${collapsed ? 'justify-center' : 'gap-4'} shrink-0 relative`}>
+                    {!collapsed && <div className="absolute bottom-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-surface-3 to-transparent" />}
+                    <Logo size={36} hideText={collapsed} />
+                    {!collapsed && (
+                        <div className="flex flex-col">
+                            <span className="text-lg font-black tracking-tighter text-text-main">Rupee<span className="text-primary">Wise</span></span>
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-[0.2em] -mt-1">Cortex AI</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Nav */}
@@ -186,6 +212,12 @@ const Layout: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <button
+                        onClick={toggleTheme}
+                        className="p-2.5 text-text-secondary hover:text-text-main hover:bg-surface-2 rounded-xl transition-all"
+                    >
+                        {isLight ? <Moon size={20} /> : <Sun size={20} />}
+                    </button>
+                    <button
                         onClick={() => setShowNotifications(!showNotifications)}
                         className="p-2.5 text-text-secondary hover:text-text-main hover:bg-surface-2 rounded-xl transition-all relative"
                     >
@@ -241,6 +273,12 @@ const Layout: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3 relative">
+                        <button
+                            onClick={toggleTheme}
+                            className="p-3 text-text-secondary hover:text-text-main hover:bg-surface-2 rounded-xl transition-all border border-transparent hover:border-surface-3 shadow-sm bg-surface-1"
+                        >
+                            {isLight ? <Moon size={20} /> : <Sun size={20} />}
+                        </button>
                         <div className="relative">
                             <button
                                 onClick={() => setShowNotifications(!showNotifications)}

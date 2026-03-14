@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Briefcase, TrendingUp, DollarSign, PieChart as PieIcon, Bot, RefreshCw, Calculator, Plus, X } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { analyzePortfolio } from '../services/geminiService';
 import { finnhub } from '../services/finnhub';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const Portfolio: React.FC = () => {
     const { user } = useAuth();
@@ -24,11 +26,46 @@ const Portfolio: React.FC = () => {
     });
     const [addLoading, setAddLoading] = useState(false);
 
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
         if (user) {
             fetchHoldings();
         }
     }, [user]);
+
+    // Handle outside click for search dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Debounced search logic for Add Asset
+    useEffect(() => {
+        const fetchResults = async () => {
+            if (newHolding.symbol.length < 2) {
+                setSearchResults([]);
+                setShowDropdown(false);
+                return;
+            }
+            setIsSearching(true);
+            const results = await finnhub.searchSymbol(newHolding.symbol);
+            setSearchResults(results.slice(0, 10)); // limit 10
+            setIsSearching(false);
+            setShowDropdown(true);
+        };
+
+        const timeoutId = setTimeout(fetchResults, 400);
+        return () => clearTimeout(timeoutId);
+    }, [newHolding.symbol]);
 
     const fetchHoldings = async () => {
         try {
@@ -181,8 +218,8 @@ const Portfolio: React.FC = () => {
                     <h3 className="text-xl font-bold text-amber-300 mb-4 flex items-center gap-2">
                         <Bot size={24} /> AI Wealth Insights
                     </h3>
-                    <div className="prose prose-invert max-w-none text-zinc-300 whitespace-pre-line">
-                        {aiAnalysis}
+                    <div className="prose prose-invert max-w-none text-zinc-300">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiAnalysis}</ReactMarkdown>
                     </div>
                 </div>
             )}
@@ -309,16 +346,44 @@ const Portfolio: React.FC = () => {
                                 </select>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm text-zinc-400 mb-1">Symbol</label>
+                                <div className="relative" ref={searchRef}>
+                                    <label className="block text-sm text-zinc-400 mb-1 flex justify-between">
+                                        Symbol {isSearching && <span className="text-[10px] text-primary animate-pulse">Searching...</span>}
+                                    </label>
                                     <input
                                         type="text"
                                         placeholder="e.g. RELIANCE"
                                         value={newHolding.symbol}
                                         onChange={(e) => setNewHolding({ ...newHolding, symbol: e.target.value })}
-                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                                        onFocus={() => { if (searchResults.length > 0) setShowDropdown(true) }}
+                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none relative z-10"
                                         required
+                                        autoComplete="off"
                                     />
+                                    {showDropdown && searchResults.length > 0 && (
+                                        <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                            <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                                                {searchResults.map((res: any, idx: number) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="p-3 hover:bg-zinc-700 cursor-pointer border-b border-zinc-700/50 last:border-none flex justify-between items-center group transition-colors"
+                                                        onClick={() => {
+                                                            setNewHolding({ ...newHolding, symbol: res.symbol, name: res.description });
+                                                            setShowDropdown(false);
+                                                        }}
+                                                    >
+                                                        <div className="overflow-hidden">
+                                                            <p className="font-bold text-white text-sm truncate">{res.symbol}</p>
+                                                            <p className="text-xs text-zinc-400 truncate">{res.description}</p>
+                                                        </div>
+                                                        <div className="text-[10px] text-primary/50 font-bold px-2 py-1 bg-zinc-900 rounded">
+                                                            {res.type}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm text-zinc-400 mb-1">Name (Optional)</label>

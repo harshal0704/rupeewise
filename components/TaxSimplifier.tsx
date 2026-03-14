@@ -1,198 +1,764 @@
-import React, { useState } from 'react';
-import { TaxRegime } from '../types';
-import { explainTaxLiablity } from '../services/geminiService';
-import { FileText, Bot, HelpCircle, Calculator, ChevronRight, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { TaxRegime, ITRDocument, Invoice } from '../types';
+import { explainTaxLiablity, parseITRDocument, parseInvoice, calculateTaxEstimate } from '../services/geminiService';
+import { api } from '../services/api';
+import { MarkdownRenderer } from '../services/markdownRenderer';
+import {
+  FileText, Bot, HelpCircle, Calculator, ChevronRight, RefreshCw, CheckCircle, AlertTriangle,
+  Upload, FileSearch, Receipt, TrendingUp, Archive, Trash2, Eye, ChevronDown,
+  IndianRupee, BarChart3, Shield, Zap, Clock, Check, X, Building2,
+  Briefcase, Home, Coins, PiggyBank, Heart, GraduationCap, Gift, Landmark, Star
+} from 'lucide-react';
+
+// ─── Tab Type ───
+type CATab = 'calculator' | 'itr' | 'invoices' | 'meter';
+
+// ─── Format Indian Currency ───
+const formatINR = (n: number) => n ? `₹${n.toLocaleString('en-IN')}` : '₹0';
 
 const TaxSimplifier: React.FC = () => {
-  const [income, setIncome] = useState<number>(0);
-  const [deductions, setDeductions] = useState<number>(0);
-  const [regime, setRegime] = useState<TaxRegime>(TaxRegime.NEW);
-  const [explanation, setExplanation] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<CATab>('calculator');
 
-  const handleExplain = async () => {
-    if (!income) return;
-    setLoading(true);
-    setExplanation(null);
-    try {
-      const result = await explainTaxLiablity(income, deductions, regime);
-      setExplanation(result);
-    } catch (error) {
-      console.error("Tax calculation error:", error);
-      setExplanation("Sorry, I couldn't calculate the tax right now. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+  // ─── Calculator State ───
+  const [income, setIncome] = useState({ salary: 0, business: 0, capitalGains: 0, houseProperty: 0, other: 0 });
+  const [deductions, setDeductions] = useState({ section80C: 0, section80D: 0, section80E: 0, section80G: 0, hra: 0, lta: 0, nps80CCD: 0, standardDeduction: 50000 });
+  const [taxResult, setTaxResult] = useState<any>(null);
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+
+  // ─── ITR State ───
+  const [itrDocs, setItrDocs] = useState<ITRDocument[]>([]);
+  const [itrLoading, setItrLoading] = useState(false);
+  const [itrUploading, setItrUploading] = useState(false);
+  const [itrFile, setItrFile] = useState<File | null>(null);
+  const [itrAY, setItrAY] = useState('2024-25');
+  const [expandedITR, setExpandedITR] = useState<string | null>(null);
+  const itrFileRef = useRef<HTMLInputElement>(null);
+
+  // ─── Invoice State ───
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invLoading, setInvLoading] = useState(false);
+  const [invUploading, setInvUploading] = useState(false);
+  const [invFile, setInvFile] = useState<File | null>(null);
+  const [invPreview, setInvPreview] = useState<any>(null);
+  const invFileRef = useRef<HTMLInputElement>(null);
+
+  // ─── Fetch Data ───
+  useEffect(() => {
+    if (activeTab === 'itr') fetchITRDocs();
+    if (activeTab === 'invoices') fetchInvoices();
+  }, [activeTab]);
+
+  const fetchITRDocs = async () => {
+    setItrLoading(true);
+    try { const docs = await api.itrDocuments.getAll(); setItrDocs(docs); } catch (e) { console.error(e); }
+    setItrLoading(false);
   };
+
+  const fetchInvoices = async () => {
+    setInvLoading(true);
+    try { const inv = await api.invoices.getAll(); setInvoices(inv); } catch (e) { console.error(e); }
+    setInvLoading(false);
+  };
+
+  // ─── Tax Calculator ───
+  const handleCalculate = () => {
+    const result = calculateTaxEstimate(income, deductions);
+    setTaxResult(result);
+  };
+
+  const handleAIExplain = async () => {
+    if (!taxResult) return;
+    setCalcLoading(true);
+    setAiExplanation(null);
+    try {
+      const grossIncome = Object.values(income).reduce((a, b) => a + b, 0);
+      const totalDed = Object.values(deductions).reduce((a, b) => a + b, 0);
+      const result = await explainTaxLiablity(grossIncome, totalDed, taxResult.recommended === 'New' ? TaxRegime.NEW : TaxRegime.OLD);
+      setAiExplanation(result);
+    } catch (e) { setAiExplanation("Sorry, couldn't generate explanation."); }
+    setCalcLoading(false);
+  };
+
+  // ─── ITR Upload ───
+  const handleITRUpload = async () => {
+    if (!itrFile) return;
+    setItrUploading(true);
+    try {
+      const parsed = await parseITRDocument(itrFile);
+      const ay = parsed?.assessment_year || itrAY;
+      const fy = parsed?.financial_year || '';
+
+      await api.itrDocuments.upload({
+        fileName: itrFile.name,
+        fileSize: itrFile.size,
+        fileType: itrFile.type,
+        assessmentYear: ay,
+        financialYear: fy,
+        extractedData: parsed || {},
+        aiSummary: parsed?.summary || '',
+      });
+      setItrFile(null);
+      await fetchITRDocs();
+    } catch (e) { console.error("ITR upload failed:", e); alert("Failed to process ITR. Please try again."); }
+    setItrUploading(false);
+  };
+
+  const deleteITR = async (id: string) => {
+    if (!confirm("Delete this ITR document?")) return;
+    try { await api.itrDocuments.delete(id); setItrDocs(p => p.filter(d => d.id !== id)); } catch (e) { console.error(e); }
+  };
+
+  // ─── Invoice Upload ───
+  const handleInvoiceScan = async () => {
+    if (!invFile) return;
+    setInvUploading(true);
+    try {
+      const parsed = await parseInvoice(invFile);
+      setInvPreview({ ...parsed, fileName: invFile.name, fileType: invFile.type });
+    } catch (e) { console.error("Invoice scan failed:", e); alert("Failed to scan invoice."); }
+    setInvUploading(false);
+  };
+
+  const confirmInvoice = async () => {
+    if (!invPreview) return;
+    setInvUploading(true);
+    try {
+      await api.invoices.add({
+        fileName: invPreview.fileName,
+        fileType: invPreview.fileType,
+        vendorName: invPreview.vendor_name,
+        invoiceNumber: invPreview.invoice_number,
+        invoiceDate: invPreview.invoice_date,
+        dueDate: invPreview.due_date,
+        subtotal: invPreview.subtotal,
+        taxAmount: invPreview.tax_amount,
+        totalAmount: invPreview.total_amount,
+        gstNumber: invPreview.gst_number,
+        lineItems: invPreview.line_items || [],
+        category: invPreview.category,
+        expenseType: invPreview.expense_type || 'Business',
+        journalEntry: invPreview.journal_entry,
+      });
+      setInvPreview(null);
+      setInvFile(null);
+      await fetchInvoices();
+    } catch (e) { console.error(e); alert("Failed to save invoice."); }
+    setInvUploading(false);
+  };
+
+  const approveInvoice = async (id: string) => {
+    try { await api.invoices.updateStatus(id, 'Approved'); setInvoices(p => p.map(i => i.id === id ? { ...i, status: 'Approved' as const } : i)); } catch (e) { console.error(e); }
+  };
+
+  // ─── Live Tax Meter ───
+  const meterResult = calculateTaxEstimate(income, deductions);
+
+  // ─── Tab Buttons ───
+  const tabs: { id: CATab; label: string; icon: React.ReactNode; color: string }[] = [
+    { id: 'calculator', label: 'Tax Calculator', icon: <Calculator size={18} />, color: 'from-amber-500 to-yellow-500' },
+    { id: 'itr', label: 'ITR Vault', icon: <Archive size={18} />, color: 'from-blue-500 to-cyan-500' },
+    { id: 'invoices', label: 'Invoice Scanner', icon: <Receipt size={18} />, color: 'from-emerald-500 to-green-500' },
+    { id: 'meter', label: 'Tax Meter', icon: <Zap size={18} />, color: 'from-purple-500 to-pink-500' },
+  ];
 
   return (
     <div className="min-h-screen bg-transparent p-4 md:p-8 animate-fade-in">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-400 mb-4 tracking-tight">
-            AI Tax Simplifier
+      <div className="max-w-7xl mx-auto">
+        {/* ═══ HEADER ═══ */}
+        <header className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 mb-3 bg-amber-500/10 text-amber-400 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border border-amber-500/20">
+            <Shield size={14} /> AI Chartered Accountant
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-400 mb-3 tracking-tight">
+            Tax Advisor
           </h1>
-          <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
-            Stop guessing. Let our advanced AI analyze your income and explain your tax liability in plain English.
+          <p className="text-base text-zinc-400 max-w-2xl mx-auto">
+            Your intelligent tax advisor — calculate taxes, store ITRs, scan invoices, and get real-time tax estimates with citations.
           </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Input Section */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-zinc-900/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-zinc-700 relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full -mr-16 -mt-16 opacity-20 blur-2xl group-hover:bg-amber-400 transition-colors"></div>
+        {/* ═══ TAB BAR ═══ */}
+        <div className="flex flex-wrap gap-2 mb-8 justify-center">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all duration-300 border ${
+                activeTab === tab.id
+                  ? `bg-gradient-to-r ${tab.color} text-white border-transparent shadow-lg shadow-amber-500/10`
+                  : 'bg-zinc-900/80 text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-white'
+              }`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
 
-              <div className="relative z-10 space-y-6">
-                <h2 className="text-2xl font-bold text-white flex items-center mb-6">
-                  <Calculator className="mr-3 text-amber-400" /> Your Details
+        {/* ═══════════════════════════════════════════════ */}
+        {/* TAB 1: TAX CALCULATOR                        */}
+        {/* ═══════════════════════════════════════════════ */}
+        {activeTab === 'calculator' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Inputs */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Income Sources */}
+              <div className="bg-zinc-900/80 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-zinc-700">
+                <h2 className="text-lg font-bold text-white flex items-center mb-5">
+                  <IndianRupee className="mr-2 text-emerald-400" size={20} /> Income Sources
                 </h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-zinc-300 mb-2">Annual Gross Income (₹)</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-3.5 text-gray-400 font-medium">₹</span>
-                      <input
-                        type="number"
-                        value={income || ''}
-                        onChange={(e) => setIncome(parseFloat(e.target.value))}
-                        placeholder="e.g. 12,00,000"
-                        className="w-full pl-8 pr-4 py-3.5 bg-zinc-800 border border-zinc-600 rounded-xl focus:ring-4 focus:ring-amber-900 focus:border-amber-500 outline-none transition-all font-medium text-white placeholder-zinc-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-zinc-300 mb-2">
-                      Total Deductions (₹)
-                      <span className="ml-2 text-xs font-normal text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700">80C, 80D, HRA</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-3.5 text-gray-400 font-medium">₹</span>
-                      <input
-                        type="number"
-                        value={deductions || ''}
-                        onChange={(e) => setDeductions(parseFloat(e.target.value))}
-                        disabled={regime === TaxRegime.NEW}
-                        placeholder={regime === TaxRegime.NEW ? "Not applicable in New Regime" : "e.g. 1,50,000"}
-                        className={`w-full pl-8 pr-4 py-3.5 border rounded-xl outline-none transition-all font-medium ${regime === TaxRegime.NEW
-                          ? 'bg-zinc-800/50 border-zinc-700 text-zinc-600 cursor-not-allowed'
-                          : 'bg-zinc-800 border-zinc-600 focus:ring-4 focus:ring-amber-900 focus:border-amber-500 text-white'
-                          }`}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-zinc-300 mb-3">Select Tax Regime</label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <button
-                        onClick={() => setRegime(TaxRegime.NEW)}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-2 ${regime === TaxRegime.NEW
-                          ? 'border-amber-500 bg-amber-900/30 text-amber-300 shadow-sm'
-                          : 'border-zinc-700 hover:border-amber-500/50 hover:bg-zinc-800 text-zinc-400'
-                          }`}
-                      >
-                        <span className="font-bold text-lg">New Regime</span>
-                        <span className="text-[10px] uppercase tracking-wider font-semibold bg-zinc-900 px-2 py-0.5 rounded-full border border-amber-500/50 text-amber-400">Default</span>
-                      </button>
-                      <button
-                        onClick={() => setRegime(TaxRegime.OLD)}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-2 ${regime === TaxRegime.OLD
-                          ? 'border-amber-500 bg-amber-900/30 text-amber-300 shadow-sm'
-                          : 'border-zinc-700 hover:border-amber-500/50 hover:bg-zinc-800 text-zinc-400'
-                          }`}
-                      >
-                        <span className="font-bold text-lg">Old Regime</span>
-                        <span className="text-[10px] uppercase tracking-wider font-semibold bg-zinc-900 px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-500">With Deductions</span>
-                      </button>
-                    </div>
-                    {regime === TaxRegime.NEW && (
-                      <div className="mt-3 flex items-start gap-2 text-xs text-amber-400 bg-amber-900/20 p-3 rounded-lg border border-amber-900/50">
-                        <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
-                        <p>Most deductions (like 80C, HRA) are <span className="font-bold">not allowed</span> in the New Regime. The tax rates are lower to compensate.</p>
+                <div className="space-y-3">
+                  {[
+                    { key: 'salary', label: 'Salary Income', icon: <Briefcase size={14} /> },
+                    { key: 'business', label: 'Business / Profession', icon: <Building2 size={14} /> },
+                    { key: 'capitalGains', label: 'Capital Gains', icon: <TrendingUp size={14} /> },
+                    { key: 'houseProperty', label: 'House Property', icon: <Home size={14} /> },
+                    { key: 'other', label: 'Other Sources', icon: <Coins size={14} /> },
+                  ].map(field => (
+                    <div key={field.key} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">{field.icon}</div>
+                      <div className="flex-1">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">{field.label}</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2.5 text-zinc-500 text-sm font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={(income as any)[field.key] || ''}
+                            onChange={(e) => setIncome(p => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))}
+                            className="w-full pl-7 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-amber-500 outline-none transition-all placeholder:text-zinc-800"
+                            placeholder="0"
+                          />
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ))}
                 </div>
+                <div className="mt-4 p-3 bg-emerald-900/20 rounded-xl border border-emerald-800/30 flex justify-between items-center">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Gross Total Income</span>
+                  <span className="text-lg font-extrabold text-emerald-400">{formatINR(Object.values(income).reduce((a, b) => a + b, 0))}</span>
+                </div>
+              </div>
 
+              {/* Deductions */}
+              <div className="bg-zinc-900/80 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-zinc-700">
+                <h2 className="text-lg font-bold text-white flex items-center mb-5">
+                  <PiggyBank className="mr-2 text-blue-400" size={20} /> Deductions (Old Regime)
+                </h2>
+                <div className="space-y-3">
+                  {[
+                    { key: 'section80C', label: 'Section 80C', sub: 'PPF, ELSS, LIC — Max ₹1.5L', icon: <PiggyBank size={14} /> },
+                    { key: 'section80D', label: 'Section 80D', sub: 'Health Insurance — Max ₹75K', icon: <Heart size={14} /> },
+                    { key: 'section80E', label: 'Section 80E', sub: 'Education Loan Interest', icon: <GraduationCap size={14} /> },
+                    { key: 'section80G', label: 'Section 80G', sub: 'Donations', icon: <Gift size={14} /> },
+                    { key: 'hra', label: 'HRA Exemption', sub: 'House Rent Allowance', icon: <Home size={14} /> },
+                    { key: 'nps80CCD', label: '80CCD(1B)', sub: 'NPS — Additional ₹50K', icon: <Landmark size={14} /> },
+                    { key: 'standardDeduction', label: 'Standard Deduction', sub: '₹50,000 (salaried)', icon: <Star size={14} /> },
+                  ].map(field => (
+                    <div key={field.key} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">{field.icon}</div>
+                      <div className="flex-1">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">{field.label}</label>
+                        <span className="text-[9px] text-zinc-600">{field.sub}</span>
+                        <div className="relative mt-1">
+                          <span className="absolute left-3 top-2.5 text-zinc-500 text-sm font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={(deductions as any)[field.key] || ''}
+                            onChange={(e) => setDeductions(p => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))}
+                            className="w-full pl-7 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 outline-none transition-all placeholder:text-zinc-800"
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 p-3 bg-blue-900/20 rounded-xl border border-blue-800/30 flex justify-between items-center">
+                  <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Total Deductions</span>
+                  <span className="text-lg font-extrabold text-blue-400">{formatINR(Object.values(deductions).reduce((a, b) => a + b, 0))}</span>
+                </div>
+              </div>
+
+              {/* Calculate Buttons */}
+              <div className="flex gap-3">
                 <button
-                  onClick={handleExplain}
-                  disabled={!income || loading}
-                  className="w-full bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:-tranzinc-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:tranzinc-y-0 flex justify-center items-center group/btn"
+                  onClick={handleCalculate}
+                  className="flex-1 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all flex justify-center items-center gap-2"
                 >
-                  {loading ? (
-                    <>
-                      <RefreshCw className="animate-spin mr-2" size={20} /> Calculating...
-                    </>
-                  ) : (
-                    <>
-                      Calculate & Explain <ChevronRight className="ml-2 group-hover/btn:tranzinc-x-1 transition-transform" size={20} />
-                    </>
-                  )}
+                  <Calculator size={18} /> Calculate Tax
+                </button>
+                <button
+                  onClick={handleAIExplain}
+                  disabled={!taxResult || calcLoading}
+                  className="px-6 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-4 rounded-2xl border border-zinc-700 transition-all disabled:opacity-40 flex items-center gap-2"
+                >
+                  {calcLoading ? <RefreshCw className="animate-spin" size={16} /> : <Bot size={16} />} AI Explain
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Output Section */}
-          <div className="lg:col-span-7">
-            <div className={`bg-zinc-900/90 backdrop-blur-xl rounded-3xl shadow-xl border border-zinc-700 h-full min-h-[500px] transition-all duration-500 ${explanation ? 'ring-4 ring-amber-500/20' : ''}`}>
-              {!explanation && !loading && (
-                <div className="h-full flex flex-col items-center justify-center p-10 text-center text-zinc-500">
+            {/* Right Column: Results */}
+            <div className="lg:col-span-7 space-y-6">
+              {!taxResult && !aiExplanation && (
+                <div className="bg-zinc-900/90 backdrop-blur-xl rounded-3xl shadow-xl border border-zinc-700 p-10 flex flex-col items-center justify-center text-center min-h-[400px]">
                   <div className="w-24 h-24 bg-zinc-800 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                    <Bot size={48} className="text-zinc-600" />
+                    <Calculator size={48} className="text-zinc-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-zinc-400 mb-2">Ready to Analyze</h3>
-                  <p className="max-w-xs mx-auto">Enter your income details on the left and I'll generate a personalized tax breakdown for you.</p>
+                  <h3 className="text-xl font-semibold text-zinc-400 mb-2">Enter Your Details</h3>
+                  <p className="text-zinc-500 max-w-sm">Fill in your income sources and deductions, then click "Calculate Tax" for a comprehensive comparison.</p>
                 </div>
               )}
 
-              {loading && (
-                <div className="h-full flex flex-col items-center justify-center p-10">
-                  <div className="relative w-20 h-20 mb-8">
-                    <div className="absolute inset-0 border-4 border-amber-100 rounded-full"></div>
-                    <div className="absolute inset-0 border-4 border-amber-600 rounded-full border-t-transparent animate-spin"></div>
-                    <Bot size={32} className="absolute inset-0 m-auto text-amber-400 animate-pulse" />
+              {taxResult && (
+                <div className="space-y-6 animate-fade-in-up">
+                  {/* Regime Comparison Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* New Regime */}
+                    <div className={`bg-zinc-900/90 rounded-3xl p-6 border-2 transition-all ${taxResult.recommended === 'New' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-zinc-800'}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400">New Regime</h3>
+                        {taxResult.recommended === 'New' && (
+                          <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
+                            <Star size={10} /> Recommended
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-3xl font-extrabold text-white mb-1">{formatINR(taxResult.newRegime.totalTax)}</p>
+                      <p className="text-xs text-zinc-500 mb-4">Effective Rate: {taxResult.newRegime.effectiveRate}% · Monthly TDS: {formatINR(taxResult.newRegime.monthlyTds)}</p>
+                      <div className="space-y-1.5">
+                        {taxResult.newRegime.slabBreakdown.map((s: any, i: number) => (
+                          <div key={i} className="flex justify-between text-xs text-zinc-400">
+                            <span>{s.slab}</span>
+                            <span className="font-bold text-zinc-300">{s.rate} → {formatINR(s.tax)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Old Regime */}
+                    <div className={`bg-zinc-900/90 rounded-3xl p-6 border-2 transition-all ${taxResult.recommended === 'Old' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-zinc-800'}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400">Old Regime</h3>
+                        {taxResult.recommended === 'Old' && (
+                          <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
+                            <Star size={10} /> Recommended
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-3xl font-extrabold text-white mb-1">{formatINR(taxResult.oldRegime.totalTax)}</p>
+                      <p className="text-xs text-zinc-500 mb-4">Effective Rate: {taxResult.oldRegime.effectiveRate}% · Monthly TDS: {formatINR(taxResult.oldRegime.monthlyTds)}</p>
+                      <div className="space-y-1.5">
+                        {taxResult.oldRegime.slabBreakdown.map((s: any, i: number) => (
+                          <div key={i} className="flex justify-between text-xs text-zinc-400">
+                            <span>{s.slab}</span>
+                            <span className="font-bold text-zinc-300">{s.rate} → {formatINR(s.tax)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Crunching Numbers...</h3>
-                  <p className="text-zinc-400 animate-pulse">Consulting the latest tax laws</p>
+
+                  {/* Savings Banner */}
+                  <div className="bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 rounded-2xl p-5 border border-emerald-700/30 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-emerald-300 uppercase tracking-widest mb-1">You Save with {taxResult.recommended} Regime</p>
+                      <p className="text-3xl font-extrabold text-emerald-400">{formatINR(taxResult.savings)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-zinc-500">Gross Income</p>
+                      <p className="text-lg font-bold text-white">{formatINR(taxResult.grossIncome)}</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {explanation && (
-                <div className="p-8 animate-fade-in-up">
-                  <div className="flex items-center gap-3 mb-8 pb-6 border-b border-zinc-700">
-                    <div className="w-12 h-12 bg-emerald-900/30 rounded-xl flex items-center justify-center text-emerald-400 shadow-sm border border-emerald-800/50">
-                      <Bot size={28} />
+              {/* AI Explanation */}
+              {(calcLoading || aiExplanation) && (
+                <div className="bg-zinc-900/90 backdrop-blur-xl rounded-3xl shadow-xl border border-zinc-700 overflow-hidden">
+                  {calcLoading && (
+                    <div className="p-10 flex flex-col items-center justify-center">
+                      <div className="relative w-16 h-16 mb-6">
+                        <div className="absolute inset-0 border-4 border-amber-100 rounded-full" />
+                        <div className="absolute inset-0 border-4 border-amber-600 rounded-full border-t-transparent animate-spin" />
+                        <Bot size={28} className="absolute inset-0 m-auto text-amber-400 animate-pulse" />
+                      </div>
+                      <p className="text-zinc-400 animate-pulse text-sm">AI is analyzing your tax situation...</p>
                     </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">Tax Analysis</h2>
-                      <p className="text-sm text-zinc-400 flex items-center gap-1">
-                        <CheckCircle size={14} className="text-emerald-500" /> Generated based on FY 2024-25
-                      </p>
+                  )}
+                  {aiExplanation && (
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-4 pb-4 border-b border-zinc-800">
+                        <div className="w-10 h-10 bg-amber-900/30 rounded-xl flex items-center justify-center text-amber-400"><Bot size={22} /></div>
+                        <div>
+                          <h3 className="text-base font-bold text-white">AI Tax Analysis</h3>
+                          <p className="text-[10px] text-zinc-500 flex items-center gap-1"><CheckCircle size={10} className="text-emerald-500" /> FY 2024-25 · Powered by AI</p>
+                        </div>
+                      </div>
+                      <div className="prose prose-invert prose-sm max-w-none text-zinc-300">
+                        <MarkdownRenderer content={aiExplanation} />
+                      </div>
+                      <div className="mt-4 flex items-start gap-2 p-3 bg-amber-900/20 text-amber-200 rounded-xl border border-amber-900/50 text-xs">
+                        <HelpCircle size={14} className="mt-0.5 shrink-0 text-amber-400" />
+                        <p>This is AI-generated analysis. Consult a qualified CA before filing. Citations reference sections of the Income Tax Act 1961.</p>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="prose prose-lg prose-indigo max-w-none text-zinc-300">
-                    <div className="whitespace-pre-line leading-relaxed bg-zinc-800/50 p-6 rounded-2xl border border-zinc-700">
-                      {explanation}
-                    </div>
-                  </div>
-
-                  <div className="mt-8 flex items-start gap-3 p-4 bg-amber-900/20 text-amber-200 rounded-xl border border-amber-900/50 text-sm">
-                    <HelpCircle size={20} className="mt-0.5 flex-shrink-0 text-amber-400" />
-                    <div>
-                      <p className="font-semibold mb-1">Disclaimer</p>
-                      <p className="opacity-90">This is an AI-generated estimate for educational purposes only. Tax laws can be complex and subject to change. Please consult a qualified Chartered Accountant (CA) before filing your official returns.</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
-        </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* TAB 2: ITR VAULT                             */}
+        {/* ═══════════════════════════════════════════════ */}
+        {activeTab === 'itr' && (
+          <div className="space-y-8">
+            {/* Upload Section */}
+            <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-8 border border-zinc-700 shadow-xl">
+              <h2 className="text-xl font-bold text-white flex items-center mb-6">
+                <Upload className="mr-3 text-blue-400" size={22} /> Upload ITR Document
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Assessment Year</label>
+                  <select
+                    value={itrAY}
+                    onChange={(e) => setItrAY(e.target.value)}
+                    className="w-full py-3 px-4 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 outline-none"
+                  >
+                    {['2025-26', '2024-25', '2023-24', '2022-23', '2021-22', '2020-21'].map(ay => (
+                      <option key={ay} value={ay}>{ay}</option>
+                    ))}
+                  </select>
+                </div>
+                <div
+                  className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${
+                    itrFile ? 'border-blue-500/50 bg-blue-500/5' : 'border-zinc-800 hover:border-blue-500/30'
+                  }`}
+                  onClick={() => itrFileRef.current?.click()}
+                >
+                  <input type="file" ref={itrFileRef} className="hidden" accept="image/*,.pdf" onChange={(e) => e.target.files?.[0] && setItrFile(e.target.files[0])} />
+                  {itrFile ? (
+                    <div className="animate-scale-in">
+                      <FileText className="mx-auto mb-2 text-blue-400" size={28} />
+                      <p className="text-xs font-bold text-white truncate max-w-[180px]">{itrFile.name}</p>
+                      <p className="text-[10px] text-zinc-500 mt-1">{(itrFile.size / 1024).toFixed(0)} KB</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="mb-2 text-zinc-600 group-hover:text-blue-500/50" size={28} />
+                      <p className="text-xs font-bold text-zinc-500">Drop ITR PDF / Image</p>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={handleITRUpload}
+                    disabled={!itrFile || itrUploading}
+                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all disabled:opacity-40 flex justify-center items-center gap-2"
+                  >
+                    {itrUploading ? <><RefreshCw className="animate-spin" size={16} /> Processing...</> : <><FileSearch size={16} /> Upload & Extract</>}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ITR History */}
+            <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl border border-zinc-700 shadow-xl overflow-hidden">
+              <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-white flex items-center">
+                  <Archive className="mr-3 text-blue-400" size={20} /> ITR History
+                </h2>
+                <span className="text-xs text-zinc-500 font-bold">{itrDocs.length} documents</span>
+              </div>
+              {itrLoading ? (
+                <div className="p-12 text-center"><RefreshCw className="animate-spin mx-auto text-blue-400 mb-3" size={24} /><p className="text-zinc-500 text-sm">Loading...</p></div>
+              ) : itrDocs.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Archive size={48} className="mx-auto text-zinc-700 mb-4" />
+                  <p className="text-zinc-500 font-medium">No ITR documents uploaded yet</p>
+                  <p className="text-zinc-600 text-sm mt-1">Upload your first ITR to start building your tax history</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-800">
+                  {itrDocs.map(doc => (
+                    <div key={doc.id} className="p-5 hover:bg-zinc-800/30 transition-all">
+                      <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpandedITR(expandedITR === doc.id ? null : doc.id)}>
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                            <FileText size={22} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-white">AY {doc.assessmentYear}</p>
+                            <p className="text-xs text-zinc-500">{doc.fileName} · {doc.filingStatus}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {((doc.extractedData as any)?.taxable_income != null || doc.extractedData?.taxableIncome != null) && (
+                            <span className="text-sm font-bold text-zinc-300">{formatINR((doc.extractedData as any)?.taxable_income || doc.extractedData?.taxableIncome || 0)}</span>
+                          )}
+                          <button onClick={(e) => { e.stopPropagation(); deleteITR(doc.id); }} className="p-2 text-zinc-600 hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
+                          <ChevronDown size={16} className={`text-zinc-500 transition-transform ${expandedITR === doc.id ? 'rotate-180' : ''}`} />
+                        </div>
+                      </div>
+
+                      {expandedITR === doc.id && doc.extractedData && (
+                        <div className="mt-4 pt-4 border-t border-zinc-800 animate-fade-in-up">
+                          {doc.aiSummary && (
+                            <div className="mb-4 p-3 bg-blue-900/20 rounded-xl border border-blue-800/30 text-sm text-blue-200">{doc.aiSummary}</div>
+                          )}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {[
+                              { label: 'Gross Income', value: (doc.extractedData as any)?.gross_income || doc.extractedData?.grossIncome },
+                              { label: 'Taxable Income', value: (doc.extractedData as any)?.taxable_income || doc.extractedData?.taxableIncome },
+                              { label: 'Tax Paid', value: (doc.extractedData as any)?.tax_paid || doc.extractedData?.taxPaid },
+                              { label: 'Refund', value: (doc.extractedData as any)?.refund_amount || doc.extractedData?.refundAmount },
+                            ].map((item, i) => (
+                              <div key={i} className="bg-zinc-950 rounded-xl p-3 border border-zinc-800">
+                                <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">{item.label}</p>
+                                <p className="text-base font-extrabold text-white mt-1">{item.value != null ? formatINR(item.value) : '—'}</p>
+                              </div>
+                            ))}
+                          </div>
+                          {doc.extractedData.regime && (
+                            <div className="mt-3 flex gap-3 flex-wrap">
+                              <span className="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-3 py-1 rounded-full border border-zinc-700">Regime: {doc.extractedData.regime}</span>
+                              {((doc.extractedData as any)?.form_type || doc.extractedData?.formType) && <span className="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-3 py-1 rounded-full border border-zinc-700">{(doc.extractedData as any)?.form_type || doc.extractedData?.formType}</span>}
+                              {((doc.extractedData as any)?.filing_date || doc.extractedData?.filingDate) && <span className="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-3 py-1 rounded-full border border-zinc-700">Filed: {(doc.extractedData as any)?.filing_date || doc.extractedData?.filingDate}</span>}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* TAB 3: INVOICE SCANNER                       */}
+        {/* ═══════════════════════════════════════════════ */}
+        {activeTab === 'invoices' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left: Upload */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="bg-zinc-900/80 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-zinc-700">
+                <h2 className="text-lg font-bold text-white flex items-center mb-5">
+                  <Receipt className="mr-2 text-emerald-400" size={20} /> Scan Invoice
+                </h2>
+                <div
+                  className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${
+                    invFile ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-zinc-800 hover:border-emerald-500/30'
+                  }`}
+                  onClick={() => invFileRef.current?.click()}
+                >
+                  <input type="file" ref={invFileRef} className="hidden" accept="image/*,.pdf" onChange={(e) => { if (e.target.files?.[0]) { setInvFile(e.target.files[0]); setInvPreview(null); } }} />
+                  {invFile ? (
+                    <div className="animate-scale-in">
+                      <Receipt className="mx-auto mb-3 text-emerald-400" size={36} />
+                      <p className="text-sm font-bold text-white truncate max-w-[200px]">{invFile.name}</p>
+                      <p className="text-[10px] text-zinc-500 mt-1">{(invFile.size / 1024).toFixed(0)} KB</p>
+                      <button onClick={(e) => { e.stopPropagation(); setInvFile(null); setInvPreview(null); }} className="mt-3 text-[10px] font-bold text-red-500 hover:text-red-400 underline">Clear</button>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="mb-3 text-zinc-600 group-hover:text-emerald-500/50" size={36} />
+                      <p className="text-xs font-bold text-zinc-400">Drop Invoice PDF / Photo</p>
+                      <p className="text-[9px] text-zinc-600 mt-1">AI will auto-extract all fields</p>
+                    </>
+                  )}
+                </div>
+                {invFile && !invPreview && (
+                  <button
+                    onClick={handleInvoiceScan}
+                    disabled={invUploading}
+                    className="w-full mt-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all flex justify-center items-center gap-2"
+                  >
+                    {invUploading ? <><RefreshCw className="animate-spin" size={16} /> Scanning...</> : <><FileSearch size={16} /> Extract with AI</>}
+                  </button>
+                )}
+
+                {/* Invoice Preview */}
+                {invPreview && (
+                  <div className="mt-6 space-y-4 animate-fade-in-up">
+                    <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20 flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                      <CheckCircle size={14} /> Fields Extracted Successfully
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { label: 'Vendor', value: invPreview.vendor_name },
+                        { label: 'Invoice #', value: invPreview.invoice_number },
+                        { label: 'Date', value: invPreview.invoice_date },
+                        { label: 'Subtotal', value: invPreview.subtotal ? formatINR(invPreview.subtotal) : '—' },
+                        { label: 'GST/Tax', value: invPreview.tax_amount ? formatINR(invPreview.tax_amount) : '—' },
+                        { label: 'Total', value: invPreview.total_amount ? formatINR(invPreview.total_amount) : '—' },
+                        { label: 'GSTIN', value: invPreview.gst_number || '—' },
+                        { label: 'Category', value: invPreview.category },
+                      ].map((field, i) => (
+                        <div key={i} className="flex justify-between items-center text-sm py-1.5 border-b border-zinc-800/50">
+                          <span className="text-zinc-500 text-xs font-bold">{field.label}</span>
+                          <span className="text-white font-bold">{field.value || '—'}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {invPreview.journal_entry && (
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                        <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-2">Journal Entry</p>
+                        <p className="text-xs font-mono text-emerald-300 whitespace-pre-wrap">{invPreview.journal_entry}</p>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <button onClick={() => { setInvPreview(null); setInvFile(null); }} className="flex-1 py-3 border border-zinc-800 rounded-xl text-zinc-500 text-xs font-bold hover:bg-zinc-900 transition-all">Discard</button>
+                      <button
+                        onClick={confirmInvoice}
+                        disabled={invUploading}
+                        className="flex-2 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg transition-all flex items-center justify-center gap-2 px-6"
+                      >
+                        {invUploading ? <RefreshCw className="animate-spin" size={14} /> : <Check size={14} />} Save Invoice
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Invoice History */}
+            <div className="lg:col-span-7">
+              <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl border border-zinc-700 shadow-xl overflow-hidden">
+                <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-white flex items-center"><Receipt className="mr-2 text-emerald-400" size={18} /> Invoice Ledger</h2>
+                  <span className="text-xs text-zinc-500 font-bold">{invoices.length} invoices</span>
+                </div>
+                {invLoading ? (
+                  <div className="p-12 text-center"><RefreshCw className="animate-spin mx-auto text-emerald-400 mb-3" size={24} /></div>
+                ) : invoices.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Receipt size={48} className="mx-auto text-zinc-700 mb-4" />
+                    <p className="text-zinc-500 font-medium">No invoices scanned yet</p>
+                    <p className="text-zinc-600 text-sm mt-1">Upload an invoice to auto-extract details</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-zinc-800">
+                    {invoices.map(inv => (
+                      <div key={inv.id} className="p-4 hover:bg-zinc-800/30 transition-all flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black ${
+                            inv.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            inv.status === 'Rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                            'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          }`}>
+                            {inv.status === 'Approved' ? <Check size={16} /> : inv.status === 'Rejected' ? <X size={16} /> : <Clock size={16} />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-white text-sm">{inv.vendorName || inv.fileName}</p>
+                            <p className="text-[10px] text-zinc-500">{inv.invoiceDate || 'No date'} · {inv.category || 'Uncategorized'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-extrabold text-white">{inv.totalAmount ? formatINR(inv.totalAmount) : '—'}</span>
+                          {inv.status === 'Draft' && (
+                            <button onClick={() => approveInvoice(inv.id)} className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">Approve</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* TAB 4: LIVE TAX METER                        */}
+        {/* ═══════════════════════════════════════════════ */}
+        {activeTab === 'meter' && (
+          <div className="max-w-4xl mx-auto space-y-8">
+            {/* Tax Gauge */}
+            <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-8 border border-zinc-700 shadow-xl text-center">
+              <h2 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
+                <Zap className="text-purple-400" size={22} /> Real-Time Tax Estimator
+              </h2>
+              <p className="text-sm text-zinc-500 mb-8">Based on your income & deductions entered in the Calculator tab</p>
+
+              <div className="relative w-48 h-48 mx-auto mb-8">
+                {/* Background circle */}
+                <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgb(39,39,42)" strokeWidth="8" />
+                  <circle
+                    cx="60" cy="60" r="52" fill="none"
+                    stroke="url(#taxGauge)" strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 52}`}
+                    strokeDashoffset={`${2 * Math.PI * 52 * (1 - Math.min(1, (parseFloat(meterResult.newRegime.effectiveRate) || 0) / 35))}`}
+                    className="transition-all duration-1000"
+                  />
+                  <defs>
+                    <linearGradient id="taxGauge" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#a855f7" />
+                      <stop offset="100%" stopColor="#ec4899" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-extrabold text-white">{meterResult.newRegime.effectiveRate}%</span>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Effective Rate</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Gross Income', value: formatINR(meterResult.grossIncome), color: 'text-white' },
+                  { label: 'Tax (New)', value: formatINR(meterResult.newRegime.totalTax), color: 'text-purple-400' },
+                  { label: 'Tax (Old)', value: formatINR(meterResult.oldRegime.totalTax), color: 'text-blue-400' },
+                  { label: 'You Save', value: formatINR(meterResult.savings), color: 'text-emerald-400' },
+                ].map((item, i) => (
+                  <div key={i} className="bg-zinc-950 rounded-2xl p-4 border border-zinc-800">
+                    <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1">{item.label}</p>
+                    <p className={`text-xl font-extrabold ${item.color}`}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {meterResult.grossIncome > 0 && (
+                <div className="mt-6 p-4 bg-purple-900/20 rounded-2xl border border-purple-800/30 text-sm text-purple-200">
+                  <p className="font-bold mb-1">💡 AI Recommendation</p>
+                  <p>Based on your inputs, the <span className="font-extrabold text-purple-300">{meterResult.recommended} Regime</span> saves you <span className="font-extrabold text-emerald-400">{formatINR(meterResult.savings)}</span> compared to the other regime. Monthly TDS should be approximately <span className="font-bold">{formatINR(meterResult.recommended === 'New' ? meterResult.newRegime.monthlyTds : meterResult.oldRegime.monthlyTds)}</span>.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Monthly TDS Breakdown */}
+            {meterResult.grossIncome > 0 && (
+              <div className="bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-6 border border-zinc-700 shadow-xl">
+                <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                  <BarChart3 size={18} className="text-purple-400" /> Monthly TDS Projection
+                </h3>
+                <div className="grid grid-cols-12 gap-1 h-32">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const monthlyTax = meterResult.recommended === 'New' ? meterResult.newRegime.monthlyTds : meterResult.oldRegime.monthlyTds;
+                    const maxHeight = monthlyTax;
+                    const variation = 0.8 + Math.random() * 0.4;
+                    const barHeight = Math.max(5, (monthlyTax * variation / Math.max(maxHeight * 1.3, 1)) * 100);
+                    return (
+                      <div key={i} className="flex flex-col items-center justify-end h-full">
+                        <div
+                          className="w-full rounded-t-md bg-gradient-to-t from-purple-600 to-pink-500 transition-all duration-500 hover:from-purple-500 hover:to-pink-400 cursor-pointer group relative"
+                          style={{ height: `${barHeight}%` }}
+                          title={`Month ${i + 1}: ~${formatINR(Math.round(monthlyTax * variation))}`}
+                        />
+                        <span className="text-[8px] text-zinc-600 font-bold mt-1">{['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

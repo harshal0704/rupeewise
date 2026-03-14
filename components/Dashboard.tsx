@@ -3,13 +3,15 @@ import { Transaction } from '../types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import {
   IndianRupee, TrendingUp, Wallet, ArrowUp, ArrowDown, Target, Zap,
-  ChevronRight, Plus, LineChart, Bot, Sparkles, Calendar, PieChart as PieChartIcon, CreditCard
+  ChevronRight, Plus, LineChart, Bot, Sparkles, Calendar, PieChart as PieChartIcon, CreditCard, Shield
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { supabase } from '../services/supabaseClient';
-import { getFinancialAdvice } from '../services/geminiService';
+import { getFinancialAdvice, calculateTaxEstimate } from '../services/geminiService';
 import { Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -70,21 +72,20 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
   const { user } = useAuth();
   const [localTransactions, setLocalTransactions] = useState<Transaction[]>(propTransactions);
   const [insight, setInsight] = useState<string>("Analyzing your finances...");
-  const [topGoal, setTopGoal] = useState<any>(null);
+  const [topGoals, setTopGoals] = useState<any[]>([]);
 
   useEffect(() => {
     if (propTransactions && propTransactions.length > 0) setLocalTransactions(propTransactions);
   }, [propTransactions]);
 
   useEffect(() => {
-    const fetchTopGoal = async () => {
+    const fetchTopGoals = async () => {
       const { data } = await supabase
         .from('goals')
         .select('*')
         .order('target_amount', { ascending: false })
-        .limit(1)
-        .single();
-      if (data) setTopGoal(data);
+        .limit(3);
+      if (data) setTopGoals(data);
     };
 
     const fetchInsight = async () => {
@@ -94,7 +95,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
     };
 
     if (user) {
-      fetchTopGoal();
+      fetchTopGoals();
       fetchInsight();
     }
   }, [user]);
@@ -153,7 +154,6 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
     .sort((a, b) => b.value - a.value);
 
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
-  const goalProgress = topGoal ? Math.min(100, Math.round((topGoal.current_amount / topGoal.target_amount) * 100)) : 0;
 
   return (
     <div className="space-y-6 pb-8">
@@ -198,11 +198,46 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
 
       {/* ═══ QUICK ACTIONS ═══ */}
       <div className="flex gap-4 overflow-x-auto pb-2 animate-fade-in-up" style={{ animationDelay: '100ms', scrollbarWidth: 'none' }}>
-        <QuickAction to="/upi" icon={<Plus size={22} className="text-primary" />} label="Add Transaction" color="bg-primary/10" />
+        <QuickAction to="/expenses" icon={<Plus size={22} className="text-primary" />} label="Add Transaction" color="bg-primary/10" />
         <QuickAction to="/stocks" icon={<LineChart size={22} className="text-secondary" />} label="Check Markets" color="bg-secondary/10" />
         <QuickAction to="/goals" icon={<Target size={22} className="text-accent" />} label="Set Goal" color="bg-accent/10" />
         <QuickAction to="/coach" icon={<Bot size={22} className="text-primary" />} label="Ask Coach" color="bg-primary/10" />
       </div>
+
+      {/* ═══ TAX PULSE WIDGET ═══ */}
+      {(() => {
+        const ytdIncome = localTransactions.filter(t => t.type === 'credit').reduce((a, t) => a + t.amount, 0);
+        if (ytdIncome <= 0) return null;
+        const estimate = calculateTaxEstimate(
+          { salary: ytdIncome, business: 0, capitalGains: 0, houseProperty: 0, other: 0 },
+          { section80C: 0, section80D: 0, section80E: 0, section80G: 0, hra: 0, lta: 0, nps80CCD: 0, standardDeduction: 50000 }
+        );
+        return (
+          <Link to="/tax" className="block animate-fade-in-up" style={{ animationDelay: '150ms' }}>
+            <div className="glass-panel rounded-2xl p-5 border border-amber-500/10 hover:border-amber-500/30 transition-all group cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                    <Shield size={20} className="text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Estimated Tax (YTD)</p>
+                    <p className="text-xl font-extrabold text-white">₹{(estimate.recommended === 'New' ? estimate.newRegime.totalTax : estimate.oldRegime.totalTax).toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      {estimate.recommended} Regime · {estimate.recommended === 'New' ? estimate.newRegime.effectiveRate : estimate.oldRegime.effectiveRate}% eff.
+                    </span>
+                  </div>
+                  <ChevronRight size={16} className="text-zinc-600 group-hover:text-amber-400 transition-colors" />
+                </div>
+              </div>
+            </div>
+          </Link>
+        );
+      })()}
 
       {/* ═══ BENTO GRID — Main Content ═══ */}
       <div className="bento-grid animate-fade-in-up mt-2" style={{ animationDelay: '200ms' }}>
@@ -258,39 +293,45 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
                   <LineChart size={32} className="text-text-muted" />
                 </div>
                 <p className="text-text-secondary font-medium">No transaction data yet</p>
-                <Link to="/upi" className="text-primary text-sm font-bold mt-2 hover:text-primary-glow transition-colors">Add your first transaction →</Link>
+                <Link to="/expenses" className="text-primary text-sm font-bold mt-2 hover:text-primary-glow transition-colors">Add your first transaction →</Link>
               </div>
             )}
           </div>
         </div>
 
-        {/* Top Goal — Progress Ring */}
-        <div className="glass-panel p-6 rounded-3xl relative overflow-hidden scroll-reveal border-surface-3 flex flex-col justify-between" style={{ animationDelay: '100ms' }}>
-          <div className="flex justify-between items-start mb-2">
+        {/* Top Goals */}
+        <div className="glass-panel p-6 rounded-3xl relative overflow-hidden scroll-reveal border-surface-3 flex flex-col" style={{ animationDelay: '100ms' }}>
+          <div className="flex justify-between items-start mb-4">
             <div className="p-3 bg-secondary/10 rounded-2xl text-secondary shadow-inner">
               <Target size={24} />
             </div>
-            <span className="text-[10px] font-extrabold bg-secondary/15 text-secondary px-3 py-1.5 rounded-full uppercase tracking-widest">Top Goal</span>
+            <span className="text-[10px] font-extrabold bg-secondary/15 text-secondary px-3 py-1.5 rounded-full uppercase tracking-widest">Active Goals</span>
           </div>
-          {topGoal ? (
-            <div className="flex flex-col items-center text-center mt-4">
-              <div className="relative mb-5 group">
-                <div className="absolute inset-0 rounded-full bg-secondary/5 blur-[20px] group-hover:bg-secondary/20 transition-colors duration-500" />
-                <ProgressRing progress={goalProgress} size={110} stroke={8} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-extrabold text-text-main drop-shadow-md">{goalProgress}%</span>
-                </div>
+          <div className="flex-1 flex flex-col justify-center space-y-3">
+            {topGoals.length > 0 ? (
+              topGoals.map((goal, idx) => {
+                const progress = Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100));
+                return (
+                  <div key={idx} className="bg-surface-1/50 p-4 rounded-2xl border border-surface-2 group hover:border-surface-3 transition-colors">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-sm font-extrabold text-text-main truncate w-2/3">{goal.title}</h3>
+                        <span className="text-xs font-bold text-secondary">{progress}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-surface-3 rounded-full overflow-hidden">
+                        <div className="h-full bg-secondary rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                    </div>
+                    <p className="text-[10px] font-medium text-text-secondary mt-2">₹{goal.current_amount?.toLocaleString('en-IN')} <span className="text-text-muted">/ ₹{goal.target_amount?.toLocaleString('en-IN')}</span></p>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 rounded-2xl bg-surface-2 text-text-muted flex items-center justify-center mx-auto mb-4 border border-surface-3"><Target size={28} /></div>
+                <p className="text-text-secondary font-medium mb-3">No active goals</p>
+                <Link to="/goals" className="bg-primary/10 text-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/20 transition-colors">Create Goal</Link>
               </div>
-              <h3 className="text-lg font-extrabold text-text-main mb-1 truncate w-full">{topGoal.title}</h3>
-              <p className="text-sm font-medium text-text-secondary">₹{topGoal.current_amount?.toLocaleString()} <span className="text-text-muted">/ ₹{topGoal.target_amount?.toLocaleString()}</span></p>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-2xl bg-surface-2 text-text-muted flex items-center justify-center mx-auto mb-4 border border-surface-3"><Target size={28} /></div>
-              <p className="text-text-secondary font-medium mb-3">No active goals</p>
-              <Link to="/goals" className="bg-primary/10 text-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/20 transition-colors">Create Goal</Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Stats Row — Full Width */}
@@ -331,7 +372,9 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
             <Sparkles size={20} className="text-primary animate-pulse" />
             <h3 className="text-sm font-extrabold text-text-main uppercase tracking-widest">Daily Insight</h3>
           </div>
-          <p className="text-lg font-medium text-text-secondary leading-relaxed relative z-10 italic group-hover:text-text-main transition-colors">"{insight}"</p>
+          <div className="text-lg font-medium text-text-secondary leading-relaxed relative z-10 group-hover:text-text-main transition-colors prose prose-invert max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight}</ReactMarkdown>
+          </div>
           <div className="mt-6 flex items-center text-primary text-sm font-bold group-hover:translate-x-2 transition-transform relative z-10 bg-primary/10 w-max px-4 py-2 rounded-xl">
             Ask AI Coach <ChevronRight size={16} className="ml-1" />
           </div>
@@ -384,7 +427,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
         <div className="bento-span-2 glass-panel p-6 rounded-3xl scroll-reveal border-surface-3" style={{ animationDelay: '200ms' }}>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-extrabold text-text-main">Recent Activity</h3>
-            <Link to="/upi" className="text-xs text-primary font-bold hover:text-primary-glow transition-colors flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-lg">
+            <Link to="/expenses" className="text-xs text-primary font-bold hover:text-primary-glow transition-colors flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-lg">
               View All <ChevronRight size={14} />
             </Link>
           </div>
@@ -409,7 +452,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
               <div className="text-center py-12">
                 <div className="w-16 h-16 rounded-3xl bg-surface-2 text-text-muted flex items-center justify-center mx-auto mb-4 border border-surface-3"><CreditCard size={32} /></div>
                 <p className="text-text-secondary font-medium text-sm mb-4">No transactions yet</p>
-                <Link to="/upi" className="bg-primary hover:bg-primary-glow transition-colors text-surface-0 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/20">Add Transaction</Link>
+                <Link to="/expenses" className="bg-primary hover:bg-primary-glow transition-colors text-surface-0 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/20">Add Transaction</Link>
               </div>
             )}
           </div>

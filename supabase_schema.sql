@@ -219,6 +219,7 @@ create table if not exists public.courses (
   color text,
   bg text,
   lessons jsonb not null default '[]',
+  is_completed boolean default false,
   created_at timestamptz default now()
 );
 

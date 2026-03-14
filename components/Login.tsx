@@ -9,6 +9,7 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [entryCode, setEntryCode] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -24,6 +25,9 @@ const Login: React.FC = () => {
         await login(email, password);
         navigate('/');
       } else {
+        if (entryCode.trim().toLowerCase() !== 'blackrock') {
+          throw new Error("Invalid entry code. Access denied.");
+        }
         await signup(name, email, password);
         navigate('/onboarding');
       }
@@ -113,17 +117,30 @@ const Login: React.FC = () => {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 {!isLogin && (
-                  <div className="relative group/input animate-fade-in-up">
-                    <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-[#D4AF37] transition-colors z-10" size={18} />
-                    <input
-                      type="text"
-                      placeholder="Full Legal Name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 focus:border-[#D4AF37]/50 focus:bg-black/80 rounded-2xl text-white placeholder-slate-600 outline-none transition-all shadow-inner"
-                      required
-                    />
-                  </div>
+                  <>
+                    <div className="relative group/input animate-fade-in-up">
+                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-[#D4AF37] transition-colors z-10" size={18} />
+                      <input
+                        type="text"
+                        placeholder="Full Legal Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 focus:border-[#D4AF37]/50 focus:bg-black/80 rounded-2xl text-white placeholder-slate-600 outline-none transition-all shadow-inner"
+                        required
+                      />
+                    </div>
+                    <div className="relative group/input animate-fade-in-up" style={{animationDelay: '100ms'}}>
+                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-[#D4AF37] transition-colors z-10" size={18} />
+                      <input
+                        type="text"
+                        placeholder="Secret Entry Code"
+                        value={entryCode}
+                        onChange={(e) => setEntryCode(e.target.value)}
+                        className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 focus:border-[#D4AF37]/50 focus:bg-black/80 rounded-2xl text-white placeholder-slate-600 outline-none transition-all shadow-inner"
+                        required
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div className="relative group/input">
