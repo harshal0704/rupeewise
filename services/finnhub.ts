@@ -65,11 +65,59 @@ export const finnhub = {
                 `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`
             );
 
-            if (!response.ok) throw new Error('Failed to fetch quote');
-            return await response.json();
+            if (!response.ok) {
+                console.warn(`Finnhub quote returned non-ok status for ${symbol}`);
+                return null;
+            }
+            const data = await response.json();
+            // Finnhub sometimes returns empty object or {c: 0, d: null, dp: null} for unsupported tickers
+            if (!data || (data.c === 0 && data.d === null)) {
+                return null;
+            }
+            return data;
         } catch (error) {
             console.error("Finnhub Quote Error:", error);
             return null;
+        }
+    },
+
+    /**
+     * Search for a company symbol
+     * @param query Company name or symbol prefix
+     */
+    /**
+     * Fetch historical stock candles (OHLCV)
+     * @param symbol Stock symbol (e.g., AAPL, MSFT)
+     * @param resolution Candle resolution: 1, 5, 15, 30, 60, D, W, M
+     * @param from Unix timestamp start
+     * @param to Unix timestamp end
+     */
+    getStockCandles: async (symbol: string, resolution: string = 'D', from: number, to: number): Promise<{ c: number[], h: number[], l: number[], o: number[], v: number[], t: number[], s: string } | null> => {
+        try {
+            const response = await fetch(
+                `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${API_KEY}`
+            );
+            if (!response.ok) return null;
+            const data = await response.json();
+            if (data.s === 'no_data') return null;
+            return data;
+        } catch (error) {
+            console.error("Finnhub Candle Error:", error);
+            return null;
+        }
+    },
+
+    searchSymbol: async (query: string): Promise<any[]> => {
+        try {
+            const response = await fetch(
+                `https://finnhub.io/api/v1/search?q=${query}&token=${API_KEY}`
+            );
+            if (!response.ok) throw new Error('Failed to search symbol');
+            const data = await response.json();
+            return data.result || [];
+        } catch (error) {
+            console.error("Finnhub Search Error:", error);
+            return [];
         }
     }
 };

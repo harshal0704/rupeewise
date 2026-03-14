@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "web-artifacts-builder": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "73aa0aa98ff675b4dd8a1889beead90bff83a7b8584218beb2648df790c59f72"
+    }
+  }
+}

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { cloudinaryService } from '../services/cloudinaryService';
-import { Check, ChevronRight, ChevronLeft, Target, Briefcase, GraduationCap, Upload, User, Camera, Plus, X, Sparkles, Trophy, Rocket, TrendingUp, Shield } from 'lucide-react';
+import { Check, ChevronRight, ChevronLeft, Target, Briefcase, GraduationCap, Upload, User, Camera, Plus, X, Sparkles, Trophy, Rocket, TrendingUp, Shield, Palette } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const STEPS = [
     { label: 'Photo', icon: <Camera size={16} /> },
@@ -11,11 +12,13 @@ const STEPS = [
     { label: 'Goals', icon: <Target size={16} /> },
     { label: 'Focus', icon: <Briefcase size={16} /> },
     { label: 'Level', icon: <Rocket size={16} /> },
+    { label: 'Theme', icon: <Palette size={16} /> },
     { label: 'AI Setup', icon: <Sparkles size={16} /> },
 ];
 
 const Onboarding: React.FC = () => {
     const { user, refreshProfile } = useAuth();
+    const { theme, setTheme, themes } = useTheme();
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -109,7 +112,8 @@ const Onboarding: React.FC = () => {
     const canProceed = () => {
         if (step === 3) return !!formData.investmentGoal;
         if (step === 4) return !!formData.experienceLevel;
-        if (step === 5) {
+        if (step === 5) return !!theme; // Theme step
+        if (step === 6) {               // AI setup step
             const provider = localStorage.getItem('ai_provider');
             if (provider === 'gemini') return !!localStorage.getItem('gemini_api_key');
             return true; // Groq doesn't strictly need a key here
@@ -368,13 +372,55 @@ const Onboarding: React.FC = () => {
                         </div>
                     )}
 
-                    {/* ─── STEP 5: AI Setup ─── */}
+                    {/* ─── STEP 5: Theme ─── */}
                     {!submitted && step === 5 && (
                         <div className="space-y-6 animate-fade-in-up">
                             <div className="text-center">
-                                <h2 className="text-2xl font-extrabold text-white mb-2">Choose Your AI Brain</h2>
-                                <p className="text-zinc-400 text-sm">Select the AI provider that powers RupeeWise for you.</p>
+                                <h2 className="text-2xl font-extrabold text-white mb-2">Choose your vibe</h2>
+                                <p className="text-zinc-400 text-sm">Select a theme for your dashboard. You can change this later.</p>
                             </div>
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                {themes.map((t) => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => setTheme(t.id)}
+                                        className={`p-4 rounded-2xl border text-left transition-all ${theme === t.id
+                                            ? 'border-primary shadow-lg shadow-primary/20 scale-105 my-1'
+                                            : 'border-zinc-800 bg-surface-1 hover:border-zinc-600'
+                                            }`}
+                                        style={{
+                                            backgroundColor: t.id === theme ? t.colors['--surface-1'] : undefined,
+                                            color: t.id === theme ? t.colors['--text-main'] : undefined
+                                        }}
+                                    >
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h3 className="font-bold">{t.name}</h3>
+                                            {theme === t.id && <Check size={16} className={t.isLight ? 'text-primary' : 'text-white'} />}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div className="w-6 h-6 rounded-full shadow-sm" style={{ backgroundColor: t.colors['--surface-0'] }}></div>
+                                            <div className="w-6 h-6 rounded-full shadow-sm" style={{ backgroundColor: t.colors['--primary'] }}></div>
+                                            <div className="w-6 h-6 rounded-full shadow-sm" style={{ backgroundColor: t.colors['--accent'] }}></div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ─── STEP 6: AI Setup ─── */}
+                    {!submitted && step === 6 && (
+                        <div className="space-y-6 animate-fade-in-up">
+                            <div className="text-center">
+                                <h2 className="text-2xl font-extrabold text-white mb-2">Connect Your AI Brain</h2>
+                                <p className="text-zinc-400 text-sm">RupeeWise uses AI for coaching, tax advice, and simulations. Pick your provider and paste your free API key.</p>
+                            </div>
+
+                            {/* Info Banner */}
+                            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-200 text-sm leading-relaxed">
+                                <strong>How to get a free API key:</strong> Visit the provider's console below, sign in with Google, and copy your API key. It's free and takes 30 seconds.
+                            </div>
+
                             <div className="grid gap-4">
                                 {/* Groq Option */}
                                 <button
@@ -383,8 +429,8 @@ const Onboarding: React.FC = () => {
                                         window.dispatchEvent(new Event('storage'));
                                     }}
                                     className={`p-5 rounded-2xl border text-left transition-all relative overflow-hidden ${(localStorage.getItem('ai_provider') || 'groq') === 'groq'
-                                            ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
-                                            : 'border-zinc-800 bg-surface-1 hover:border-zinc-500'
+                                        ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
+                                        : 'border-zinc-800 bg-surface-1 hover:border-zinc-500'
                                         }`}
                                 >
                                     {(localStorage.getItem('ai_provider') || 'groq') === 'groq' && (
@@ -394,7 +440,23 @@ const Onboarding: React.FC = () => {
                                         <h3 className="font-bold text-white text-lg">Groq (Recommended)</h3>
                                         <div className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-md">Free & Fast</div>
                                     </div>
-                                    <p className="text-sm text-zinc-400 relative z-10">Use our blazing fast AI models. No API key required to start.</p>
+                                    <p className="text-sm text-zinc-400 relative z-10">Blazing fast inference. Get your free key from the Groq Console.</p>
+
+                                    {(localStorage.getItem('ai_provider') || 'groq') === 'groq' && (
+                                        <div className="w-full relative z-10 mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
+                                            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg text-sm font-bold hover:bg-emerald-500/30 transition-colors">
+                                                → Open Groq Console & Get Key
+                                            </a>
+                                            <input
+                                                type="text"
+                                                placeholder="Paste your Groq API Key (optional)"
+                                                defaultValue={localStorage.getItem('groq_api_key') || ''}
+                                                onChange={(e) => localStorage.setItem('groq_api_key', e.target.value)}
+                                                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none placeholder-zinc-500"
+                                            />
+                                            <p className="text-xs text-zinc-500">If left empty, the app will use the default Groq key.</p>
+                                        </div>
+                                    )}
                                 </button>
 
                                 {/* Gemini Option */}
@@ -404,31 +466,51 @@ const Onboarding: React.FC = () => {
                                         window.dispatchEvent(new Event('storage'));
                                     }}
                                     className={`p-5 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col gap-3 ${localStorage.getItem('ai_provider') === 'gemini'
-                                            ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10'
-                                            : 'border-zinc-800 bg-surface-1 hover:border-zinc-500'
+                                        ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10'
+                                        : 'border-zinc-800 bg-surface-1 hover:border-zinc-500'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between relative z-10 w-full">
                                         <h3 className="font-bold text-white text-lg">Google Gemini</h3>
                                         <div className="px-2 py-0.5 bg-zinc-800 text-zinc-300 text-xs font-bold rounded-md">Bring Your Key</div>
                                     </div>
-                                    <p className="text-sm text-zinc-400 relative z-10">Use Google's powerful Gemini models if you have your own API key.</p>
+                                    <p className="text-sm text-zinc-400 relative z-10">Use Google's powerful Gemini models. Free API key from AI Studio.</p>
 
                                     {localStorage.getItem('ai_provider') === 'gemini' && (
-                                        <div className="w-full relative z-10 mt-2 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                                        <div className="w-full relative z-10 mt-2 space-y-3 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                                            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-sm font-bold hover:bg-blue-500/30 transition-colors">
+                                                → Open Google AI Studio & Get Key
+                                            </a>
                                             <input
                                                 type="text"
-                                                placeholder="Enter Gemini API Key"
+                                                placeholder="Paste your Gemini API Key"
                                                 defaultValue={localStorage.getItem('gemini_api_key') || ''}
                                                 onChange={(e) => localStorage.setItem('gemini_api_key', e.target.value)}
                                                 className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none placeholder-zinc-500"
                                             />
-                                            <p className="text-xs text-zinc-500 mt-2">
-                                                Get a free key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google AI Studio</a>.
-                                            </p>
                                         </div>
                                     )}
                                 </button>
+                            </div>
+
+                            {/* Market Data Section */}
+                            <div className="mt-6 p-5 rounded-2xl border border-zinc-800 bg-surface-1 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="font-bold text-white text-lg">📊 Indian Stock Data (Optional)</h3>
+                                    <div className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs font-bold rounded-md">BSE</div>
+                                </div>
+                                <p className="text-sm text-zinc-400">To use Indian BSE stocks in the Alpha Terminal simulator (Time Machine, DCA), add a free Alpha Vantage API key.</p>
+                                <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg text-sm font-bold hover:bg-orange-500/30 transition-colors">
+                                    → Get Free Alpha Vantage Key
+                                </a>
+                                <input
+                                    type="text"
+                                    placeholder="Paste Alpha Vantage API Key (optional)"
+                                    defaultValue={localStorage.getItem('alphavantage_api_key') || ''}
+                                    onChange={(e) => localStorage.setItem('alphavantage_api_key', e.target.value)}
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-orange-500 outline-none placeholder-zinc-500"
+                                />
+                                <p className="text-xs text-zinc-500">US stocks work out of the box via Finnhub. This key is only needed for Indian BSE stocks.</p>
                             </div>
                         </div>
                     )}
@@ -444,7 +526,7 @@ const Onboarding: React.FC = () => {
                                     <ChevronLeft size={18} /> Back
                                 </button>
                             )}
-                            {step < 5 ? (
+                            {step < 6 ? (
                                 <button
                                     onClick={() => setStep(step + 1)}
                                     disabled={!canProceed()}
