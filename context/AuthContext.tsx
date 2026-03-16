@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api';
 import { supabase } from '../services/supabaseClient';
 
 interface AuthContextType {
@@ -38,32 +37,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const initAuth = async () => {
-      const storedUser = await api.auth.getCurrentUser();
-      if (storedUser) {
-        setUser(storedUser);
-        await fetchProfile(storedUser.id);
+    // 1. Get the initial session (handles page refresh / PWA reload)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const sessionUser = session?.user ?? null;
+      setUser(sessionUser);
+      if (sessionUser) {
+        fetchProfile(sessionUser.id).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
-    };
-    initAuth();
+    });
+
+    // 2. Listen for auth state changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        const sessionUser = session?.user ?? null;
+        setUser(sessionUser);
+        if (sessionUser) {
+          fetchProfile(sessionUser.id);
+        } else {
+          setProfile(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, pass: string) => {
-    const data = await api.auth.login(email, pass);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
     setUser(data.user);
     if (data.user) await fetchProfile(data.user.id);
   };
 
   const signup = async (name: string, email: string, pass: string) => {
-    const data = await api.auth.signup(name, email, pass);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: pass,
+      options: { data: { name, full_name: name } },
+    });
+    if (error) throw error;
     setUser(data.user);
-    // Profile is created via DB trigger, but we fetch it to be safe/synced
     if (data.user) await fetchProfile(data.user.id);
   };
 
-  const logout = () => {
-    api.auth.logout();
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
   };

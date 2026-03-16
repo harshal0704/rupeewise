@@ -87,6 +87,15 @@ const Onboarding: React.FC = () => {
     const handleSubmit = async () => {
         setLoading(true);
         try {
+            // Ensure we have a valid, fresh session before writing to the DB.
+            // This prevents 401 errors caused by a stale or missing JWT.
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError || !session) {
+                // Try to refresh the session token
+                const { error: refreshError } = await supabase.auth.refreshSession();
+                if (refreshError) throw new Error("Session expired. Please log in again.");
+            }
+
             const { error } = await supabase
                 .from('profiles')
                 .upsert({
