@@ -209,8 +209,8 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions: propTransactions })
         const ytdIncome = localTransactions.filter(t => t.type === 'credit').reduce((a, t) => a + t.amount, 0);
         if (ytdIncome <= 0) return null;
         const estimate = calculateTaxEstimate(
-          { salary: ytdIncome, business: 0, capitalGains: 0, houseProperty: 0, other: 0 },
-          { section80C: 0, section80D: 0, section80E: 0, section80G: 0, hra: 0, lta: 0, nps80CCD: 0, standardDeduction: 50000 }
+          { salary: ytdIncome, business: 0, capitalGains: { stcg: 0, ltcg: 0, stcgDebt: 0, ltcgDebt: 0 }, houseProperty: 0, other: 0 },
+          { section80C: 0, section80D: 0, section80E: 0, section80G: 0, hra: 0, lta: 0, nps80CCD: 0, homeLoanInterest24B: 0, savingsInterest80TTA: 0, standardDeduction: 50000 }
         );
         return (
           <Link to="/tax" className="block animate-fade-in-up" style={{ animationDelay: '150ms' }}>
