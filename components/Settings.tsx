@@ -173,7 +173,7 @@ const Settings: React.FC = () => {
                             <div className="relative inline-block mb-6">
                                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse-glow"></div>
                                 <img
-                                    src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=1e1f22&color=d4a853&size=200`}
+                                    src={profile?.avatar_url || user?.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user?.name || user?.user_metadata?.full_name || 'User'}&background=1e1f22&color=d4a853&size=200`}
                                     alt="Avatar"
                                     className="relative w-32 h-32 rounded-full border-4 border-surface-2 shadow-2xl z-10 mx-auto object-cover"
                                 />

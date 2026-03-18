@@ -56,7 +56,7 @@ const Layout: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
+    const { user, profile, logout } = useAuth();
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
     const { theme, setTheme, themes } = useTheme();
 
@@ -184,9 +184,9 @@ const Layout: React.FC = () => {
                     <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} p-2 rounded-xl hover:bg-surface-2 transition-all group cursor-pointer border border-transparent hover:border-surface-3 shadow-sm`}>
                         <div className="relative shrink-0">
                             <img
-                                src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=1e1f22&color=d4a853&size=40`}
+                                src={profile?.avatar_url || user?.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || user?.user_metadata?.full_name || 'U')}&background=1e1f22&color=d4a853&size=40`}
                                 alt="User"
-                                className="w-10 h-10 rounded-full border-2 border-surface-3 group-hover:border-primary/50 transition-colors shadow-md"
+                                className="w-10 h-10 rounded-full border-2 border-surface-3 group-hover:border-primary/50 transition-colors shadow-md object-cover"
                             />
                             <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-surface-1 shadow-[0_0_8px_var(--success)]" />
                         </div>

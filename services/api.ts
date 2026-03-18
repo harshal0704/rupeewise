@@ -284,6 +284,53 @@ export const api = {
   },
 
   // ═══════════════════════════════════════════════
+  // CA SYSTEM — Tax Records
+  // ═══════════════════════════════════════════════
+  taxRecords: {
+    get: async (financialYear: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('tax_records')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('financial_year', financialYear)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching tax records:", error);
+        return null;
+      }
+      return data;
+    },
+    upsert: async (financialYear: string, income: any, deductions: any) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Authentication required.");
+
+      const { data, error } = await supabase
+        .from('tax_records')
+        .upsert({
+          user_id: user.id,
+          financial_year: financialYear,
+          income,
+          deductions,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,financial_year'
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error("Error saving tax records:", error);
+        throw error;
+      }
+      return data;
+    }
+  },
+
+  // ═══════════════════════════════════════════════
   // CA SYSTEM — Chat History
   // ═══════════════════════════════════════════════
   chat: {

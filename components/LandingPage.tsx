@@ -279,16 +279,25 @@ const LandingPage: React.FC = () => {
                             className="md:col-span-4 bg-primary text-black rounded-[3rem] p-10 flex flex-col justify-between group cursor-pointer relative overflow-hidden"
                             onClick={() => navigate('/login')}
                         >
+                            <img
+                                src="/ai_coach.png"
+                                alt="AI Coach"
+                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-110 opacity-60"
+                            />
+                            <div className="absolute inset-0 bg-primary/40 mix-blend-multiply" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
                             <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="relative z-10 flex justify-between items-start w-full">
-                                <div className="w-14 h-14 bg-black/10 rounded-2xl flex items-center justify-center shadow-inner">
+                            <div className="relative z-10 flex justify-between items-start w-full text-white">
+                                <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner border border-white/30 text-white">
                                     <Bot size={28} />
                                 </div>
-                                <ChevronRight size={24} />
+                                <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white">
+                                    <ChevronRight size={24} />
+                                </div>
                             </div>
-                            <div className="relative z-10">
-                                <h4 className="text-2xl font-black mb-2 tracking-tight">AI Wealth Coach</h4>
-                                <p className="text-black/70 font-bold leading-snug">Autonomous text parsing, tax strategy generation, and deep financial advisory.</p>
+                            <div className="relative z-10 text-white mt-8">
+                                <h4 className="text-2xl font-black mb-2 tracking-tight drop-shadow-md">AI Wealth Coach</h4>
+                                <p className="text-white/80 font-medium leading-snug">Autonomous text parsing, tax strategy generation, and deep financial advisory.</p>
                             </div>
                         </motion.div>
 

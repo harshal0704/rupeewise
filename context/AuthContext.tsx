@@ -78,6 +78,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       options: { data: { name, full_name: name } },
     });
     if (error) throw error;
+    
+    if (!data.session) {
+      throw new Error("Registration successful. Please check your email to verify your account.");
+    }
+    
     setUser(data.user);
     if (data.user) await fetchProfile(data.user.id);
   };

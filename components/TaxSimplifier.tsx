@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { TaxRegime, ITRDocument, Invoice } from '../types';
 import { explainTaxLiablity, parseITRDocument, parseInvoice, calculateTaxEstimate, getTaxOptimizationAdvice } from '../services/geminiService';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { MarkdownRenderer } from '../services/markdownRenderer';
 import {
   FileText, Bot, HelpCircle, Calculator, ChevronRight, RefreshCw, CheckCircle, AlertTriangle,
@@ -18,6 +19,7 @@ type CATab = 'calculator' | 'optimizer' | 'calendar' | 'itr' | 'invoices' | 'met
 const formatINR = (n: number) => n ? `₹${n.toLocaleString('en-IN')}` : '₹0';
 
 const TaxSimplifier: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<CATab>('calculator');
 
   // ─── Calculator State ───
@@ -37,6 +39,7 @@ const TaxSimplifier: React.FC = () => {
   const [taxResult, setTaxResult] = useState<any>(null);
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [calcLoading, setCalcLoading] = useState(false);
+  const [recordsLoading, setRecordsLoading] = useState(false);
 
   // ─── Optimizer State ───
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -65,6 +68,34 @@ const TaxSimplifier: React.FC = () => {
     if (activeTab === 'invoices') fetchInvoices();
   }, [activeTab]);
 
+  // ─── Load Saved Tax Records ───
+  useEffect(() => {
+    const loadRecords = async () => {
+      setRecordsLoading(true);
+      try {
+        const record = await api.taxRecords.get(fy);
+        if (record) {
+          setDraftIncome(record.income);
+          setDraftDeductions(record.deductions);
+          setIncome(record.income);
+          setDeductions(record.deductions);
+          setIsDirty(false);
+        } else {
+          setDraftIncome(emptyIncome);
+          setDraftDeductions(emptyDeductions);
+          setIncome(emptyIncome);
+          setDeductions(emptyDeductions);
+          setIsDirty(false);
+        }
+        setTaxResult(null); // Clear result on year change
+      } catch (e) {
+        console.error("Failed to load tax records", e);
+      }
+      setRecordsLoading(false);
+    };
+    if (user) loadRecords();
+  }, [fy, user]);
+
   const fetchITRDocs = async () => {
     setItrLoading(true);
     try { const docs = await api.itrDocuments.getAll(); setItrDocs(docs); } catch (e) { console.error(e); }
@@ -78,7 +109,7 @@ const TaxSimplifier: React.FC = () => {
   };
 
   // ─── Tax Calculator ───
-  const handleCalculate = () => {
+  const handleCalculate = async () => {
     // Commit draft values to real state first
     setIncome(draftIncome);
     setDeductions(draftDeductions);
@@ -87,6 +118,15 @@ const TaxSimplifier: React.FC = () => {
     const result = calculateTaxEstimate(draftIncome, draftDeductions, fy);
     setTaxResult(result);
     setAiExplanation(null);
+
+    // Save progress to Supabase
+    try {
+      if (user) {
+        await api.taxRecords.upsert(fy, draftIncome, draftDeductions);
+      }
+    } catch (e) {
+      console.error("Failed to save tax records", e);
+    }
   };
 
   const handleOptimize = async () => {
@@ -295,15 +335,25 @@ const TaxSimplifier: React.FC = () => {
                 </h2>
                 <div className="space-y-3">
                   {[
-                    { key: 'salary', label: 'Salary Income', icon: <Briefcase size={14} /> },
-                    { key: 'business', label: 'Business / Profession', icon: <Building2 size={14} /> },
-                    { key: 'houseProperty', label: 'House Property', icon: <Home size={14} /> },
-                    { key: 'other', label: 'Other Sources', icon: <Coins size={14} /> },
+                    { key: 'salary', label: 'Salary Income', icon: <Briefcase size={14} />, help: 'Your annual basic salary + allowances before any exemptions.' },
+                    { key: 'business', label: 'Business / Profession', icon: <Building2 size={14} />, help: 'Net profit from your business or freelancing/professional work.' },
+                    { key: 'houseProperty', label: 'House Property', icon: <Home size={14} />, help: 'Rental income received. For home loan interest on self-occupied property, enter it as a negative value (e.g. -200000) or under Section 24(B).' },
+                    { key: 'other', label: 'Other Sources', icon: <Coins size={14} />, help: 'Interest from savings, FDs, dividends, or any other income.' },
                   ].map(field => (
                     <div key={field.key} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">{field.icon}</div>
                       <div className="flex-1">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">{field.label}</label>
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1 group relative w-max">
+                          {field.label}
+                          {field.help && (
+                            <>
+                              <Info size={12} className="text-zinc-600 hover:text-amber-400 transition-colors cursor-help" />
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 bg-zinc-800 text-zinc-300 text-[10px] normal-case tracking-normal p-2 rounded-lg border border-zinc-700 shadow-xl z-20">
+                                {field.help}
+                              </div>
+                            </>
+                          )}
+                        </label>
                         <div className="relative">
                           <span className="absolute left-3 top-2.5 text-zinc-500 text-sm font-bold">₹</span>
                           <input
@@ -325,7 +375,13 @@ const TaxSimplifier: React.FC = () => {
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">STCG (Equity) - 15/20%</label>
+                        <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1 group relative w-max">
+                          STCG (Equity) - 15/20%
+                          <Info size={10} className="text-zinc-600 hover:text-amber-400 transition-colors cursor-help" />
+                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 bg-zinc-800 text-zinc-300 text-[10px] normal-case tracking-normal p-2 rounded-lg border border-zinc-700 shadow-xl z-20">
+                            Short-Term Capital Gains. Profits from selling stocks or equity mutual funds held for less than 12 months.
+                          </div>
+                        </label>
                         <div className="relative">
                           <span className="absolute left-2.5 top-2 text-zinc-500 text-xs font-bold">₹</span>
                           <input
@@ -338,7 +394,13 @@ const TaxSimplifier: React.FC = () => {
                         </div>
                       </div>
                       <div>
-                        <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">LTCG (Equity) - 10/12.5%</label>
+                        <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1 group relative w-max">
+                          LTCG (Equity) - 10/12.5%
+                          <Info size={10} className="text-zinc-600 hover:text-amber-400 transition-colors cursor-help" />
+                          <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block w-48 bg-zinc-800 text-zinc-300 text-[10px] normal-case tracking-normal p-2 rounded-lg border border-zinc-700 shadow-xl z-20">
+                            Long-Term Capital Gains. Profits from selling stocks or equity mutual funds held for more than 12 months.
+                          </div>
+                        </label>
                         <div className="relative">
                           <span className="absolute left-2.5 top-2 text-zinc-500 text-xs font-bold">₹</span>
                           <input
@@ -372,20 +434,30 @@ const TaxSimplifier: React.FC = () => {
                 </h2>
                 <div className="space-y-3">
                   {[
-                    { key: 'section80C', label: 'Section 80C', sub: 'PPF, ELSS, LIC — Max ₹1.5L', icon: <PiggyBank size={14} /> },
-                    { key: 'section80D', label: 'Section 80D', sub: 'Health Insurance — Max ₹75K', icon: <Heart size={14} /> },
-                    { key: 'homeLoanInterest24B', label: 'Section 24(B)', sub: 'Home Loan Interest — Max ₹2L', icon: <Home size={14} /> },
-                    { key: 'section80E', label: 'Section 80E', sub: 'Education Loan Interest', icon: <GraduationCap size={14} /> },
-                    { key: 'nps80CCD', label: '80CCD(1B)', sub: 'NPS — Additional ₹50K', icon: <Landmark size={14} /> },
-                    { key: 'savingsInterest80TTA', label: '80TTA/TTB', sub: 'Savings Interest — Max ₹10K/50K', icon: <Coins size={14} /> },
-                    { key: 'section80G', label: 'Section 80G', sub: 'Donations', icon: <Gift size={14} /> },
-                    { key: 'hra', label: 'HRA Exemption', sub: 'House Rent Allowance', icon: <Building2 size={14} /> },
-                    { key: 'standardDeduction', label: 'Standard Deduction', sub: `${fy === '2025-26' ? '₹75,000 (New Regime only)' : '₹50,000 (New & Old)'}`, icon: <Star size={14} /> },
+                    { key: 'section80C', label: 'Section 80C', sub: 'PPF, ELSS, LIC — Max ₹1.5L', icon: <PiggyBank size={14} />, help: 'Investments in EPF, PPF, ELSS (Tax saving mutual funds), Life Insurance premiums, or principal repayment of home loan.' },
+                    { key: 'section80D', label: 'Section 80D', sub: 'Health Insurance — Max ₹75K', icon: <Heart size={14} />, help: 'Premiums paid for medical/health insurance for self, spouse, dependent children (up to ₹25k) and parents (up to ₹50k if senior citizens).' },
+                    { key: 'homeLoanInterest24B', label: 'Section 24(B)', sub: 'Home Loan Interest — Max ₹2L', icon: <Home size={14} />, help: 'Interest paid on home loan for a self-occupied property. Max deduction is ₹2 Lakhs.' },
+                    { key: 'section80E', label: 'Section 80E', sub: 'Education Loan Interest', icon: <GraduationCap size={14} />, help: 'Interest paid on higher education loan for self, spouse, or children. No upper limit on the deduction amount.' },
+                    { key: 'nps80CCD', label: '80CCD(1B)', sub: 'NPS — Additional ₹50K', icon: <Landmark size={14} />, help: 'Additional deduction for investment in National Pension System (NPS) Tier 1 account, over and above the 80C limit.' },
+                    { key: 'savingsInterest80TTA', label: '80TTA/TTB', sub: 'Savings Interest — Max ₹10K/50K', icon: <Coins size={14} />, help: 'Deduction on interest earned from savings bank accounts (up to ₹10k under 80TTA, or ₹50k for senior citizens under 80TTB). Excludes FD interest.' },
+                    { key: 'section80G', label: 'Section 80G', sub: 'Donations', icon: <Gift size={14} />, help: 'Donations made to prescribed charitable institutions or relief funds. Subject to qualifying limits.' },
+                    { key: 'hra', label: 'HRA Exemption', sub: 'House Rent Allowance', icon: <Building2 size={14} />, help: 'Exemption for rent paid. Calculated based on Basic Salary, actual HRA received, and rent paid. Useful if you live in a rented house.' },
+                    { key: 'standardDeduction', label: 'Standard Deduction', sub: `${fy === '2025-26' ? '₹75,000 (New Regime only)' : '₹50,000 (New & Old)'}`, icon: <Star size={14} />, help: 'A flat deduction available to all salaried employees and pensioners. Automatically applied, no proof required.' },
                   ].map(field => (
                     <div key={field.key} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">{field.icon}</div>
                       <div className="flex-1">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">{field.label}</label>
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1 relative group w-max">
+                          {field.label}
+                          {field.help && (
+                            <>
+                              <Info size={12} className="text-zinc-600 hover:text-blue-400 transition-colors cursor-help" />
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-56 bg-zinc-800 text-zinc-300 text-[10px] normal-case tracking-normal p-2 rounded-lg border border-zinc-700 shadow-xl z-20">
+                                {field.help}
+                              </div>
+                            </>
+                          )}
+                        </label>
                         <span className="text-[9px] text-zinc-600">{field.sub}</span>
                         <div className="relative mt-1">
                           <span className="absolute left-3 top-2.5 text-zinc-500 text-sm font-bold">₹</span>

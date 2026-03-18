@@ -105,18 +105,18 @@ const Onboarding: React.FC = () => {
             if (geminiKey) localStorage.setItem('gemini_api_key', geminiKey);
             if (alphaKey) localStorage.setItem('alphavantage_api_key', alphaKey);
 
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError || !session) {
-                const { error: refreshError } = await supabase.auth.refreshSession();
-                if (refreshError) throw new Error("Session expired. Please log in again.");
-            }
-
+            // Removing manual session refresh as supabase-js auto-refreshes tokens before request.
+            // If the upsert fails due to auth, it will throw a proper PostgrestError.
             const { error } = await supabase
                 .from('profiles')
                 .upsert({
                     id: user.id,
                     investment_goal: formData.investmentGoal,
                     experience_level: formData.experienceLevel,
+                    job_title: formData.jobTitle,
+                    dream: formData.dream,
+                    goals: formData.goals,
+                    avatar_url: formData.avatarUrl,
                     onboarding_completed: true,
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'id' })
