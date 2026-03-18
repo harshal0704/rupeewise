@@ -9,9 +9,9 @@ import { api } from '../services/api';
 const QuickActionCard: React.FC<{ icon: React.ReactNode; label: string; query: string; onSelect: (q: string) => void }> = ({ icon, label, query, onSelect }) => (
   <button
     onClick={() => onSelect(query)}
-    className="flex items-center gap-2 px-4 py-3 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-400 hover:text-white hover:border-primary/30 hover:bg-zinc-800 transition-all group"
+    className="flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-zinc-900/80 border border-zinc-800 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold text-zinc-400 hover:text-white hover:border-primary/30 hover:bg-zinc-800 transition-all group shrink-0"
   >
-    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">{icon}</div>
+    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">{icon}</div>
     <span className="whitespace-nowrap">{label}</span>
   </button>
 );
@@ -138,22 +138,37 @@ const AICoach: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] animate-fade-in">
+    <div className="flex flex-col h-[calc(100vh-120px)] pb-20 md:pb-0 animate-fade-in">
       {/* Header */}
-      <div className="glass-panel rounded-2xl p-4 mb-4 flex items-center justify-between">
+      <div className="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 flex items-center justify-center border border-amber-500/20">
-            <Shield size={20} className="text-amber-400" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 flex items-center justify-center border border-amber-500/20 shrink-0">
+            <Shield size={18} className="text-amber-400" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-white flex items-center gap-2">
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               RupeeWise CA
-              <span className="text-[9px] font-black bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full uppercase tracking-widest border border-amber-500/30">AI Powered</span>
+              <span className="text-[8px] sm:text-[9px] font-black bg-amber-500/20 text-amber-400 px-1.5 sm:px-2 py-0.5 rounded-full uppercase tracking-widest border border-amber-500/30">AI</span>
             </h1>
-            <p className="text-xs text-zinc-400">Chartered Accountant with citations & legal references</p>
+            <p className="text-[10px] sm:text-xs text-zinc-400 truncate">Chartered Accountant with citations & legal references</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 ml-12 sm:ml-0">
+          <button
+            onClick={async () => {
+              await api.chat.clearHistory();
+              setMessages([{
+                id: Date.now().toString(),
+                role: 'model',
+                text: "Namaste! I'm your **RupeeWise CA** — a virtual Chartered Accountant powered by AI.\n\nI can help with:\n- 📊 **Tax Planning** — Old vs New Regime, deductions under 80C/80D/80E\n- 📋 **ITR Filing Guidance** — Which ITR form, deadlines, documents\n- 🧾 **GST & Invoicing** — Input credit, GSTIN validation, HSN codes\n- 💡 **Financial Advisory** — Investments, insurance, retirement planning\n\nEvery answer is backed by **specific sections of the Income Tax Act** and relevant laws. Ask me anything!",
+                timestamp: new Date()
+              }]);
+            }}
+            className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-white bg-gradient-to-r from-primary/80 to-secondary/80 hover:from-primary hover:to-secondary px-2.5 sm:px-3 py-1.5 rounded-lg transition-all shadow-sm shadow-primary/20"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            New Chat
+          </button>
           <button 
             onClick={async () => {
               if (window.confirm("Are you sure you want to clear chat history?")) {
@@ -166,13 +181,13 @@ const AICoach: React.FC = () => {
                 }]);
               }
             }}
-            className="text-xs text-zinc-500 hover:text-white transition-colors border border-transparent hover:border-zinc-700 hover:bg-zinc-800 px-2 py-1 rounded-lg"
+            className="hidden sm:block text-xs text-zinc-500 hover:text-white transition-colors border border-transparent hover:border-zinc-700 hover:bg-zinc-800 px-2 py-1 rounded-lg"
           >
             Clear History
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-zinc-400">Online</span>
+            <span className="text-[10px] sm:text-xs text-zinc-400">Online</span>
           </div>
         </div>
       </div>
@@ -190,7 +205,7 @@ const AICoach: React.FC = () => {
               </div>
             )}
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user'
+              className={`max-w-[88%] sm:max-w-[80%] rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 ${msg.role === 'user'
                   ? 'bg-primary/15 border border-primary/20 text-white'
                   : 'glass-panel'
                 }`}
@@ -235,7 +250,7 @@ const AICoach: React.FC = () => {
         {messages.length <= 2 && !loading && (
           <div className="pt-2">
             <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-3 ml-1">Quick Questions</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible -mx-1 px-1">
               {quickActions.map((action, i) => (
                 <QuickActionCard
                   key={i}
@@ -253,22 +268,22 @@ const AICoach: React.FC = () => {
       </div>
 
       {/* Input */}
-      <div className="glass-panel rounded-2xl p-3 flex gap-3 items-center mt-2">
+      <div className="glass-panel rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex gap-2 sm:gap-3 items-center mt-2">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          placeholder="Ask about taxes, deductions, ITR filing, GST..."
-          className="flex-1 bg-transparent text-white text-sm px-3 py-2 outline-none placeholder-zinc-500"
+          placeholder="Ask about taxes, deductions..."
+          className="flex-1 bg-transparent text-white text-sm px-2 sm:px-3 py-2 outline-none placeholder-zinc-500"
           disabled={loading}
         />
         <button
           onClick={() => handleSend()}
           disabled={!input.trim() || loading}
-          className="w-10 h-10 bg-gradient-to-r from-amber-500 to-yellow-500 text-zinc-900 rounded-xl flex items-center justify-center hover:from-amber-400 hover:to-yellow-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed font-bold shadow-lg shadow-amber-500/20"
+          className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-amber-500 to-yellow-500 text-zinc-900 rounded-lg sm:rounded-xl flex items-center justify-center hover:from-amber-400 hover:to-yellow-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed font-bold shadow-lg shadow-amber-500/20 shrink-0"
         >
-          <Send size={18} />
+          <Send size={16} />
         </button>
       </div>
     </div>

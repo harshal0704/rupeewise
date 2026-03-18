@@ -1,3 +1,5 @@
+import { finnhub } from './finnhub';
+
 const API_TOKEN = import.meta.env.VITE_EODHD_API_TOKEN || 'demo';
 
 export interface EODHDNewsItem {
@@ -11,12 +13,18 @@ export interface EODHDNewsItem {
 
 // CORS Proxy helper
 const fetchWithProxy = async (url: string) => {
-    // Try without proxy first, fallback if it fails, or just use corsproxy.io
-    // Using corsproxy.io as it's generally more reliable than allorigins
     const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-    const response = await fetch(proxyUrl);
-    if (!response.ok) throw new Error(`Fetch failed: ${response.statusText}`);
-    return await response.json(); // corsproxy returns the raw response directly, unlike allorigins
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    try {
+        const response = await fetch(proxyUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!response.ok) throw new Error(`Fetch failed: ${response.statusText}`);
+        return await response.json();
+    } catch (e) {
+        clearTimeout(timeout);
+        throw e;
+    }
 };
 
 export const eodhdService = {
@@ -43,6 +51,24 @@ export const eodhdService = {
     },
 
     getLivePrice: async (symbol: string) => {
+        // Strategy: Try Finnhub first (reliable, no CORS), then EODHD as fallback
+        try {
+            // Clean symbol for Finnhub (remove .NSE, .NS, .BO suffixes)
+            const finnhubSymbol = symbol.replace(/\.(NSE|NS|BO|BSE)$/i, '');
+            const quote = await finnhub.getQuote(finnhubSymbol);
+            
+            if (quote && quote.c > 0) {
+                return {
+                    price: quote.c,
+                    change: quote.d || 0,
+                    change_p: quote.dp || 0
+                };
+            }
+        } catch (error) {
+            console.warn("Finnhub price failed for:", symbol, error);
+        }
+
+        // Fallback: Try EODHD
         try {
             const ticker = symbol.includes('.') ? symbol : `${symbol}.NSE`;
             const url = `https://eodhd.com/api/real-time/${ticker}?api_token=${API_TOKEN}&fmt=json`;
@@ -55,29 +81,11 @@ export const eodhdService = {
                     change_p: data.change_p || 0
                 };
             }
-            throw new Error("Invalid EODHD Data");
         } catch (error) {
-            console.warn("EODHD Price Error, trying Yahoo Finance fallback for:", symbol);
-            try {
-                // Yahoo finance fallback via proxy
-                const yfSymbol = symbol.includes('.') ? symbol.replace('.NSE', '.NS') : `${symbol}.NS`;
-                const yfUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${yfSymbol}?interval=1d`;
-                const yfData = await fetchWithProxy(yfUrl);
-                
-                if (yfData && yfData.chart && yfData.chart.result && yfData.chart.result.length > 0) {
-                    const meta = yfData.chart.result[0].meta;
-                    const price = meta.regularMarketPrice;
-                    const prevClose = meta.chartPreviousClose;
-                    const change = price - prevClose;
-                    const change_p = prevClose ? (change / prevClose) * 100 : 0;
-                    
-                    return { price, change, change_p };
-                }
-            } catch (yfError) {
-                console.error("Yahoo Finance Fallback Error:", yfError);
-            }
-            return { price: 0, change: 0, change_p: 0 };
+            console.warn("EODHD fallback also failed for:", symbol);
         }
+
+        return { price: 0, change: 0, change_p: 0 };
     },
 
     getHistoricalData: async (symbol: string, period: 'd' | 'w' | 'm' = 'd', fromDate?: string, toDate?: string) => {

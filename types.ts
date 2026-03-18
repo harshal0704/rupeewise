@@ -72,7 +72,12 @@ export interface TradeCharges {
 export interface IncomeBreakdown {
   salary: number;
   business: number;
-  capitalGains: number;
+  capitalGains: {
+    stcg: number;       // 15% / 20%
+    ltcg: number;       // 10% / 12.5%
+    stcgDebt: number;   // Slab
+    ltcgDebt: number;   // 20%
+  };
   houseProperty: number;
   other: number;
 }
@@ -85,6 +90,8 @@ export interface DeductionBreakdown {
   hra: number;
   lta: number;
   nps80CCD: number;
+  homeLoanInterest24B: number; // Section 24B
+  savingsInterest80TTA: number; // Section 80TTA/TTB
   standardDeduction: number;
 }
 
@@ -163,6 +170,16 @@ export interface TaxEstimate {
   effectiveRate: number;
   monthlyTds: number;
   slabBreakdown: { slab: string; rate: string; tax: number }[];
+  surcharge: number;
+  cess: number;
+}
+
+export interface OptimizationSuggestion {
+  title: string;
+  description: string;
+  action: string;
+  potentialSavings: number;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
 }
 
 export interface CitedAdvice {

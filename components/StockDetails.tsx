@@ -49,9 +49,9 @@ const StockDetails: React.FC = () => {
     const screenerUrl = `https://www.screener.in/company/${cleanSymbol}/`;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-8rem)] animate-fade-in overflow-y-auto custom-scrollbar pb-20">
+        <div className="flex flex-col h-[calc(100vh-8rem)] animate-fade-in overflow-y-auto custom-scrollbar pb-24 md:pb-20">
             {/* Header */}
-            <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 mb-8 mt-2 sticky top-0 bg-surface-0/90 backdrop-blur-md z-30 py-4 border-b border-surface-3">
+            <header className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8 mt-2 sticky top-0 bg-surface-0/90 backdrop-blur-md z-30 py-3 sm:py-4 border-b border-surface-3">
                 <div className="flex items-center gap-4">
                     <button 
                         onClick={() => navigate(-1)} 
@@ -60,8 +60,8 @@ const StockDetails: React.FC = () => {
                         <ArrowLeft size={20} />
                     </button>
                     <div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight">{symbol}</h1>
+                        <div className="flex items-center gap-2 sm:gap-3 mb-1">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">{symbol}</h1>
                             <div className="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-[10px] uppercase font-bold tracking-widest">
                                 AI Analysis
                             </div>
@@ -80,12 +80,12 @@ const StockDetails: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex gap-3">
-                    <button onClick={() => navigate('/invest', { state: { ticker: symbol } })} className="px-6 py-3 bg-surface-2 hover:bg-surface-3 transition-colors border border-surface-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-white shadow-sm group">
+                <div className="flex gap-2 sm:gap-3 flex-wrap">
+                    <button onClick={() => navigate('/invest', { state: { ticker: symbol } })} className="px-4 sm:px-6 py-2.5 sm:py-3 bg-surface-2 hover:bg-surface-3 transition-colors border border-surface-3 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-white shadow-sm group flex-1 sm:flex-none">
                         <LineChartIcon size={16} className="text-primary group-hover:scale-110 transition-transform" /> Alpha Terminal
                     </button>
-                    <a href={screenerUrl} target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-primary hover:bg-primary-glow transition-all rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-white shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                        Open in Screener.in <ExternalLink size={14} className="text-white/80" />
+                    <a href={screenerUrl} target="_blank" rel="noopener noreferrer" className="px-4 sm:px-6 py-2.5 sm:py-3 bg-primary hover:bg-primary-glow transition-all rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] flex-1 sm:flex-none">
+                        Screener.in <ExternalLink size={14} className="text-white/80" />
                     </a>
                 </div>
             </header>
@@ -94,7 +94,7 @@ const StockDetails: React.FC = () => {
                 {/* Left Column - Chart & Quick Stats */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Advanced Chart */}
-                    <div className="glass-panel rounded-[2.5rem] border border-surface-3 shadow-2xl relative bg-[#131722] overflow-hidden h-[600px] flex flex-col">
+                    <div className="glass-panel rounded-xl sm:rounded-[2.5rem] border border-surface-3 shadow-2xl relative bg-[#131722] overflow-hidden h-[350px] sm:h-[450px] lg:h-[600px] flex flex-col">
                         <div className="p-5 border-b border-surface-3 bg-[#1e222d] flex justify-between items-center">
                             <h3 className="text-white font-black flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
                                 <ActivitySquare size={18} className="text-primary" /> Live Technical Analysis
@@ -171,19 +171,26 @@ const StockDetails: React.FC = () => {
                     ) : insights ? (
                         <>
                             {/* Key Metrics Grid */}
-                            <div className="glass-panel p-6 rounded-3xl border border-surface-3 space-y-4">
+                            <div className="glass-panel p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-surface-3 space-y-4">
                                 <h3 className="text-sm font-extrabold text-white flex items-center gap-2 uppercase tracking-widest mb-2">
                                     <PieChart size={18} className="text-primary" /> Valuation Metrics
                                 </h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {insights.ratios?.slice(0, 6).map((r: any, idx: number) => (
-                                        <div key={idx} className="bg-surface-2 p-4 rounded-2xl border border-surface-3 hover:border-primary/30 transition-colors">
-                                            <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider mb-1.5">{r.label}</p>
-                                            <p className="text-lg font-black text-white tracking-tight">{r.value || 'N/A'}</p>
-                                        </div>
-                                    ))}
-                                    {(!insights.ratios || insights.ratios.length === 0) && (
-                                        <p className="text-sm text-zinc-500 col-span-2 py-4">Metrics not available for this entity.</p>
+                                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                                    {insights.ratios && insights.ratios.length > 0 ? (
+                                        insights.ratios.slice(0, 6).map((r: any, idx: number) => (
+                                            <div key={idx} className="bg-surface-2 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-surface-3 hover:border-primary/30 transition-colors">
+                                                <p className="text-[9px] sm:text-[10px] text-zinc-500 uppercase font-bold tracking-wider mb-1 sm:mb-1.5">{r.label}</p>
+                                                <p className="text-base sm:text-lg font-black text-white tracking-tight">{r.value || 'N/A'}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        /* Show 6 placeholder metric boxes */
+                                        ['Market Cap', 'P/E Ratio', 'ROCE %', 'ROE %', 'Dividend Yield', 'Debt to Equity'].map((label, idx) => (
+                                            <div key={idx} className="bg-surface-2 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-surface-3">
+                                                <p className="text-[9px] sm:text-[10px] text-zinc-500 uppercase font-bold tracking-wider mb-1 sm:mb-1.5">{label}</p>
+                                                <p className="text-base sm:text-lg font-black text-zinc-600 tracking-tight">—</p>
+                                            </div>
+                                        ))
                                     )}
                                 </div>
                             </div>

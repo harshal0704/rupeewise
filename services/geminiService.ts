@@ -24,7 +24,7 @@ const getGeminiModel = (): string =>
 const getGroqModel = (): string =>
   localStorage.getItem('groq_model') || 'llama-3.3-70b-versatile';
 
-const getGroqVisionModel = (): string => 'llama-3.2-90b-vision-preview';
+const getGroqVisionModel = (): string => 'llama-3.2-11b-vision-preview';
 
 const INDIAN_FINANCE_SYSTEM_INSTRUCTION = `
 You are RupeeWise AI, a financial expert tailored for the Indian market. 
@@ -78,6 +78,7 @@ const groqVision = async (
   prompt: string
 ): Promise<string> => {
   const apiKey = getGroqApiKey();
+  if (!apiKey) throw new Error('Groq API key is required for vision features. Please add it in Settings or during Onboarding.');
   const model = getGroqVisionModel();
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -96,23 +97,25 @@ const groqVision = async (
               type: 'image_url',
               image_url: { url: `data:${mimeType};base64,${base64Data}` },
             },
-            { type: 'text', text: prompt },
+            { type: 'text', text: prompt + '\n\nIMPORTANT: Return ONLY valid JSON, no markdown formatting.' },
           ],
         },
       ],
       temperature: 0.3,
       max_tokens: 4096,
-      response_format: { type: "json_object" },
     }),
   });
 
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`Groq Vision Error (${response.status}): ${errText}`);
+    console.error(`Groq Vision HTTP ${response.status}:`, errText);
+    throw new Error(`Groq Vision Error (${response.status}): The AI vision model couldn't process this file. Try a clearer image or switch to Gemini in Settings.`);
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || '{}';
+  const content = data.choices?.[0]?.message?.content || '{}';
+  // Clean any markdown formatting from the response
+  return content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 };
 
 // ─── Helper to convert file to base64 ───
@@ -735,33 +738,77 @@ export const analyzePortfolio = async (holdings: any[]) => {
 
 export const analyzeStockFundamentals = async (symbol: string): Promise<any> => {
   const provider = getAIProvider();
+  
+  // Detect if Indian or global stock
+  const isIndian = symbol.endsWith('.NS') || symbol.endsWith('.BO') || symbol.endsWith('.NSE') || symbol.endsWith('.BSE');
+  const cleanSymbol = symbol.replace(/\.(NS|BO|NSE|BSE)$/i, '');
+  const market = isIndian ? 'Indian (NSE/BSE)' : 'global';
+  const currency = isIndian ? '₹' : '$';
+  
   const prompt = `
-    Analyze the Indian stock "${symbol}" as if you are the website Screener.in.
-    Provide the following in JSON format ONLY:
-    1. "pros": A list of 3 key strengths (e.g., "Company is virtually debt free").
-    2. "cons": A list of 3 key weaknesses (e.g., "Stock is trading at 5x book value").
-    3. "ratios": A list of 6 key financial ratios with their EXACT labels and current estimated values.
-       Include: Market Cap, P/E Ratio, ROCE %, ROE %, Dividend Yield, and Debt to Equity.
-    4. "summary": A 1-2 sentence powerful executive summary of the business and its market position.
+    You are a professional stock analyst. Analyze the ${market} stock "${cleanSymbol}" (ticker: ${symbol}).
     
-    Ensure the tone is professional, analytical, and factual.
+    Provide the following in JSON format ONLY:
+    1. "pros": A list of exactly 3 key strengths/bullish factors for this company.
+    2. "cons": A list of exactly 3 key weaknesses/bearish factors or risks.
+    3. "ratios": A list of exactly 6 key financial metrics. Each must have "label" and "value" keys.
+       Include these metrics with realistic estimated values:
+       - Market Cap (e.g., "${currency}2.5T" or "${currency}1.2L Cr")
+       - P/E Ratio (e.g., "28.5")
+       - ROCE % (e.g., "22.4%")
+       - ROE % (e.g., "18.7%")
+       - Dividend Yield (e.g., "1.2%")
+       - Debt to Equity (e.g., "0.45")
+    4. "summary": A 2 sentence executive summary of the business and its competitive position.
+    
+    IMPORTANT: You MUST provide all 4 fields with data. Do NOT leave ratios empty.
+    Return ONLY valid JSON, no markdown.
   `;
 
+  const fallbackResult = {
+    pros: [`${cleanSymbol} is a well-known entity in its sector`],
+    cons: ['Detailed analysis requires real-time data'],
+    ratios: [
+      { label: 'Market Cap', value: 'N/A' },
+      { label: 'P/E Ratio', value: 'N/A' },
+      { label: 'ROCE %', value: 'N/A' },
+      { label: 'ROE %', value: 'N/A' },
+      { label: 'Dividend Yield', value: 'N/A' },
+      { label: 'Debt to Equity', value: 'N/A' },
+    ],
+    summary: `${cleanSymbol} analysis is currently being generated. Please ensure your AI API key is configured in Settings.`
+  };
+
   if (provider === 'groq') {
+    const apiKey = getGroqApiKey();
+    if (!apiKey) {
+      console.warn('Groq API key missing — returning fallback valuation data');
+      return { ...fallbackResult, summary: `Configure your Groq API key in Settings to see AI-powered analysis for ${cleanSymbol}.` };
+    }
     try {
       const result = await groqChat([
-        { role: 'system', content: INDIAN_FINANCE_SYSTEM_INSTRUCTION },
+        { role: 'system', content: INDIAN_FINANCE_SYSTEM_INSTRUCTION + ' Always return valid JSON with pros, cons, ratios, and summary fields.' },
         { role: 'user', content: prompt },
       ], { json: true });
-      return JSON.parse(result);
+      
+      const parsed = JSON.parse(result);
+      // Validate that ratios exist
+      if (!parsed.ratios || parsed.ratios.length === 0) {
+        parsed.ratios = fallbackResult.ratios;
+      }
+      return parsed;
     } catch (error) {
       console.error("Groq Stock Analysis Error:", error);
-      return null;
+      return fallbackResult;
     }
   }
 
+  // Gemini
   const apiKey = getGeminiApiKey();
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn('Gemini API key missing — returning fallback valuation data');
+    return { ...fallbackResult, summary: `Configure your Gemini API key in Settings to see AI-powered analysis for ${cleanSymbol}.` };
+  }
   const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
@@ -789,10 +836,14 @@ export const analyzeStockFundamentals = async (symbol: string): Promise<any> => 
         }
       }
     });
-    return JSON.parse(response.text || "{}");
+    const parsed = JSON.parse(response.text || "{}");
+    if (!parsed.ratios || parsed.ratios.length === 0) {
+      parsed.ratios = fallbackResult.ratios;
+    }
+    return parsed;
   } catch (error) {
     console.error("Gemini Stock Analysis Error:", error);
-    return null;
+    return fallbackResult;
   }
 };
 
@@ -1165,16 +1216,37 @@ export const getCAAdvice = async (
 // ═══════════════════════════════════════════════════
 
 export const calculateTaxEstimate = (
-  income: { salary: number; business: number; capitalGains: number; houseProperty: number; other: number },
-  deductions: { section80C: number; section80D: number; section80E: number; section80G: number; hra: number; lta: number; nps80CCD: number; standardDeduction: number }
+  income: { salary: number; business: number; capitalGains: { stcg: number; ltcg: number; stcgDebt: number; ltcgDebt: number }; houseProperty: number; other: number },
+  deductions: { section80C: number; section80D: number; section80E: number; section80G: number; hra: number; lta: number; nps80CCD: number; homeLoanInterest24B: number; savingsInterest80TTA: number; standardDeduction: number },
+  fy: string = '2024-25'
 ): { oldRegime: any; newRegime: any; recommended: string; savings: number; grossIncome: number; totalDeductions: number } => {
-  const grossIncome = Object.values(income).reduce((a, b) => a + b, 0);
+  const cg = income.capitalGains;
+  // Debt STCG and other incomes are taxed at slab rates
+  const slabIncome = income.salary + income.business + income.houseProperty + income.other + cg.stcgDebt;
+  const grossIncome = slabIncome + cg.stcg + cg.ltcg + cg.ltcgDebt;
+  
   const totalDeductions = Object.values(deductions).reduce((a, b) => a + b, 0);
 
+  // ─── Special Rate Taxes ───
+  // STCG on Equity is 15% (or 20% in latest budget, using 20% for FY25)
+  const stcgRate = fy === '2025-26' ? 0.20 : 0.15;
+  const stcgTax = cg.stcg * stcgRate;
+  
+  // LTCG on Equity > 1.25L is 12.5% (was 10% > 1L)
+  const ltcgExemption = fy === '2025-26' ? 125000 : 100000;
+  const ltcgRate = fy === '2025-26' ? 0.125 : 0.10;
+  const taxableLtcg = Math.max(0, cg.ltcg - ltcgExemption);
+  const ltcgTax = taxableLtcg * ltcgRate;
+
+  // LTCG Debt is usually 20% with indexation (simplified here)
+  const ltcgDebtTax = cg.ltcgDebt * 0.20;
+
+  const specialGainsTax = stcgTax + ltcgTax + ltcgDebtTax;
+
   // ─── New Regime FY 2024-25 (No deductions except standard deduction of ₹75,000) ───
-  const newStdDeduction = 75000;
-  const newTaxableIncome = Math.max(0, grossIncome - newStdDeduction);
-  let newTax = 0;
+  const newStdDeduction = fy === '2025-26' ? 75000 : 50000;
+  const newTaxableIncome = Math.max(0, slabIncome - newStdDeduction);
+  let newTax = specialGainsTax;
   const newSlabs = [
     { limit: 300000, rate: 0 },
     { limit: 700000, rate: 0.05 },
@@ -1202,20 +1274,31 @@ export const calculateTaxEstimate = (
     prevLimit = slab.limit;
     if (newRemaining <= 0) break;
   }
+  
+  // Add special rate breakdown to New Regime
+  if (cg.stcg > 0) newSlabBreakdown.push({ slab: `STCG Equity (${(stcgRate*100)}%)`, rate: `${(stcgRate*100)}%`, tax: Math.round(stcgTax) });
+  if (taxableLtcg > 0) newSlabBreakdown.push({ slab: `LTCG Equity (${(ltcgRate*100)}%)`, rate: `${(ltcgRate*100)}%`, tax: Math.round(ltcgTax) });
+  if (cg.ltcgDebt > 0) newSlabBreakdown.push({ slab: 'LTCG Debt (20%)', rate: '20%', tax: Math.round(ltcgDebtTax) });
+
   // Rebate u/s 87A for new regime (income up to ₹7L)
   if (newTaxableIncome <= 700000) newTax = 0;
   // Surcharge
-  if (grossIncome > 50000000) newTax *= 1.37;
-  else if (grossIncome > 20000000) newTax *= 1.25;
-  else if (grossIncome > 10000000) newTax *= 1.15;
-  else if (grossIncome > 5000000) newTax *= 1.10;
+  let newSurchargeRate = 0;
+  if (grossIncome > 50000000) newSurchargeRate = fy === '2024-25' ? 0.25 : 0.25; // Adjusted as per recent budgets, max 25% under new regime
+  else if (grossIncome > 20000000) newSurchargeRate = 0.25;
+  else if (grossIncome > 10000000) newSurchargeRate = 0.15;
+  else if (grossIncome > 5000000) newSurchargeRate = 0.10;
+  
+  const newSurcharge = Math.round(newTax * newSurchargeRate);
+  newTax += newSurcharge;
+  
   // Cess 4%
-  const newCess = newTax * 0.04;
+  const newCess = Math.round(newTax * 0.04);
   const newTotalTax = Math.round(newTax + newCess);
 
-  // ─── Old Regime FY 2024-25 ───
-  const oldTaxableIncome = Math.max(0, grossIncome - totalDeductions);
-  let oldTax = 0;
+  // ─── Old Regime FY 2024-25 / 2025-26 ───
+  const oldTaxableIncome = Math.max(0, slabIncome - totalDeductions);
+  let oldTax = specialGainsTax;
   const oldSlabs = [
     { limit: 250000, rate: 0 },
     { limit: 500000, rate: 0.05 },
@@ -1241,14 +1324,26 @@ export const calculateTaxEstimate = (
     oldPrevLimit = slab.limit;
     if (oldRemaining <= 0) break;
   }
+  
+  // Add special rate breakdown to Old Regime
+  if (cg.stcg > 0) oldSlabBreakdown.push({ slab: `STCG Equity (${(stcgRate*100)}%)`, rate: `${(stcgRate*100)}%`, tax: Math.round(stcgTax) });
+  if (taxableLtcg > 0) oldSlabBreakdown.push({ slab: `LTCG Equity (${(ltcgRate*100)}%)`, rate: `${(ltcgRate*100)}%`, tax: Math.round(ltcgTax) });
+  if (cg.ltcgDebt > 0) oldSlabBreakdown.push({ slab: 'LTCG Debt (20%)', rate: '20%', tax: Math.round(ltcgDebtTax) });
+
   // Rebate u/s 87A for old regime (income up to ₹5L)
   if (oldTaxableIncome <= 500000) oldTax = 0;
-  // Surcharge (same rates)
-  if (grossIncome > 50000000) oldTax *= 1.37;
-  else if (grossIncome > 20000000) oldTax *= 1.25;
-  else if (grossIncome > 10000000) oldTax *= 1.15;
-  else if (grossIncome > 5000000) oldTax *= 1.10;
-  const oldCess = oldTax * 0.04;
+  
+  // Surcharge 
+  let oldSurchargeRate = 0;
+  if (grossIncome > 50000000) oldSurchargeRate = 0.37;
+  else if (grossIncome > 20000000) oldSurchargeRate = 0.25;
+  else if (grossIncome > 10000000) oldSurchargeRate = 0.15;
+  else if (grossIncome > 5000000) oldSurchargeRate = 0.10;
+  
+  const oldSurcharge = Math.round(oldTax * oldSurchargeRate);
+  oldTax += oldSurcharge;
+  
+  const oldCess = Math.round(oldTax * 0.04);
   const oldTotalTax = Math.round(oldTax + oldCess);
 
   const recommended = newTotalTax <= oldTotalTax ? 'New' : 'Old';
@@ -1261,6 +1356,8 @@ export const calculateTaxEstimate = (
       effectiveRate: grossIncome > 0 ? ((oldTotalTax / grossIncome) * 100).toFixed(1) : '0',
       slabBreakdown: oldSlabBreakdown,
       monthlyTds: Math.round(oldTotalTax / 12),
+      surcharge: oldSurcharge,
+      cess: oldCess,
     },
     newRegime: {
       taxableIncome: newTaxableIncome,
@@ -1268,6 +1365,8 @@ export const calculateTaxEstimate = (
       effectiveRate: grossIncome > 0 ? ((newTotalTax / grossIncome) * 100).toFixed(1) : '0',
       slabBreakdown: newSlabBreakdown,
       monthlyTds: Math.round(newTotalTax / 12),
+      surcharge: newSurcharge,
+      cess: newCess,
     },
     recommended,
     savings,
@@ -1280,6 +1379,66 @@ export const calculateTaxEstimate = (
 // ═══════════════════════════════════════════════════
 // CA SYSTEM — Transaction Anomaly Detection
 // ═══════════════════════════════════════════════════
+
+export const getTaxOptimizationAdvice = async (
+  income: { salary: number; business: number; capitalGains: number; houseProperty: number; other: number },
+  deductions: { section80C: number; section80D: number; section80E: number; section80G: number; hra: number; lta: number; nps80CCD: number; homeLoanInterest24B: number; savingsInterest80TTA: number },
+  regime: string
+): Promise<any[]> => {
+  const provider = getAIProvider();
+  const prompt = `
+    You are an expert Indian Chartered Accountant advising a client on how to optimize their taxes.
+    Their current profile:
+    Income: ${JSON.stringify(income)}
+    Deductions Already Claimed: ${JSON.stringify(deductions)}
+    Chosen Regime: ${regime} Regime
+
+    Identify gaps where they can save MORE tax under Indian Income Tax Act. 
+    Look at 80C (max 1.5L), 80D (Health), 80CCD(1B) NPS (additional 50k), HRA, Section 24b (Home Loan Interest up to 2L), standard deduction, etc. If they chose the New Regime, most deductions don't apply, so focus on any remaining strategies or advise them to switch.
+
+    Return ONLY a JSON array of actionable suggestions. Each object MUST have:
+    - title (string, e.g., "Max out Section 80C")
+    - description (string, explaining what to do)
+    - action (string, short punchy action, e.g., "Invest ₹50k in ELSS")
+    - potentialSavings (number, estimated tax saved in ₹, e.g., 15000)
+    - difficulty (string: 'Easy', 'Medium', or 'Hard')
+
+    If their taxes are perfectly optimized, return an array with one entry congratulating them.
+    Output ONLY valid JSON array with no markdown blocks if possible.
+  `;
+
+  if (provider === 'groq') {
+    try {
+      const result = await groqChat([
+        { role: 'system', content: INDIAN_FINANCE_SYSTEM_INSTRUCTION },
+        { role: 'user', content: prompt }
+      ], { json: true });
+      return JSON.parse(result);
+    } catch (error) {
+      console.error("Groq Optimizer Error:", error);
+      return [];
+    }
+  }
+
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) return [];
+  const ai = new GoogleGenAI({ apiKey });
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: getGeminiModel(),
+      contents: prompt,
+      config: {
+        systemInstruction: INDIAN_FINANCE_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+      }
+    });
+    return JSON.parse(response.text || "[]");
+  } catch (error) {
+    console.error("Gemini Optimizer Error:", error);
+    return [];
+  }
+};
 
 export const detectTransactionAnomalies = async (transactions: { merchant: string; amount: number; category: string; date: string; type: string }[]): Promise<any[]> => {
   if (transactions.length < 3) return [];

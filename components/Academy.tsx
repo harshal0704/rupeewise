@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BookOpen, GraduationCap, Brain, ChevronRight, PlayCircle, Award, HelpCircle, TrendingUp, FileText, CheckCircle, XCircle, RefreshCw, Plus, Loader2, X, Globe, BarChart2, DollarSign, Zap, Network } from 'lucide-react';
 import { getFinancialAdvice, generateFullCourse, generateDailyQuiz } from '../services/geminiService';
 import { MarkdownRenderer } from '../services/markdownRenderer';
@@ -79,6 +79,98 @@ const DEFAULT_COURSES = [
         ]
     }
 ];
+
+// ── Lesson Reader Subcomponent ──────────────────────────────────────────────────
+const LessonReader: React.FC<{ lesson: any; onClose: () => void }> = ({ lesson, onClose }) => {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [progress, setProgress] = useState(0);
+
+    const handleScroll = () => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const { scrollTop, scrollHeight, clientHeight } = el;
+        const total = scrollHeight - clientHeight;
+        setProgress(total > 0 ? Math.min(100, Math.round((scrollTop / total) * 100)) : 100);
+    };
+
+    // Estimate reading time
+    const wordCount = lesson.content ? lesson.content.split(/\s+/).length : 0;
+    const readingMins = Math.max(1, Math.ceil(wordCount / 200));
+
+    return (
+        <div className="fixed inset-0 z-[10000] bg-[#09090b] flex flex-col animate-fade-in overflow-hidden">
+            {/* Reading progress bar */}
+            <div className="absolute top-0 left-0 h-[3px] bg-primary/20 w-full z-10">
+                <div
+                    className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-150 ease-out shadow-[0_0_8px_rgba(var(--primary),0.6)]"
+                    style={{ width: `${progress}%` }}
+                />
+            </div>
+
+            {/* Top Nav */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-[#09090b]/95 backdrop-blur-xl shrink-0 mt-[3px]">
+                <button
+                    onClick={onClose}
+                    className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors group"
+                >
+                    <div className="p-2 rounded-xl bg-zinc-800/80 group-hover:bg-zinc-700 transition-colors">
+                        <X size={18} />
+                    </div>
+                    <span className="text-sm font-semibold hidden sm:inline">Back to Course</span>
+                </button>
+                <div className="text-center">
+                    <h1 className="text-sm font-black text-white truncate max-w-[200px] sm:max-w-md">{lesson.title}</h1>
+                    <div className="flex items-center justify-center gap-2 mt-0.5">
+                        <p className="text-[11px] text-primary font-bold uppercase tracking-widest">{readingMins} min read</p>
+                        <span className="text-zinc-700">·</span>
+                        <p className="text-[11px] text-zinc-500">{progress}% read</p>
+                    </div>
+                </div>
+                <button
+                    onClick={onClose}
+                    className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary/80 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-primary/20"
+                >
+                    <CheckCircle size={14} /> Done
+                </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="max-w-3xl mx-auto px-6 py-12">
+                    {/* Hero section */}
+                    <div className="mb-10 pb-8 border-b border-zinc-800">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-4">
+                            <BookOpen size={12} /> Lesson
+                        </div>
+                        <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight mb-3">
+                            {lesson.title}
+                        </h1>
+                        <div className="flex items-center gap-4 text-sm text-zinc-500">
+                            <span>{readingMins} min read</span>
+                            <span>·</span>
+                            <span>{wordCount} words</span>
+                        </div>
+                    </div>
+
+                    {/* Article Body */}
+                    <article className="max-w-none space-y-1">
+                        <MarkdownRenderer content={lesson.content} className="text-[17px] leading-[1.75]" />
+                    </article>
+
+                    {/* End card */}
+                    <div className="mt-16 p-6 rounded-2xl bg-primary/5 border border-primary/20 text-center">
+                        <CheckCircle className="mx-auto text-primary mb-3" size={28} />
+                        <p className="text-white font-bold mb-1">You've finished this lesson!</p>
+                        <p className="text-zinc-400 text-sm mb-4">Head back to the course to track your progress.</p>
+                        <button onClick={onClose} className="px-8 py-3 bg-primary text-white font-black text-sm rounded-xl hover:bg-primary/80 transition-all shadow-lg shadow-primary/20">
+                            Back to Course →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const Academy: React.FC = () => {
     const { user } = useAuth();
@@ -215,19 +307,40 @@ const Academy: React.FC = () => {
     };
 
     const handleMarkAsComplete = async () => {
-        if (!selectedCourse?.id) {
-            setModules(prev => prev.map(m => m.title === selectedCourse.title ? { ...m, is_completed: true } : m));
-            setSelectedCourse({ ...selectedCourse, is_completed: true });
-            return;
-        }
-
+        if (!user) return;
         setMarkingComplete(true);
         try {
-            const { error } = await supabase.from('courses').update({ is_completed: true }).eq('id', selectedCourse.id);
-            if (error) throw error;
-            
-            setModules(prev => prev.map(m => m.id === selectedCourse.id ? { ...m, is_completed: true } : m));
-            setSelectedCourse({ ...selectedCourse, is_completed: true });
+            let courseId = selectedCourse?.id;
+
+            // If this is a default/local course with no DB id, upsert it first
+            if (!courseId) {
+                const { data, error } = await supabase
+                    .from('courses')
+                    .upsert({
+                        user_id: user.id,
+                        title: selectedCourse.title,
+                        description: selectedCourse.description,
+                        icon: selectedCourse.icon,
+                        color: selectedCourse.color,
+                        bg: selectedCourse.bg,
+                        lessons: selectedCourse.lessons,
+                        is_completed: true,
+                    }, { onConflict: 'user_id,title' })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                courseId = data.id;
+                const updatedCourse = { ...selectedCourse, id: courseId, is_completed: true };
+                setModules(prev => prev.map(m => m.title === selectedCourse.title ? updatedCourse : m));
+                setSelectedCourse(updatedCourse);
+            } else {
+                // Existing DB course — just update
+                const { error } = await supabase.from('courses').update({ is_completed: true }).eq('id', courseId);
+                if (error) throw error;
+                setModules(prev => prev.map(m => m.id === courseId ? { ...m, is_completed: true } : m));
+                setSelectedCourse({ ...selectedCourse, is_completed: true });
+            }
         } catch (e) {
             console.error("Failed to mark complete:", e);
         } finally {
@@ -617,55 +730,10 @@ const Academy: React.FC = () => {
 
             {/* Lesson Full-Screen Page */}
             {selectedLesson && (
-                <div className="fixed inset-0 z-[10000] bg-[#09090b] flex flex-col animate-fade-in overflow-hidden">
-                    {/* Top Nav */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-[#09090b]/95 backdrop-blur-xl shrink-0">
-                        <button
-                            onClick={() => setSelectedLesson(null)}
-                            className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors group"
-                        >
-                            <div className="p-2 rounded-xl bg-zinc-800/80 group-hover:bg-zinc-700 transition-colors">
-                                <X size={18} />
-                            </div>
-                            <span className="text-sm font-semibold hidden sm:inline">Back to Course</span>
-                        </button>
-                        <div className="text-center">
-                            <h1 className="text-sm font-black text-white truncate max-w-[200px] sm:max-w-md">{selectedLesson.title}</h1>
-                            <p className="text-[11px] text-primary font-bold uppercase tracking-widest">{selectedLesson.duration} read</p>
-                        </div>
-                        <button
-                            onClick={() => setSelectedLesson(null)}
-                            className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary/80 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-primary/20"
-                        >
-                            <CheckCircle size={14} /> Done
-                        </button>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        <div className="max-w-3xl mx-auto px-6 py-12">
-                            <article className="prose prose-invert prose-emerald max-w-none font-medium leading-relaxed text-zinc-300 prose-headings:font-black prose-headings:tracking-tight prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg">
-                                <MarkdownRenderer content={selectedLesson.content} />
-                            </article>
-                        </div>
-                    </div>
-
-                    {/* Bottom Footer */}
-                    <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/30 flex justify-between items-center shrink-0">
-                        <button
-                            onClick={() => setSelectedLesson(null)}
-                            className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors font-medium"
-                        >
-                            ← Back to Course
-                        </button>
-                        <button
-                            onClick={() => setSelectedLesson(null)}
-                            className="px-8 py-3 bg-primary text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-primary/80 transition-all shadow-lg shadow-primary/20"
-                        >
-                            Complete Lesson ✓
-                        </button>
-                    </div>
-                </div>
+                <LessonReader
+                    lesson={selectedLesson}
+                    onClose={() => setSelectedLesson(null)}
+                />
             )}
         </div>
     );

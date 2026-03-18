@@ -686,3 +686,71 @@ body.light-theme {
     animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
+
+/* ════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS
+   ════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* Reduce global padding on mobile */
+  .glass-panel {
+    border-radius: 16px;
+  }
+  
+  /* Ensure content doesn't hide behind bottom dock */
+  main {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Better touch targets */
+  button, a, input, select, textarea {
+    min-height: 36px;
+  }
+
+  /* Smooth scroll on mobile */
+  .custom-scrollbar {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Fix fixed position elements */
+  .bottom-dock {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  /* Reduce heavy shadow effects on mobile for performance */
+  .glass-panel:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Make tables scroll horizontally on small screens */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Reduce spacing in stacked layouts */
+  .stagger-children > * {
+    animation-delay: 0ms !important;
+  }
+}
+
+/* Small phones (< 375px) */
+@media (max-width: 374px) {
+  body {
+    font-size: 14px;
+  }
+  
+  .neumorph-input {
+    padding: 10px 12px 10px 36px;
+    font-size: 0.875rem;
+    border-radius: 10px;
+  }
+}
+
+/* Safe area support for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .bottom-dock {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+}
